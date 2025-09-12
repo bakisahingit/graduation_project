@@ -32,6 +32,16 @@ const modelsList = document.getElementById('models-list');
 const addModelOption = document.getElementById('add-model-option');
 const selectOptionsScroll = document.getElementById('select-options-scroll');
 
+// Molecule modal elements
+const moleculeModal = document.getElementById('molecule-modal');
+const moleculeOverlay = document.getElementById('molecule-overlay');
+const moleculeClose = document.getElementById('molecule-close');
+const moleculeDrawerBtn = document.getElementById('molecule-drawer-btn');
+const moleculeDisplay = document.getElementById('molecule-display');
+const smilesInput = document.getElementById('smiles-input');
+const clearMoleculeBtn = document.getElementById('clear-molecule');
+const insertMoleculeBtn = document.getElementById('insert-molecule');
+
 // State
 let isInChatMode = false;
 let currentStreamController = null;
@@ -912,12 +922,129 @@ settingsOverlay.addEventListener('click', () => {
 document.addEventListener('keydown', (e) => {
 	if (e.key === 'Escape' && settingsModal.classList.contains('open')) {
 		closeSettingsModal();
+	} else if (e.key === 'Escape' && moleculeModal.classList.contains('open')) {
+		closeMoleculeModal();
 	}
 });
+
+// Molecule modal functionality
+function openMoleculeModal() {
+	moleculeModal.classList.add('open');
+	smilesInput.focus();
+}
+
+function closeMoleculeModal() {
+	moleculeModal.classList.remove('open');
+}
+
+function clearMolecule() {
+	smilesInput.value = '';
+	updateMoleculeDisplay();
+}
+
+function updateMoleculeDisplay() {
+	const smiles = smilesInput.value.trim();
+	const placeholder = moleculeDisplay.querySelector('.molecule-placeholder');
+	
+	if (smiles) {
+		// Hide placeholder and show molecule structure
+		if (placeholder) {
+			placeholder.style.display = 'none';
+		}
+		
+		// Create a simple text representation of the molecule
+		const moleculeText = document.createElement('div');
+		moleculeText.className = 'molecule-text';
+		moleculeText.style.cssText = `
+			color: #4caf50;
+			font-family: 'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+			font-size: 16px;
+			font-weight: 500;
+			text-align: center;
+			padding: 20px;
+			background: rgba(76,175,80,0.1);
+			border: 1px solid rgba(76,175,80,0.2);
+			border-radius: 8px;
+			margin: 10px;
+		`;
+		moleculeText.textContent = `SMILES: ${smiles}`;
+		
+		// Remove existing molecule text if any
+		const existingText = moleculeDisplay.querySelector('.molecule-text');
+		if (existingText) {
+			existingText.remove();
+		}
+		
+		moleculeDisplay.appendChild(moleculeText);
+	} else {
+		// Show placeholder
+		if (placeholder) {
+			placeholder.style.display = 'flex';
+		}
+		
+		// Remove molecule text
+		const existingText = moleculeDisplay.querySelector('.molecule-text');
+		if (existingText) {
+			existingText.remove();
+		}
+	}
+}
+
+function insertMoleculeToChat() {
+	const smiles = smilesInput.value.trim();
+	if (!smiles) {
+		alert('Lütfen bir SMILES formatı girin.');
+		return;
+	}
+	
+	// Create molecule message text
+	const moleculeMessage = `Molekül: ${smiles}`;
+	
+	// Insert into current input field
+	if (isInChatMode) {
+		const currentValue = input.value;
+		input.value = currentValue ? `${currentValue}\n${moleculeMessage}` : moleculeMessage;
+		autoResizeTextarea(input);
+		input.focus();
+	} else {
+		const currentValue = welcomeInput.value;
+		welcomeInput.value = currentValue ? `${currentValue}\n${moleculeMessage}` : moleculeMessage;
+		autoResizeTextarea(welcomeInput);
+		welcomeInput.focus();
+	}
+	
+	// Close modal
+	closeMoleculeModal();
+}
 
 // New chat button handler
 newChatBtn.addEventListener('click', () => {
 	switchToWelcomeMode();
+});
+
+// Molecule modal event listeners
+moleculeDrawerBtn.addEventListener('click', () => {
+	openMoleculeModal();
+});
+
+moleculeClose.addEventListener('click', () => {
+	closeMoleculeModal();
+});
+
+moleculeOverlay.addEventListener('click', () => {
+	closeMoleculeModal();
+});
+
+smilesInput.addEventListener('input', () => {
+	updateMoleculeDisplay();
+});
+
+clearMoleculeBtn.addEventListener('click', () => {
+	clearMolecule();
+});
+
+insertMoleculeBtn.addEventListener('click', () => {
+	insertMoleculeToChat();
 });
 
 // Initialize
