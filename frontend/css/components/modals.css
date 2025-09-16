@@ -1,0 +1,445 @@
+/**
+ * Modal Components
+ * Modal bileşenleri
+ */
+
+/* Base modal styles */
+.settings-modal, .molecule-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: var(--z-modal);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-modal.open, .molecule-modal.open {
+    display: flex;
+}
+
+.settings-overlay, .molecule-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+}
+
+.settings-content {
+    position: relative;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    background: linear-gradient(180deg, rgba(26,26,26,0.95), rgba(20,20,20,0.98));
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-xl);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.molecule-content {
+    position: relative;
+    width: 90%;
+    max-width: 700px;
+    max-height: 80vh;
+    background: linear-gradient(180deg, rgba(26,26,26,0.95), rgba(20,20,20,0.98));
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-xl);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.settings-header, .molecule-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-5) var(--space-6);
+    border-bottom: 1px solid var(--border-secondary);
+}
+
+.settings-title, .molecule-title {
+    margin: 0;
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+    color: var(--accent);
+}
+
+.settings-close, .molecule-close {
+    background: var(--gray-950);
+    border: 1px solid var(--border-secondary);
+    color: var(--gray-300);
+    padding: var(--space-2);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: var(--transition-normal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-close:hover, .molecule-close:hover {
+    background: var(--gray-900);
+    border-color: var(--border-accent);
+    color: var(--gray-100);
+}
+
+.settings-body, .molecule-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Settings modal specific */
+.settings-navigation {
+    display: flex;
+    padding: 0 var(--space-6);
+    border-bottom: 1px solid var(--border-secondary);
+}
+
+.settings-nav-btn {
+    background: transparent;
+    border: none;
+    color: var(--gray-400);
+    padding: var(--space-4) var(--space-5);
+    cursor: pointer;
+    transition: var(--transition-normal);
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    border-bottom: 2px solid transparent;
+}
+
+.settings-nav-btn:hover {
+    color: var(--gray-200);
+}
+
+.settings-nav-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+.settings-tab {
+    display: none;
+    flex: 1;
+    overflow: hidden;
+}
+
+.settings-tab.active {
+    display: flex;
+    flex-direction: column;
+}
+
+.models-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-5) var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.model-item {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3) var(--space-4);
+    transition: var(--transition-normal);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.model-item:hover {
+    background: var(--gray-950);
+    border-color: var(--border-secondary);
+    transform: translateY(-1px);
+}
+
+.model-item.selected {
+    background: rgba(79,195,247,0.1);
+    border-color: rgba(79,195,247,0.3);
+}
+
+.model-item.selected .model-name {
+    color: var(--primary);
+}
+
+.model-name {
+    color: var(--accent);
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    flex: 1;
+}
+
+.model-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.model-status {
+    color: var(--gray-500);
+    font-size: var(--text-xs);
+    background: var(--gray-950);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.model-switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: var(--gray-900);
+    border: 1px solid var(--border-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: var(--transition-slow);
+    flex-shrink: 0;
+}
+
+.model-switch.active {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    border-color: var(--primary);
+}
+
+.model-switch::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    background: var(--gray-100);
+    border-radius: 50%;
+    transition: var(--transition-slow);
+    box-shadow: var(--shadow-sm);
+}
+
+.model-switch.active::before {
+    transform: translateX(20px);
+    background: white;
+}
+
+.model-switch:hover {
+    transform: scale(1.05);
+}
+
+/* Models list scrollbar */
+.models-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.models-list::-webkit-scrollbar-track {
+    background: var(--gray-950);
+    border-radius: 3px;
+}
+
+.models-list::-webkit-scrollbar-thumb {
+    background: var(--gray-800);
+    border-radius: 3px;
+}
+
+.models-list::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-700);
+}
+
+/* Molecule modal specific */
+.molecule-content {
+    max-width: 700px;
+}
+
+.molecule-panel {
+    flex: 1;
+    padding: var(--space-5) var(--space-6);
+    border-bottom: 1px solid var(--border-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+}
+
+.molecule-display {
+    width: 100%;
+    height: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.molecule-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--gray-500);
+    text-align: center;
+}
+
+.molecule-placeholder svg {
+    color: var(--gray-700);
+}
+
+.molecule-placeholder p {
+    margin: 0;
+    font-size: var(--text-md);
+}
+
+.molecule-placeholder .placeholder-hint {
+    font-size: var(--text-sm);
+    color: var(--gray-600);
+    margin-top: var(--space-2);
+}
+
+.molecule-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--error);
+    text-align: center;
+}
+
+.molecule-error svg {
+    color: var(--error);
+}
+
+.molecule-error p {
+    margin: 0;
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+}
+
+.smiles-input-section {
+    padding: var(--space-5) var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.smiles-label {
+    color: var(--gray-200);
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+}
+
+.molecule-actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+}
+
+.molecule-action-btn {
+    background: var(--gray-950);
+    border: 1px solid var(--border-secondary);
+    color: var(--gray-200);
+    padding: 10px var(--space-5);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    cursor: pointer;
+    transition: var(--transition-normal);
+}
+
+.molecule-action-btn:hover {
+    background: var(--gray-900);
+    border-color: var(--border-accent);
+    color: var(--gray-100);
+    transform: translateY(-1px);
+}
+
+.molecule-action-btn.primary {
+    background: linear-gradient(135deg, rgba(76,175,80,0.2), rgba(139,195,74,0.1));
+    border-color: rgba(76,175,80,0.3);
+    color: var(--secondary);
+}
+
+.molecule-action-btn.primary:hover {
+    background: linear-gradient(135deg, rgba(76,175,80,0.3), rgba(139,195,74,0.2));
+    border-color: rgba(76,175,80,0.5);
+    color: var(--secondary-light);
+    box-shadow: var(--shadow-md);
+}
+
+/* Responsive modal adjustments */
+@media (max-width: 768px) {
+    .settings-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .settings-header, .molecule-header {
+        padding: var(--space-4) var(--space-5);
+    }
+    
+    .settings-title, .molecule-title {
+        font-size: 1.3rem;
+    }
+    
+    .settings-navigation {
+        padding: 0 var(--space-5);
+    }
+    
+    .settings-nav-btn {
+        padding: var(--space-3) var(--space-4);
+        font-size: var(--text-base);
+    }
+    
+    .models-list {
+        padding: var(--space-4) var(--space-5);
+    }
+    
+    .model-item {
+        padding: 10px var(--space-3);
+    }
+    
+    .model-name {
+        font-size: var(--text-sm);
+    }
+    
+    .molecule-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .molecule-header {
+        padding: var(--space-4) var(--space-5);
+    }
+    
+    .molecule-title {
+        font-size: 1.3rem;
+    }
+    
+    .molecule-panel {
+        padding: var(--space-4) var(--space-5);
+        min-height: 150px;
+    }
+    
+    .smiles-input-section {
+        padding: var(--space-4) var(--space-5);
+    }
+    
+    .molecule-actions {
+        flex-direction: column;
+    }
+    
+    .molecule-action-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

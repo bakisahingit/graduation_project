@@ -1,0 +1,58 @@
+/* Molecule component styles */
+
+#molecule-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(180deg, #0f1113 0%, #151517 100%);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+    padding: 12px;
+}
+
+#molecule-canvas {
+    width: 100%;
+    height: 420px;
+    display: block;
+    border-radius: 6px;
+    background: transparent;
+}
+
+.molecule-tooltip {
+    position: fixed;
+    pointer-events: none;
+    padding: 8px 10px;
+    background: linear-gradient(180deg, rgba(14,14,14,0.94), rgba(20,20,20,0.82));
+    color: #ffffff;
+    border-radius: 8px;
+    font-size: 13px;
+    z-index: 9999;
+    transform: translate3d(0,0,0);
+    transition: opacity 120ms ease, transform 120ms ease;
+    opacity: 0;
+    backdrop-filter: blur(6px) saturate(120%);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+}
+.molecule-tooltip.visible { opacity: 1; transform: translateY(-6px); }
+
+#molecule-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #cfcfd1;
+}
+
+#molecule-error {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: #ffb4b4;
+    background: rgba(229,57,53,0.04);
+    border-radius: 6px;
+    padding: 10px;
+}
+
+
+

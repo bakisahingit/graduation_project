@@ -1,0 +1,121 @@
+/**
+ * App Layout
+ * Ana uygulama düzeni
+ */
+
+.app-root {
+    width: 100%;
+    height: 100%;
+    display: flex;
+}
+
+/* Main content area */
+.main-content {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Welcome Screen */
+.welcome-screen {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.welcome-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-6);
+    text-align: center;
+    width: 100%;
+    max-width: 1800px;
+}
+
+.welcome-title {
+    font-size: var(--text-3xl);
+    font-weight: var(--font-bold);
+    background: linear-gradient(135deg, var(--primary), var(--primary-light), #b3e5fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: var(--shadow-glow);
+}
+
+/* Chat Interface */
+.chat-interface {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.messages-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    padding: var(--space-5);
+    overflow: hidden;
+}
+
+.messages {
+    width: 70%;
+    max-width: 800px;
+    height: 100%;
+    padding: var(--space-5);
+    border-radius: var(--radius-2xl);
+    background: var(--bg-secondary);
+    backdrop-filter: blur(calc(var(--glass-blur) - 2px));
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.input-container {
+    padding: var(--space-5);
+    display: flex;
+    justify-content: center;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-primary);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .main-content {
+        height: calc(100% - 200px);
+    }
+    
+    .welcome-title {
+        font-size: 1.6rem;
+    }
+    
+    .welcome-content {
+        max-width: 95%;
+    }
+    
+    .messages {
+        width: 95%;
+        padding: var(--space-4);
+    }
+}
+
+@media (max-width: 520px) {
+    .welcome-title {
+        font-size: 1.4rem;
+    }
+    
+    .welcome-content {
+        gap: var(--space-5);
+    }
+    
+    .messages {
+        padding: var(--space-3);
+    }
+}
+
