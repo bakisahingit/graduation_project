@@ -142,27 +142,27 @@
 
 /* Send button specific */
 .send-btn {
-    background: rgba(79,195,247,0.2);
-    border: 1px solid rgba(79,195,247,0.4);
+    background: linear-gradient(135deg, rgba(79,195,247,0.15), rgba(129,212,250,0.08));
+    border: none;
     color: var(--primary);
-    padding: var(--space-2);
+    padding: var(--space-1);
     border-radius: var(--radius-lg);
     font-size: var(--text-sm);
     font-weight: var(--font-medium);
     cursor: pointer;
     transition: var(--transition-normal);
     white-space: nowrap;
-    align-self: flex-start;
-    margin-top: 2px;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 36px;
-    height: 36px;
+    min-width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    backdrop-filter: blur(4px);
 }
 
 .send-btn:hover:not(:disabled) {
-    background: rgba(79,195,247,0.3);
+    background: linear-gradient(135deg, rgba(79,195,247,0.25), rgba(129,212,250,0.15));
     color: var(--primary-light);
     transform: translateY(-1px);
 }
@@ -250,11 +250,97 @@
     box-shadow: var(--shadow-md);
 }
 
+/* Tools button */
+.tools-btn {
+    background: linear-gradient(135deg, rgba(156,39,176,0.15), rgba(186,104,200,0.08));
+    border: none;
+    color: var(--accent);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    cursor: pointer;
+    transition: var(--transition-normal);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    backdrop-filter: blur(4px);
+    justify-content: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.tools-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(156,39,176,0.25), rgba(186,104,200,0.15));
+    color: var(--accent-light);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.tools-btn.active {
+    background: linear-gradient(135deg, rgba(76,175,80,0.3), rgba(139,195,74,0.2));
+    color: var(--secondary);
+    box-shadow: var(--shadow-md);
+}
+
+.tools-btn.active:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(76,175,80,0.4), rgba(139,195,74,0.3));
+    color: var(--secondary-light);
+}
+
+.tools-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.tools-btn .tool-icon {
+    width: 16px;
+    height: 16px;
+    filter: brightness(0) saturate(100%) invert(67%) sepia(96%) saturate(749%) hue-rotate(180deg) brightness(101%) contrast(101%);
+}
+
+/* Tool remove button */
+.tool-remove-btn {
+    background: transparent;
+    border: none;
+    color: var(--gray-400);
+    padding: 2px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition-normal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: var(--space-1);
+    flex-shrink: 0;
+}
+
+.tool-remove-btn:hover {
+    background: rgba(255,107,107,0.1);
+    color: var(--error);
+    transform: scale(1.1);
+}
+
+.tool-remove-btn:active {
+    transform: scale(0.95);
+}
+
+.tool-remove-btn svg {
+    width: 12px;
+    height: 12px;
+}
+
 /* Responsive button adjustments */
 @media (max-width: 768px) {
     .new-chat-btn {
         padding: var(--space-2) var(--space-3);
         font-size: var(--text-sm);
         white-space: nowrap;
+    }
+    
+    .tools-btn {
+        padding: var(--space-1);
+        font-size: var(--text-xs);
+        flex-shrink: 0;
     }
 }

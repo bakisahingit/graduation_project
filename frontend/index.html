@@ -75,10 +75,32 @@
 			<div class="welcome-content">
 				<h1 class="welcome-title">Havalı Chat</h1>
 				<form id="welcome-form" class="welcome-input-wrapper">
-					<textarea id="welcome-input" placeholder="Bir şey yazın... Enter ile gönder, Shift+Enter ile alt satıra" aria-label="Havalı giriş" rows="1"></textarea>
-					<button type="submit" id="welcome-send-btn" class="send-btn">
-						<img src="../assets/send.svg" alt="Gönder" class="btn-icon">
-					</button>
+					<div class="input-area">
+						<textarea id="welcome-input" placeholder="Bir şey yazın... Enter ile gönder, Shift+Enter ile alt satıra" aria-label="Havalı giriş" rows="1"></textarea>
+					</div>
+					<div class="input-divider"></div>
+					<div class="input-actions">
+						<button type="button" class="tools-btn" id="welcome-tools-btn">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+							</svg>
+							Tools
+						</button>
+						<div class="tools-dropdown" id="welcome-tools-dropdown">
+							<div class="tools-list">
+								<button class="tool-item" id="welcome-admed-tool">
+									<img src="assets/admed.svg" alt="AdMed" class="tool-item-icon" width="16" height="16">
+									<div class="tool-item-content">
+										<span class="tool-name">AdMed</span>
+										<span class="tool-description">Backend bağlantı noktası</span>
+									</div>
+								</button>
+							</div>
+						</div>
+						<button type="submit" id="welcome-send-btn" class="send-btn">
+							<img src="../assets/send.svg" alt="Gönder" class="btn-icon">
+						</button>
+					</div>
 				</form>
 			</div>
 		</div>
@@ -90,10 +112,32 @@
 			</div>
 			<div class="input-container">
 				<form id="chat-form" class="input-wrapper">
-					<textarea id="chat-input" placeholder="Bir şey yazın... Enter ile gönder, Shift+Enter ile alt satıra" aria-label="Havalı giriş" rows="1"></textarea>
-					<button type="submit" id="chat-send-btn" class="send-btn">
-						<img src="../assets/send.svg" alt="Gönder" class="btn-icon">
-					</button>
+					<div class="input-area">
+						<textarea id="chat-input" placeholder="Bir şey yazın... Enter ile gönder, Shift+Enter ile alt satıra" aria-label="Havalı giriş" rows="1"></textarea>
+					</div>
+					<div class="input-divider"></div>
+					<div class="input-actions">
+						<button type="button" class="tools-btn" id="chat-tools-btn">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+								<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+							</svg>
+							Tools
+						</button>
+						<div class="tools-dropdown" id="chat-tools-dropdown">
+							<div class="tools-list">
+								<button class="tool-item" id="chat-admed-tool">
+									<img src="assets/admed.svg" alt="AdMed" class="tool-item-icon" width="16" height="16">
+									<div class="tool-item-content">
+										<span class="tool-name">AdMed</span>
+										<span class="tool-description">Backend bağlantı noktası</span>
+									</div>
+								</button>
+							</div>
+						</div>
+						<button type="submit" id="chat-send-btn" class="send-btn">
+							<img src="../assets/send.svg" alt="Gönder" class="btn-icon">
+						</button>
+					</div>
 				</form>
 			</div>
 		</div>
@@ -124,6 +168,7 @@
 			</div>
 		</div>
 	</div>
+
 
 	<!-- Molecule Drawer Modal -->
 	<div class="molecule-modal" id="molecule-modal">

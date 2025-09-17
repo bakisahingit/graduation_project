@@ -24,6 +24,7 @@ class ChatApp {
         this.isStreaming = false;
         this.userScrolledUp = false;
         this.currentStreamController = null;
+        this.activeTool = null; // Aktif tool (null, 'admed', vs.)
         
         this.init();
     }
@@ -177,6 +178,46 @@ class ChatApp {
             });
         }
 
+        // Tools dropdown
+        if (this.ui.elements.welcomeToolsBtn) {
+            DOMUtils.on(this.ui.elements.welcomeToolsBtn, 'click', (e) => {
+                e.stopPropagation();
+                this.toggleToolsDropdown('welcome');
+            });
+        }
+
+        if (this.ui.elements.chatToolsBtn) {
+            DOMUtils.on(this.ui.elements.chatToolsBtn, 'click', (e) => {
+                e.stopPropagation();
+                this.toggleToolsDropdown('chat');
+            });
+        }
+
+        // Dropdown dışına tıklayınca kapat
+        DOMUtils.on(document, 'click', (e) => {
+            if ((this.ui.elements.welcomeToolsDropdown && 
+                 !this.ui.elements.welcomeToolsDropdown.contains(e.target) &&
+                 !this.ui.elements.welcomeToolsBtn.contains(e.target)) ||
+                (this.ui.elements.chatToolsDropdown && 
+                 !this.ui.elements.chatToolsDropdown.contains(e.target) &&
+                 !this.ui.elements.chatToolsBtn.contains(e.target))) {
+                this.closeAllToolsDropdowns();
+            }
+        });
+
+
+        if (this.ui.elements.welcomeAdmedTool) {
+            DOMUtils.on(this.ui.elements.welcomeAdmedTool, 'click', () => {
+                this.handleAdmedTool();
+            });
+        }
+
+        if (this.ui.elements.chatAdmedTool) {
+            DOMUtils.on(this.ui.elements.chatAdmedTool, 'click', () => {
+                this.handleAdmedTool();
+            });
+        }
+
         // Keyboard shortcuts
         DOMUtils.on(document, 'keydown', (e) => {
             if (e.key === 'Escape') {
@@ -184,6 +225,9 @@ class ChatApp {
                     this.closeSettingsModal();
                 } else if (this.ui.elements.moleculeModal.classList.contains('open')) {
                     this.closeMoleculeModal();
+                } else if ((this.ui.elements.welcomeToolsDropdown && this.ui.elements.welcomeToolsDropdown.classList.contains('open')) ||
+                          (this.ui.elements.chatToolsDropdown && this.ui.elements.chatToolsDropdown.classList.contains('open'))) {
+                    this.closeAllToolsDropdowns();
                 }
             }
         });
@@ -232,6 +276,9 @@ class ChatApp {
         
         // Chat moduna geç
         this.ui.switchToChatMode(selectedModel);
+        
+        // Tool buton durumunu güncelle (chat moduna geçtikten sonra)
+        this.updateToolButtonState();
         
         // Mesajı işle
         await this.processMessage(text, selectedModel);
@@ -295,8 +342,8 @@ class ChatApp {
             const currentConversation = this.conversation.getCurrentConversation();
             const conversationHistoryForAPI = currentConversation ? currentConversation.messages : [];
 
-            // API'ye istek gönder
-            const data = await this.api.sendMessage(text, model, conversationHistoryForAPI, controller.signal);
+            // API'ye istek gönder (tools bilgisi ile)
+            const data = await this.api.sendMessage(text, model, conversationHistoryForAPI, controller.signal, this.activeTool);
             
             this.ui.removeThinkingIndicator(typingEl);
 
@@ -489,6 +536,9 @@ class ChatApp {
         this.ui.switchToWelcomeMode();
         this.conversation.setCurrentConversation(null);
         this.renderConversationHistory();
+        
+        // Tool buton durumunu güncelle (welcome moduna geçtikten sonra)
+        this.updateToolButtonState();
     }
 
     /**
@@ -723,6 +773,104 @@ class ChatApp {
 
         // Modal'ı kapat
         this.closeMoleculeModal();
+    }
+
+    /**
+     * Tools dropdown aç/kapat
+     */
+    toggleToolsDropdown(type) {
+        const dropdown = type === 'welcome' ? this.ui.elements.welcomeToolsDropdown : this.ui.elements.chatToolsDropdown;
+        
+        if (!dropdown) {
+            return;
+        }
+        
+        // Eğer bu dropdown zaten açıksa, kapat
+        if (dropdown.classList.contains('open')) {
+            DOMUtils.removeClass(dropdown, 'open');
+            return;
+        }
+        
+        // Diğer dropdown'ı kapat ve bu dropdown'ı aç
+        this.closeAllToolsDropdowns();
+        DOMUtils.addClass(dropdown, 'open');
+    }
+
+    /**
+     * Tüm tools dropdown'ları kapat
+     */
+    closeAllToolsDropdowns() {
+        if (this.ui.elements.welcomeToolsDropdown) {
+            DOMUtils.removeClass(this.ui.elements.welcomeToolsDropdown, 'open');
+        }
+        if (this.ui.elements.chatToolsDropdown) {
+            DOMUtils.removeClass(this.ui.elements.chatToolsDropdown, 'open');
+        }
+    }
+
+    /**
+     * AdMed tool handler
+     */
+    handleAdmedTool() {
+        // Tool'u aktif/pasif yap
+        if (this.activeTool === 'admed') {
+            this.activeTool = null;
+            this.updateToolButtonState();
+        } else {
+            this.activeTool = 'admed';
+            this.updateToolButtonState();
+        }
+
+        // Dropdown'ları kapat
+        this.closeAllToolsDropdowns();
+    }
+
+    /**
+     * Aktif tool'u kaldır
+     */
+    removeActiveTool() {
+        this.activeTool = null;
+        this.updateToolButtonState();
+    }
+
+    /**
+     * Tool buton durumunu güncelle
+     */
+    updateToolButtonState() {
+        const isInChatMode = this.ui.elements.chatInterface.style.display !== 'none';
+        const toolsBtn = isInChatMode ? this.ui.elements.chatToolsBtn : this.ui.elements.welcomeToolsBtn;
+        
+        if (toolsBtn) {
+            if (this.activeTool === 'admed') {
+                DOMUtils.addClass(toolsBtn, 'active');
+                toolsBtn.innerHTML = `
+                    <img src="assets/admed.svg" alt="AdMed" class="tool-icon" width="16" height="16">
+                    <span>AdMed</span>
+                    <button class="tool-remove-btn" type="button">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                `;
+                
+                // Remove button için event listener ekle
+                const removeBtn = toolsBtn.querySelector('.tool-remove-btn');
+                if (removeBtn) {
+                    DOMUtils.on(removeBtn, 'click', (e) => {
+                        e.stopPropagation();
+                        this.removeActiveTool();
+                    });
+                }
+            } else {
+                DOMUtils.removeClass(toolsBtn, 'active');
+                toolsBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Tools
+                `;
+            }
+        }
     }
 }
 

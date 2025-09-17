@@ -14,17 +14,27 @@ export class ApiService {
      * @param {string} model - Model
      * @param {Array} conversationHistory - Konuşma geçmişi
      * @param {AbortSignal} signal - Abort signal
+     * @param {string} activeTool - Aktif tool (null, 'admed', vs.)
      * @returns {Promise<any>}
      */
-    async sendMessage(message, model, conversationHistory = [], signal = null) {
+    async sendMessage(message, model, conversationHistory = [], signal = null, activeTool = null) {
+        const requestBody = { 
+            message, 
+            model, 
+            conversationHistory 
+        };
+
+        // Tools bilgisi varsa ekle
+        if (activeTool) {
+            requestBody.tools = {
+                active: activeTool
+            };
+        }
+
         const requestOptions = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                message, 
-                model, 
-                conversationHistory 
-            })
+            body: JSON.stringify(requestBody)
         };
 
         if (signal) {

@@ -60,7 +60,15 @@ export class UIComponent {
             moleculeDisplay: DOMUtils.select('#molecule-display'),
             smilesInput: DOMUtils.select('#smiles-input'),
             clearMoleculeBtn: DOMUtils.select('#clear-molecule'),
-            insertMoleculeBtn: DOMUtils.select('#insert-molecule')
+            insertMoleculeBtn: DOMUtils.select('#insert-molecule'),
+            
+            // Tools dropdown elementleri
+            welcomeToolsDropdown: DOMUtils.select('#welcome-tools-dropdown'),
+            chatToolsDropdown: DOMUtils.select('#chat-tools-dropdown'),
+            welcomeToolsBtn: DOMUtils.select('#welcome-tools-btn'),
+            chatToolsBtn: DOMUtils.select('#chat-tools-btn'),
+            welcomeAdmedTool: DOMUtils.select('#welcome-admed-tool'),
+            chatAdmedTool: DOMUtils.select('#chat-admed-tool')
         };
     }
 
@@ -244,7 +252,11 @@ export class UIComponent {
     switchToChatMode(selectedModel) {
         DOMUtils.toggleVisibility(this.elements.welcomeScreen, false);
         DOMUtils.toggleVisibility(this.elements.chatInterface, true);
-        this.elements.input.focus();
+        
+        // Focus'u yumuşak bir şekilde yap (sayfa kaydırmasını önlemek için)
+        setTimeout(() => {
+            this.elements.input.focus();
+        }, 100);
     }
 
     /**
@@ -278,11 +290,14 @@ export class UIComponent {
         
         if (enabled) {
             const isInChatMode = this.elements.chatInterface.style.display !== 'none';
-            if (isInChatMode) {
-                this.elements.input.focus();
-            } else {
-                this.elements.welcomeInput.focus();
-            }
+            // Focus'u yumuşak bir şekilde yap (sayfa kaydırmasını önlemek için)
+            setTimeout(() => {
+                if (isInChatMode) {
+                    this.elements.input.focus();
+                } else {
+                    this.elements.welcomeInput.focus();
+                }
+            }, 50);
         }
     }
 
