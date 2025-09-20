@@ -26,39 +26,9 @@
 				</button>
 			</div>
 			
-			<div class="model-selector-sidebar">
-				<div class="custom-select-sidebar" id="custom-model-select-sidebar">
-					<div class="select-trigger-sidebar" id="select-trigger-sidebar">
-						<span class="select-value-sidebar">Model seçiliyor...</span>
-						<svg class="select-arrow-sidebar" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<polyline points="6,9 12,15 18,9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-						</svg>
-					</div>
-					<div class="select-options-sidebar" id="select-options-sidebar">
-						<div class="select-options-scroll" id="select-options-scroll">
-							<!-- Options will be populated by JavaScript -->
-						</div>
-						<div class="add-model-option" id="add-model-option">
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-							</svg>
-							Model Ekle
-						</div>
-					</div>
-				</div>
-				<select id="model-select-sidebar" aria-label="Model seçin" style="display: none;"></select>
-			</div>
+			<!-- Model selector moved to input wrapper -->
 			
-			<div class="molecule-drawer-section">
-				<button class="molecule-drawer-btn" id="molecule-drawer-btn">
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-						<path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-						<path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-						<path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-					</svg>
-					Molekül Çiz
-				</button>
-			</div>
+			<!-- Molecule drawer moved to input wrapper -->
 			
 			<div class="conversation-history" id="conversation-history">
 				<div class="history-title">Konuşma Geçmişi</div>
@@ -80,26 +50,70 @@
 					</div>
 					<div class="input-divider"></div>
 					<div class="input-actions">
-						<button type="button" class="tools-btn" id="welcome-tools-btn">
-							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-							</svg>
-							Tools
-						</button>
-						<div class="tools-dropdown" id="welcome-tools-dropdown">
-							<div class="tools-list">
-								<button class="tool-item" id="welcome-admed-tool">
-									<img src="assets/admed.svg" alt="AdMed" class="tool-item-icon" width="16" height="16">
-									<div class="tool-item-content">
-										<span class="tool-name">AdMed</span>
-										<span class="tool-description">Backend bağlantı noktası</span>
-									</div>
-								</button>
+						<div class="left-buttons">
+							<button type="button" class="add-btn" id="welcome-add-btn">
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+							</button>
+							<div class="add-dropdown" id="welcome-add-dropdown">
+								<div class="add-options">
+									<button class="add-option" id="welcome-file-upload">
+										<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<polyline points="10,9 9,9 8,9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+										</svg>
+										Dosya Ekle
+									</button>
+									<button class="add-option" id="welcome-molecule-draw">
+										<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+										</svg>
+										Molekül Çiz
+									</button>
+								</div>
+							</div>
+							<button type="button" class="tools-btn" id="welcome-tools-btn">
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								Tools
+							</button>
+							<div class="tools-dropdown" id="welcome-tools-dropdown">
+								<div class="tools-options">
+									<button class="tool-option" id="welcome-admed-tool">
+										<svg class="tool-option-icon" viewBox="0 0 32 32" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+											<path d="M 14 5 C 12.90625 5 12 5.90625 12 7 L 12 8 L 6 8 C 4.355469 8 3 9.355469 3 11 L 3 26 L 29 26 L 29 11 C 29 9.355469 27.644531 8 26 8 L 20 8 L 20 7 C 20 5.90625 19.09375 5 18 5 Z M 14 7 L 18 7 L 18 8 L 14 8 Z M 6 10 L 26 10 C 26.566406 10 27 10.433594 27 11 L 27 24 L 5 24 L 5 11 C 5 10.433594 5.433594 10 6 10 Z M 15 13 L 15 16 L 12 16 L 12 18 L 15 18 L 15 21 L 17 21 L 17 18 L 20 18 L 20 16 L 17 16 L 17 13 Z" fill="currentColor"/>
+										</svg>
+										AdMed
+									</button>
+								</div>
 							</div>
 						</div>
-						<button type="submit" id="welcome-send-btn" class="send-btn">
-							<img src="../assets/send.svg" alt="Gönder" class="btn-icon">
-						</button>
+						<div class="right-buttons">
+							<div class="model-selector-input">
+								<div class="custom-select-input" id="custom-model-select-welcome">
+									<div class="select-trigger-input" id="select-trigger-welcome">
+										<span class="select-value-input">Model</span>
+										<svg class="select-arrow-input" width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<polyline points="6,9 12,15 18,9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+										</svg>
+									</div>
+									<div class="select-options-input" id="select-options-welcome">
+										<!-- Options will be populated by JavaScript -->
+									</div>
+								</div>
+								<select id="model-select-welcome" aria-label="Model seçin" style="display: none;"></select>
+							</div>
+							<button type="submit" id="welcome-send-btn" class="send-btn">
+								<img src="../assets/send.svg" alt="Gönder" class="btn-icon">
+							</button>
+						</div>
 					</div>
 				</form>
 			</div>
@@ -117,26 +131,70 @@
 					</div>
 					<div class="input-divider"></div>
 					<div class="input-actions">
-						<button type="button" class="tools-btn" id="chat-tools-btn">
-							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-								<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-							</svg>
-							Tools
-						</button>
-						<div class="tools-dropdown" id="chat-tools-dropdown">
-							<div class="tools-list">
-								<button class="tool-item" id="chat-admed-tool">
-									<img src="assets/admed.svg" alt="AdMed" class="tool-item-icon" width="16" height="16">
-									<div class="tool-item-content">
-										<span class="tool-name">AdMed</span>
-										<span class="tool-description">Backend bağlantı noktası</span>
-									</div>
-								</button>
+						<div class="left-buttons">
+							<button type="button" class="add-btn" id="chat-add-btn">
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+							</button>
+							<div class="add-dropdown" id="chat-add-dropdown">
+								<div class="add-options">
+									<button class="add-option" id="chat-file-upload">
+										<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<polyline points="14,2 14,8 20,8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<polyline points="10,9 9,9 8,9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+										</svg>
+										Dosya Ekle
+									</button>
+									<button class="add-option" id="chat-molecule-draw">
+										<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+											<path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+										</svg>
+										Molekül Çiz
+									</button>
+								</div>
+							</div>
+							<button type="button" class="tools-btn" id="chat-tools-btn">
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+								Tools
+							</button>
+							<div class="tools-dropdown" id="chat-tools-dropdown">
+								<div class="tools-options">
+									<button class="tool-option" id="chat-admed-tool">
+										<svg class="tool-option-icon" viewBox="0 0 32 32" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+											<path d="M 14 5 C 12.90625 5 12 5.90625 12 7 L 12 8 L 6 8 C 4.355469 8 3 9.355469 3 11 L 3 26 L 29 26 L 29 11 C 29 9.355469 27.644531 8 26 8 L 20 8 L 20 7 C 20 5.90625 19.09375 5 18 5 Z M 14 7 L 18 7 L 18 8 L 14 8 Z M 6 10 L 26 10 C 26.566406 10 27 10.433594 27 11 L 27 24 L 5 24 L 5 11 C 5 10.433594 5.433594 10 6 10 Z M 15 13 L 15 16 L 12 16 L 12 18 L 15 18 L 15 21 L 17 21 L 17 18 L 20 18 L 20 16 L 17 16 L 17 13 Z" fill="currentColor"/>
+										</svg>
+										AdMed
+									</button>
+								</div>
 							</div>
 						</div>
-						<button type="submit" id="chat-send-btn" class="send-btn">
-							<img src="../assets/send.svg" alt="Gönder" class="btn-icon">
-						</button>
+						<div class="right-buttons">
+							<div class="model-selector-input">
+								<div class="custom-select-input" id="custom-model-select-chat">
+									<div class="select-trigger-input" id="select-trigger-chat">
+										<span class="select-value-input">Model</span>
+										<svg class="select-arrow-input" width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+											<polyline points="6,9 12,15 18,9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+										</svg>
+									</div>
+									<div class="select-options-input" id="select-options-chat">
+										<!-- Options will be populated by JavaScript -->
+									</div>
+								</div>
+								<select id="model-select-chat" aria-label="Model seçin" style="display: none;"></select>
+							</div>
+							<button type="submit" id="chat-send-btn" class="send-btn">
+								<img src="../assets/send.svg" alt="Gönder" class="btn-icon">
+							</button>
+						</div>
 					</div>
 				</form>
 			</div>

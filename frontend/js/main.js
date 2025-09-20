@@ -125,12 +125,7 @@ class ChatApp {
             });
         }
 
-        // Molecule modal
-        if (this.ui.elements.moleculeDrawerBtn) {
-            DOMUtils.on(this.ui.elements.moleculeDrawerBtn, 'click', () => {
-                this.openMoleculeModal();
-            });
-        }
+        // Molecule modal - Sidebar butonu kaldırıldı (artık input wrapper'da)
 
         if (this.ui.elements.moleculeClose) {
             DOMUtils.on(this.ui.elements.moleculeClose, 'click', () => {
@@ -178,6 +173,46 @@ class ChatApp {
             });
         }
 
+        // Add dropdown
+        if (this.ui.elements.welcomeAddBtn) {
+            DOMUtils.on(this.ui.elements.welcomeAddBtn, 'click', (e) => {
+                e.stopPropagation();
+                this.toggleAddDropdown('welcome');
+            });
+        }
+
+        if (this.ui.elements.chatAddBtn) {
+            DOMUtils.on(this.ui.elements.chatAddBtn, 'click', (e) => {
+                e.stopPropagation();
+                this.toggleAddDropdown('chat');
+            });
+        }
+
+        // Add dropdown options
+        if (this.ui.elements.welcomeFileUpload) {
+            DOMUtils.on(this.ui.elements.welcomeFileUpload, 'click', () => {
+                this.handleFileUpload('welcome');
+            });
+        }
+
+        if (this.ui.elements.chatFileUpload) {
+            DOMUtils.on(this.ui.elements.chatFileUpload, 'click', () => {
+                this.handleFileUpload('chat');
+            });
+        }
+
+        if (this.ui.elements.welcomeMoleculeDraw) {
+            DOMUtils.on(this.ui.elements.welcomeMoleculeDraw, 'click', () => {
+                this.handleMoleculeDraw('welcome');
+            });
+        }
+
+        if (this.ui.elements.chatMoleculeDraw) {
+            DOMUtils.on(this.ui.elements.chatMoleculeDraw, 'click', () => {
+                this.handleMoleculeDraw('chat');
+            });
+        }
+
         // Tools dropdown
         if (this.ui.elements.welcomeToolsBtn) {
             DOMUtils.on(this.ui.elements.welcomeToolsBtn, 'click', (e) => {
@@ -195,6 +230,7 @@ class ChatApp {
 
         // Dropdown dışına tıklayınca kapat
         DOMUtils.on(document, 'click', (e) => {
+            // Tools dropdown kontrolü
             if ((this.ui.elements.welcomeToolsDropdown && 
                  !this.ui.elements.welcomeToolsDropdown.contains(e.target) &&
                  !this.ui.elements.welcomeToolsBtn.contains(e.target)) ||
@@ -202,6 +238,16 @@ class ChatApp {
                  !this.ui.elements.chatToolsDropdown.contains(e.target) &&
                  !this.ui.elements.chatToolsBtn.contains(e.target))) {
                 this.closeAllToolsDropdowns();
+            }
+            
+            // Add dropdown kontrolü
+            if ((this.ui.elements.welcomeAddDropdown && 
+                 !this.ui.elements.welcomeAddDropdown.contains(e.target) &&
+                 !this.ui.elements.welcomeAddBtn.contains(e.target)) ||
+                (this.ui.elements.chatAddDropdown && 
+                 !this.ui.elements.chatAddDropdown.contains(e.target) &&
+                 !this.ui.elements.chatAddBtn.contains(e.target))) {
+                this.closeAllAddDropdowns();
             }
         });
 
@@ -237,32 +283,72 @@ class ChatApp {
      * Sidebar custom select kurulumu
      */
     setupSidebarCustomSelect() {
-        if (!this.ui.elements.selectTriggerSidebar || !this.ui.elements.customSelectSidebar) {
-            return;
+        // Sidebar model select moved to input wrapper
+        // if (!this.ui.elements.selectTriggerSidebar || !this.ui.elements.customSelectSidebar) {
+        //     return;
+        // }
+
+        // Sidebar model select devre dışı (artık input wrapper'da)
+        // Toggle dropdown
+        // DOMUtils.on(this.ui.elements.selectTriggerSidebar, 'click', (e) => {
+        //     e.stopPropagation();
+        //     this.toggleSidebarSelect();
+        // });
+
+        // Input wrapper model select - Welcome
+        if (this.ui.elements.selectTriggerWelcome) {
+            DOMUtils.on(this.ui.elements.selectTriggerWelcome, 'click', (e) => {
+                e.stopPropagation();
+                this.toggleInputSelect('welcome');
+            });
         }
 
-        // Toggle dropdown
-        DOMUtils.on(this.ui.elements.selectTriggerSidebar, 'click', (e) => {
-            e.stopPropagation();
-            this.toggleSidebarSelect();
-        });
+        // Input wrapper model select - Chat
+        if (this.ui.elements.selectTriggerChat) {
+            DOMUtils.on(this.ui.elements.selectTriggerChat, 'click', (e) => {
+                e.stopPropagation();
+                this.toggleInputSelect('chat');
+            });
+        }
+
+        // Model Ekle butonları
+        if (this.ui.elements.welcomeAddModelBtn) {
+            DOMUtils.on(this.ui.elements.welcomeAddModelBtn, 'click', (e) => {
+                e.stopPropagation();
+                this.openSettingsModal();
+            });
+        }
+
+        if (this.ui.elements.chatAddModelBtn) {
+            DOMUtils.on(this.ui.elements.chatAddModelBtn, 'click', (e) => {
+                e.stopPropagation();
+                this.openSettingsModal();
+            });
+        }
 
         // Close dropdown when clicking outside
         DOMUtils.on(document, 'click', (e) => {
-            if (this.ui.elements.customSelectSidebar && !this.ui.elements.customSelectSidebar.contains(e.target)) {
-                this.closeSidebarSelect();
+            // Sidebar model select devre dışı
+            // if (this.ui.elements.customSelectSidebar && !this.ui.elements.customSelectSidebar.contains(e.target)) {
+            //     this.closeSidebarSelect();
+            // }
+            if (this.ui.elements.customSelectWelcome && !this.ui.elements.customSelectWelcome.contains(e.target)) {
+                this.closeInputSelect('welcome');
+            }
+            if (this.ui.elements.customSelectChat && !this.ui.elements.customSelectChat.contains(e.target)) {
+                this.closeInputSelect('chat');
             }
         });
 
-        // Handle keyboard navigation
-        DOMUtils.on(this.ui.elements.selectTriggerSidebar, 'keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                this.toggleSidebarSelect();
-            } else if (e.key === 'Escape') {
-                this.closeSidebarSelect();
-            }
-        });
+        // Sidebar keyboard navigation devre dışı
+        // DOMUtils.on(this.ui.elements.selectTriggerSidebar, 'keydown', (e) => {
+        //     if (e.key === 'Enter' || e.key === ' ') {
+        //         e.preventDefault();
+        //         this.toggleSidebarSelect();
+        //     } else if (e.key === 'Escape') {
+        //         this.closeSidebarSelect();
+        //     }
+        // });
     }
 
     /**
@@ -272,7 +358,7 @@ class ChatApp {
         const text = this.ui.elements.welcomeInput.value.trim();
         if (!text) return;
 
-        const selectedModel = this.ui.elements.modelSelectSidebar.value;
+        const selectedModel = this.ui.elements.modelSelectWelcome ? this.ui.elements.modelSelectWelcome.value : null;
         
         // Chat moduna geç
         this.ui.switchToChatMode(selectedModel);
@@ -291,7 +377,7 @@ class ChatApp {
         const text = this.ui.elements.input.value.trim();
         if (!text) return;
 
-        const model = this.ui.elements.modelSelectSidebar.value;
+        const model = this.ui.elements.modelSelectChat ? this.ui.elements.modelSelectChat.value : null;
         await this.processMessage(text, model);
     }
 
@@ -386,60 +472,212 @@ class ChatApp {
      * Modelleri yükle
      */
     async populateModels() {
-        if (!this.ui.elements.modelSelectSidebar || !this.ui.elements.selectOptionsScroll) {
-            return;
-        }
+        // Sidebar model select kaldırıldı, sadece input wrapper model select'leri kullanılıyor
+        // if (!this.ui.elements.modelSelectSidebar || !this.ui.elements.selectOptionsScroll) {
+        //     return;
+        // }
 
-        // Mevcut seçenekleri temizle
-        this.ui.elements.modelSelectSidebar.innerHTML = '';
-        this.ui.elements.selectOptionsScroll.innerHTML = '';
+        // Mevcut seçenekleri temizle (sidebar kaldırıldı)
+        // this.ui.elements.modelSelectSidebar.innerHTML = '';
+        // this.ui.elements.selectOptionsScroll.innerHTML = '';
+        
+        // Input wrapper model select'leri de temizle
+        if (this.ui.elements.modelSelectWelcome) {
+            this.ui.elements.modelSelectWelcome.innerHTML = '';
+        }
+        if (this.ui.elements.modelSelectChat) {
+            this.ui.elements.modelSelectChat.innerHTML = '';
+        }
+        if (this.ui.elements.selectOptionsWelcome) {
+            this.ui.elements.selectOptionsWelcome.innerHTML = '';
+        }
+        if (this.ui.elements.selectOptionsChat) {
+            this.ui.elements.selectOptionsChat.innerHTML = '';
+        }
 
         try {
             const allModels = await this.model.getAllModels();
             const activeModelsList = allModels.filter(model => this.model.isModelActive(model));
 
             if (activeModelsList.length === 0) {
-                if (this.ui.elements.selectValueSidebar) {
-                    this.ui.elements.selectValueSidebar.textContent = 'Model seçiliyor...';
+                // Sidebar model select kaldırıldı
+                // if (this.ui.elements.selectValueSidebar) {
+                //     this.ui.elements.selectValueSidebar.textContent = 'Model seçiliyor...';
+                // }
+                if (this.ui.elements.selectValueWelcome) {
+                    this.ui.elements.selectValueWelcome.textContent = 'Model seçiliyor...';
+                }
+                if (this.ui.elements.selectValueChat) {
+                    this.ui.elements.selectValueChat.textContent = 'Model seçiliyor...';
                 }
                 return;
             }
 
             // İlk modeli seçili olarak ayarla
             const firstModel = activeModelsList[0];
-            if (this.ui.elements.selectValueSidebar) {
-                this.ui.elements.selectValueSidebar.textContent = firstModel;
+            // Sidebar model select kaldırıldı
+            // if (this.ui.elements.selectValueSidebar) {
+            //     this.ui.elements.selectValueSidebar.textContent = firstModel;
+            // }
+            if (this.ui.elements.selectValueWelcome) {
+                this.ui.elements.selectValueWelcome.textContent = firstModel;
+            }
+            if (this.ui.elements.selectValueChat) {
+                this.ui.elements.selectValueChat.textContent = firstModel;
             }
 
             activeModelsList.forEach((model, idx) => {
-                // Sidebar model select'e ekle (gizli)
-                const optSidebar = DOMUtils.create('option', { 
-                    value: model, 
-                    textContent: model 
-                });
-                if (idx === 0) optSidebar.selected = true;
-                this.ui.elements.modelSelectSidebar.appendChild(optSidebar);
+                // Sidebar model select kaldırıldı
+                // const optSidebar = DOMUtils.create('option', { 
+                //     value: model, 
+                //     textContent: model 
+                // });
+                // if (idx === 0) optSidebar.selected = true;
+                // this.ui.elements.modelSelectSidebar.appendChild(optSidebar);
 
-                // Sidebar custom select scroll container'a ekle
-                const sidebarOption = DOMUtils.create('div', { 
-                    className: 'select-option-sidebar',
-                    textContent: model
-                });
-                sidebarOption.dataset.value = model;
-                
-                if (idx === 0) {
-                    DOMUtils.addClass(sidebarOption, 'selected');
+                // Welcome model select'e ekle (gizli)
+                if (this.ui.elements.modelSelectWelcome) {
+                    const optWelcome = DOMUtils.create('option', { 
+                        value: model, 
+                        textContent: model 
+                    });
+                    if (idx === 0) optWelcome.selected = true;
+                    this.ui.elements.modelSelectWelcome.appendChild(optWelcome);
                 }
 
-                DOMUtils.on(sidebarOption, 'click', () => {
-                    this.selectSidebarOption(model, model);
-                });
+                // Chat model select'e ekle (gizli)
+                if (this.ui.elements.modelSelectChat) {
+                    const optChat = DOMUtils.create('option', { 
+                        value: model, 
+                        textContent: model 
+                    });
+                    if (idx === 0) optChat.selected = true;
+                    this.ui.elements.modelSelectChat.appendChild(optChat);
+                }
 
-                this.ui.elements.selectOptionsScroll.appendChild(sidebarOption);
+                // Sidebar custom select kaldırıldı
+                // const sidebarOption = DOMUtils.create('div', { 
+                //     className: 'select-option-sidebar',
+                //     textContent: model
+                // });
+                // sidebarOption.dataset.value = model;
+                // 
+                // if (idx === 0) {
+                //     DOMUtils.addClass(sidebarOption, 'selected');
+                // }
+                // 
+                // DOMUtils.on(sidebarOption, 'click', () => {
+                //     this.selectSidebarOption(model, model);
+                // });
+                // 
+                // this.ui.elements.selectOptionsScroll.appendChild(sidebarOption);
+
+                // Welcome dropdown seçeneklerine ekle (görsel)
+                if (this.ui.elements.selectOptionsWelcome) {
+                    const welcomeOption = DOMUtils.create('div', {
+                        className: 'select-option-input',
+                        dataset: { value: model },
+                        textContent: model
+                    });
+
+                    if (idx === 0) {
+                        DOMUtils.addClass(welcomeOption, 'selected');
+                    }
+
+                    DOMUtils.on(welcomeOption, 'click', () => {
+                        this.selectInputOption('welcome', model, model);
+                    });
+
+                    this.ui.elements.selectOptionsWelcome.appendChild(welcomeOption);
+                }
+
+                // Chat dropdown seçeneklerine ekle (görsel)
+                if (this.ui.elements.selectOptionsChat) {
+                    const chatOption = DOMUtils.create('div', {
+                        className: 'select-option-input',
+                        dataset: { value: model },
+                        textContent: model
+                    });
+
+                    if (idx === 0) {
+                        DOMUtils.addClass(chatOption, 'selected');
+                    }
+
+                    DOMUtils.on(chatOption, 'click', () => {
+                        this.selectInputOption('chat', model, model);
+                    });
+
+                    this.ui.elements.selectOptionsChat.appendChild(chatOption);
+                }
             });
+
+            // Model Ekle butonunu ekle (Welcome)
+            if (this.ui.elements.selectOptionsWelcome) {
+                const welcomeAddModelDiv = this.ui.elements.selectOptionsWelcome.querySelector('.select-add-model');
+                if (!welcomeAddModelDiv) {
+                    const addModelDiv = DOMUtils.create('div', {
+                        className: 'select-add-model'
+                    });
+                    
+                    const addModelBtn = DOMUtils.create('button', {
+                        className: 'select-add-model-btn',
+                        id: 'welcome-add-model-btn',
+                        innerHTML: `
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Model Ekle
+                        `
+                    });
+
+                    DOMUtils.on(addModelBtn, 'click', (e) => {
+                        e.stopPropagation();
+                        this.openSettingsModal();
+                    });
+
+                    addModelDiv.appendChild(addModelBtn);
+                    this.ui.elements.selectOptionsWelcome.appendChild(addModelDiv);
+                }
+            }
+
+            // Model Ekle butonunu ekle (Chat)
+            if (this.ui.elements.selectOptionsChat) {
+                const chatAddModelDiv = this.ui.elements.selectOptionsChat.querySelector('.select-add-model');
+                if (!chatAddModelDiv) {
+                    const addModelDiv = DOMUtils.create('div', {
+                        className: 'select-add-model'
+                    });
+                    
+                    const addModelBtn = DOMUtils.create('button', {
+                        className: 'select-add-model-btn',
+                        id: 'chat-add-model-btn',
+                        innerHTML: `
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Model Ekle
+                        `
+                    });
+
+                    DOMUtils.on(addModelBtn, 'click', (e) => {
+                        e.stopPropagation();
+                        this.openSettingsModal();
+                    });
+
+                    addModelDiv.appendChild(addModelBtn);
+                    this.ui.elements.selectOptionsChat.appendChild(addModelDiv);
+                }
+            }
         } catch (error) {
-            if (this.ui.elements.selectValueSidebar) {
-                this.ui.elements.selectValueSidebar.textContent = 'Model yüklenemedi';
+            // Sidebar model select kaldırıldı
+            // if (this.ui.elements.selectValueSidebar) {
+            //     this.ui.elements.selectValueSidebar.textContent = 'Model yüklenemedi';
+            // }
+            if (this.ui.elements.selectValueWelcome) {
+                this.ui.elements.selectValueWelcome.textContent = 'Model yüklenemedi';
+            }
+            if (this.ui.elements.selectValueChat) {
+                this.ui.elements.selectValueChat.textContent = 'Model yüklenemedi';
             }
         }
     }
@@ -603,6 +841,133 @@ class ChatApp {
     }
 
     /**
+     * Input wrapper model select toggle
+     * @param {string} type - 'welcome' veya 'chat'
+     */
+    toggleInputSelect(type) {
+        const elements = this.getInputSelectElements(type);
+        if (!elements.selectOptions) return;
+        
+        const isOpen = elements.selectOptions.classList.contains('open');
+        if (isOpen) {
+            this.closeInputSelect(type);
+        } else {
+            this.openInputSelect(type);
+        }
+    }
+
+    /**
+     * Input wrapper model select aç
+     * @param {string} type - 'welcome' veya 'chat'
+     */
+    openInputSelect(type) {
+        const elements = this.getInputSelectElements(type);
+        if (!elements.selectOptions || !elements.selectTrigger) return;
+        
+        DOMUtils.addClass(elements.selectOptions, 'open');
+        DOMUtils.addClass(elements.selectTrigger, 'active');
+        elements.selectTrigger.setAttribute('aria-expanded', 'true');
+    }
+
+    /**
+     * Input wrapper model select kapat
+     * @param {string} type - 'welcome' veya 'chat'
+     */
+    closeInputSelect(type) {
+        const elements = this.getInputSelectElements(type);
+        if (!elements.selectOptions || !elements.selectTrigger) return;
+        
+        DOMUtils.removeClass(elements.selectOptions, 'open');
+        DOMUtils.removeClass(elements.selectTrigger, 'active');
+        elements.selectTrigger.setAttribute('aria-expanded', 'false');
+    }
+
+    /**
+     * Input wrapper model select elementlerini al
+     * @param {string} type - 'welcome' veya 'chat'
+     * @returns {Object} Elementler
+     */
+    getInputSelectElements(type) {
+        if (type === 'welcome') {
+            return {
+                selectOptions: this.ui.elements.selectOptionsWelcome,
+                selectTrigger: this.ui.elements.selectTriggerWelcome,
+                selectValue: this.ui.elements.selectValueWelcome,
+                modelSelect: this.ui.elements.modelSelectWelcome
+            };
+        } else {
+            return {
+                selectOptions: this.ui.elements.selectOptionsChat,
+                selectTrigger: this.ui.elements.selectTriggerChat,
+                selectValue: this.ui.elements.selectValueChat,
+                modelSelect: this.ui.elements.modelSelectChat
+            };
+        }
+    }
+
+    /**
+     * Input wrapper seçenek seç
+     * @param {string} type - 'welcome' veya 'chat'
+     * @param {string} value - Değer
+     * @param {string} text - Metin
+     */
+    selectInputOption(type, value, text) {
+        const elements = this.getInputSelectElements(type);
+        if (!elements.selectValue || !elements.modelSelect) return;
+        
+        // Görsel değeri güncelle
+        elements.selectValue.textContent = text;
+        
+        // Gizli select'i güncelle
+        elements.modelSelect.value = value;
+        
+        // Seçenekleri güncelle
+        const options = elements.selectOptions.querySelectorAll('.select-option-input');
+        options.forEach(option => {
+            if (option.dataset.value === value) {
+                DOMUtils.addClass(option, 'selected');
+            } else {
+                DOMUtils.removeClass(option, 'selected');
+            }
+        });
+        
+        // Diğer model select'i de senkronize et
+        if (type === 'welcome' && this.ui.elements.modelSelectChat && this.ui.elements.selectValueChat) {
+            this.ui.elements.modelSelectChat.value = value;
+            this.ui.elements.selectValueChat.textContent = text;
+            
+            // Chat model select'teki seçenekleri güncelle
+            if (this.ui.elements.selectOptionsChat) {
+                const chatOptions = this.ui.elements.selectOptionsChat.querySelectorAll('.select-option-input');
+                chatOptions.forEach(option => {
+                    if (option.dataset.value === value) {
+                        DOMUtils.addClass(option, 'selected');
+                    } else {
+                        DOMUtils.removeClass(option, 'selected');
+                    }
+                });
+            }
+        } else if (type === 'chat' && this.ui.elements.modelSelectWelcome && this.ui.elements.selectValueWelcome) {
+            this.ui.elements.modelSelectWelcome.value = value;
+            this.ui.elements.selectValueWelcome.textContent = text;
+            
+            // Welcome model select'teki seçenekleri güncelle
+            if (this.ui.elements.selectOptionsWelcome) {
+                const welcomeOptions = this.ui.elements.selectOptionsWelcome.querySelectorAll('.select-option-input');
+                welcomeOptions.forEach(option => {
+                    if (option.dataset.value === value) {
+                        DOMUtils.addClass(option, 'selected');
+                    } else {
+                        DOMUtils.removeClass(option, 'selected');
+                    }
+                });
+            }
+        }
+        
+        this.closeInputSelect(type);
+    }
+
+    /**
      * Settings modal aç
      */
     openSettingsModal() {
@@ -680,13 +1045,26 @@ class ChatApp {
         this.populateModels();
 
         // Eğer mevcut seçili model deaktif edildiyse, ilk aktif modeli seç
-        if (!this.model.isModelActive(this.ui.elements.modelSelectSidebar.value)) {
+        // Sidebar model select kaldırıldı, input wrapper model select'leri güncelleniyor
+        if (this.ui.elements.modelSelectWelcome && !this.model.isModelActive(this.ui.elements.modelSelectWelcome.value)) {
             this.model.getFirstActiveModel().then(firstModel => {
                 if (firstModel) {
-                    this.selectSidebarOption(firstModel, firstModel);
+                    this.selectInputOption('welcome', firstModel, firstModel);
                 } else {
-                    if (this.ui.elements.selectValueSidebar) {
-                        this.ui.elements.selectValueSidebar.textContent = 'Model seçiliyor...';
+                    if (this.ui.elements.selectValueWelcome) {
+                        this.ui.elements.selectValueWelcome.textContent = 'Model seçiliyor...';
+                    }
+                }
+            });
+        }
+        
+        if (this.ui.elements.modelSelectChat && !this.model.isModelActive(this.ui.elements.modelSelectChat.value)) {
+            this.model.getFirstActiveModel().then(firstModel => {
+                if (firstModel) {
+                    this.selectInputOption('chat', firstModel, firstModel);
+                } else {
+                    if (this.ui.elements.selectValueChat) {
+                        this.ui.elements.selectValueChat.textContent = 'Model seçiliyor...';
                     }
                 }
             });
@@ -809,6 +1187,107 @@ class ChatApp {
     }
 
     /**
+     * Add dropdown'ı aç/kapat
+     * @param {string} type - 'welcome' veya 'chat'
+     */
+    toggleAddDropdown(type) {
+        const dropdown = type === 'welcome' ? this.ui.elements.welcomeAddDropdown : this.ui.elements.chatAddDropdown;
+        
+        if (!dropdown) {
+            return;
+        }
+        
+        // Eğer bu dropdown zaten açıksa, kapat
+        if (dropdown.classList.contains('open')) {
+            DOMUtils.removeClass(dropdown, 'open');
+            return;
+        }
+        
+        // Diğer dropdown'ları kapat ve bu dropdown'ı aç
+        this.closeAllAddDropdowns();
+        this.closeAllToolsDropdowns();
+        DOMUtils.addClass(dropdown, 'open');
+    }
+
+    /**
+     * Tüm add dropdown'ları kapat
+     */
+    closeAllAddDropdowns() {
+        if (this.ui.elements.welcomeAddDropdown) {
+            DOMUtils.removeClass(this.ui.elements.welcomeAddDropdown, 'open');
+        }
+        if (this.ui.elements.chatAddDropdown) {
+            DOMUtils.removeClass(this.ui.elements.chatAddDropdown, 'open');
+        }
+    }
+
+    /**
+     * Dosya yükleme handler'ı
+     * @param {string} type - 'welcome' veya 'chat'
+     */
+    handleFileUpload(type) {
+        this.closeAllAddDropdowns();
+        
+        // Dosya seçici oluştur
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.txt,.md,.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif';
+        input.multiple = true;
+        
+        input.onchange = (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                this.processUploadedFiles(files, type);
+            }
+        };
+        
+        input.click();
+    }
+
+    /**
+     * Yüklenen dosyaları işle
+     * @param {Array} files - Yüklenen dosyalar
+     * @param {string} type - 'welcome' veya 'chat'
+     */
+    processUploadedFiles(files, type) {
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                const fileName = file.name;
+                
+                // Dosya içeriğini chat'e ekle
+                this.addFileToChat(fileName, content, type);
+            };
+            reader.readAsText(file);
+        });
+    }
+
+    /**
+     * Dosyayı chat'e ekle
+     * @param {string} fileName - Dosya adı
+     * @param {string} content - Dosya içeriği
+     * @param {string} type - 'welcome' veya 'chat'
+     */
+    addFileToChat(fileName, content, type) {
+        const input = type === 'welcome' ? this.ui.elements.welcomeInput : this.ui.elements.input;
+        if (input) {
+            const fileInfo = `\n\n[Dosya: ${fileName}]\n${content}\n[/Dosya]\n\n`;
+            input.value += fileInfo;
+            input.focus();
+        }
+    }
+
+    /**
+     * Molekül çizme handler'ı
+     * @param {string} type - 'welcome' veya 'chat'
+     */
+    handleMoleculeDraw(type) {
+        this.closeAllAddDropdowns();
+        this.openMoleculeModal();
+    }
+
+    /**
      * AdMed tool handler
      */
     handleAdmedTool() {
@@ -844,7 +1323,9 @@ class ChatApp {
             if (this.activeTool === 'admed') {
                 DOMUtils.addClass(toolsBtn, 'active');
                 toolsBtn.innerHTML = `
-                    <img src="assets/admed.svg" alt="AdMed" class="tool-icon" width="16" height="16">
+                    <svg width="16" height="16" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M 14 5 C 12.90625 5 12 5.90625 12 7 L 12 8 L 6 8 C 4.355469 8 3 9.355469 3 11 L 3 26 L 29 26 L 29 11 C 29 9.355469 27.644531 8 26 8 L 20 8 L 20 7 C 20 5.90625 19.09375 5 18 5 Z M 14 7 L 18 7 L 18 8 L 14 8 Z M 6 10 L 26 10 C 26.566406 10 27 10.433594 27 11 L 27 24 L 5 24 L 5 11 C 5 10.433594 5.433594 10 6 10 Z M 15 13 L 15 16 L 12 16 L 12 18 L 15 18 L 15 21 L 17 21 L 17 18 L 20 18 L 20 16 L 17 16 L 17 13 Z" fill="currentColor"/>
+                    </svg>
                     <span>AdMed</span>
                     <button class="tool-remove-btn" type="button">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

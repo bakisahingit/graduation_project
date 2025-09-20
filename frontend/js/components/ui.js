@@ -37,11 +37,12 @@ export class UIComponent {
             sidebar: DOMUtils.select('#sidebar'),
             newChatBtn: DOMUtils.select('#new-chat-btn'),
             settingsBtn: DOMUtils.select('#settings-btn'),
-            modelSelectSidebar: DOMUtils.select('#model-select-sidebar'),
-            customSelectSidebar: DOMUtils.select('#custom-model-select-sidebar'),
-            selectTriggerSidebar: DOMUtils.select('#select-trigger-sidebar'),
-            selectValueSidebar: DOMUtils.select('.select-value-sidebar'),
-            selectOptionsSidebar: DOMUtils.select('#select-options-sidebar'),
+            // Sidebar model select moved to input wrapper
+            // modelSelectSidebar: DOMUtils.select('#model-select-sidebar'),
+            // customSelectSidebar: DOMUtils.select('#custom-model-select-sidebar'),
+            // selectTriggerSidebar: DOMUtils.select('#select-trigger-sidebar'),
+            // selectValueSidebar: DOMUtils.select('.select-value-sidebar'),
+            // selectOptionsSidebar: DOMUtils.select('#select-options-sidebar'),
             historyList: DOMUtils.select('#history-list'),
             
             // Settings modal elementleri
@@ -56,11 +57,35 @@ export class UIComponent {
             moleculeModal: DOMUtils.select('#molecule-modal'),
             moleculeOverlay: DOMUtils.select('#molecule-overlay'),
             moleculeClose: DOMUtils.select('#molecule-close'),
-            moleculeDrawerBtn: DOMUtils.select('#molecule-drawer-btn'),
+            // moleculeDrawerBtn: DOMUtils.select('#molecule-drawer-btn'), // Moved to input wrapper
             moleculeDisplay: DOMUtils.select('#molecule-display'),
             smilesInput: DOMUtils.select('#smiles-input'),
             clearMoleculeBtn: DOMUtils.select('#clear-molecule'),
             insertMoleculeBtn: DOMUtils.select('#insert-molecule'),
+            
+            // Add dropdown elementleri
+            welcomeAddBtn: DOMUtils.select('#welcome-add-btn'),
+            chatAddBtn: DOMUtils.select('#chat-add-btn'),
+            welcomeAddDropdown: DOMUtils.select('#welcome-add-dropdown'),
+            chatAddDropdown: DOMUtils.select('#chat-add-dropdown'),
+            welcomeFileUpload: DOMUtils.select('#welcome-file-upload'),
+            chatFileUpload: DOMUtils.select('#chat-file-upload'),
+            welcomeMoleculeDraw: DOMUtils.select('#welcome-molecule-draw'),
+            chatMoleculeDraw: DOMUtils.select('#chat-molecule-draw'),
+            
+            // Input wrapper model select elementleri
+            modelSelectWelcome: DOMUtils.select('#model-select-welcome'),
+            customSelectWelcome: DOMUtils.select('#custom-model-select-welcome'),
+            selectTriggerWelcome: DOMUtils.select('#select-trigger-welcome'),
+            selectValueWelcome: DOMUtils.select('#select-trigger-welcome .select-value-input'),
+            selectOptionsWelcome: DOMUtils.select('#select-options-welcome'),
+            modelSelectChat: DOMUtils.select('#model-select-chat'),
+            customSelectChat: DOMUtils.select('#custom-model-select-chat'),
+            selectTriggerChat: DOMUtils.select('#select-trigger-chat'),
+            selectValueChat: DOMUtils.select('#select-trigger-chat .select-value-input'),
+            selectOptionsChat: DOMUtils.select('#select-options-chat'),
+            welcomeAddModelBtn: DOMUtils.select('#welcome-add-model-btn'),
+            chatAddModelBtn: DOMUtils.select('#chat-add-model-btn'),
             
             // Tools dropdown elementleri
             welcomeToolsDropdown: DOMUtils.select('#welcome-tools-dropdown'),
@@ -253,6 +278,24 @@ export class UIComponent {
         DOMUtils.toggleVisibility(this.elements.welcomeScreen, false);
         DOMUtils.toggleVisibility(this.elements.chatInterface, true);
         
+        // Welcome'dan seçilen modeli chat model select'e aktar
+        if (selectedModel && this.elements.modelSelectChat && this.elements.selectValueChat) {
+            this.elements.modelSelectChat.value = selectedModel;
+            this.elements.selectValueChat.textContent = selectedModel;
+            
+            // Chat model select'teki seçenekleri güncelle
+            if (this.elements.selectOptionsChat) {
+                const options = this.elements.selectOptionsChat.querySelectorAll('.select-option-input');
+                options.forEach(option => {
+                    if (option.dataset.value === selectedModel) {
+                        DOMUtils.addClass(option, 'selected');
+                    } else {
+                        DOMUtils.removeClass(option, 'selected');
+                    }
+                });
+            }
+        }
+        
         // Focus'u yumuşak bir şekilde yap (sayfa kaydırmasını önlemek için)
         setTimeout(() => {
             this.elements.input.focus();
@@ -272,6 +315,27 @@ export class UIComponent {
         // Input alanlarını temizle
         this.elements.input.value = '';
         this.elements.welcomeInput.value = '';
+        
+        // Chat'ten seçilen modeli welcome model select'e aktar
+        if (this.elements.modelSelectChat && this.elements.modelSelectWelcome && this.elements.selectValueWelcome) {
+            const chatSelectedModel = this.elements.modelSelectChat.value;
+            if (chatSelectedModel) {
+                this.elements.modelSelectWelcome.value = chatSelectedModel;
+                this.elements.selectValueWelcome.textContent = chatSelectedModel;
+                
+                // Welcome model select'teki seçenekleri güncelle
+                if (this.elements.selectOptionsWelcome) {
+                    const options = this.elements.selectOptionsWelcome.querySelectorAll('.select-option-input');
+                    options.forEach(option => {
+                        if (option.dataset.value === chatSelectedModel) {
+                            DOMUtils.addClass(option, 'selected');
+                        } else {
+                            DOMUtils.removeClass(option, 'selected');
+                        }
+                    });
+                }
+            }
+        }
         
         // Textarea yüksekliklerini sıfırla
         DOMUtils.autoResizeTextarea(this.elements.input);

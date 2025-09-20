@@ -225,8 +225,8 @@
 
 /* Send button specific */
 .send-btn {
-    background: rgba(79,195,247,0.08);
-    border: 1px solid rgba(79,195,247,0.2);
+    background: transparent;
+    border: 1px solid transparent;
     color: var(--primary);
     padding: var(--space-1);
     border-radius: var(--radius-lg);
@@ -241,11 +241,10 @@
     min-width: 32px;
     height: 32px;
     flex-shrink: 0;
-    backdrop-filter: blur(2px);
 }
 
 .send-btn:hover:not(:disabled) {
-    background: rgba(79,195,247,0.12);
+    background: var(--bg-glass);
     border-color: rgba(79,195,247,0.3);
     color: var(--primary-light);
     transform: translateY(-1px);
@@ -253,7 +252,7 @@
 }
 
 .send-btn:active:not(:disabled) {
-    background: rgba(79,195,247,0.15);
+    background: var(--bg-glass-hover);
     border-color: rgba(79,195,247,0.4);
     transform: scale(0.95);
 }
@@ -264,8 +263,8 @@
 }
 
 .send-btn:disabled {
-    background: rgba(79,195,247,0.04);
-    border-color: rgba(79,195,247,0.1);
+    background: transparent;
+    border-color: transparent;
     color: rgba(79,195,247,0.4);
     cursor: not-allowed;
 }
@@ -402,10 +401,62 @@
     cursor: not-allowed;
 }
 
+/* Add button */
+.add-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--accent);
+    padding: var(--space-1);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.add-btn:hover:not(:disabled) {
+    background: var(--bg-glass);
+    border-color: rgba(255,255,255,0.2);
+    color: var(--gray-100);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255,255,255,0.1);
+}
+
+.add-btn:active:not(:disabled) {
+    background: var(--bg-glass-hover);
+    border-color: rgba(255,255,255,0.3);
+    transform: scale(0.95);
+}
+
+.add-btn:focus-visible {
+    outline: 2px solid rgba(255,255,255,0.3);
+    outline-offset: 2px;
+}
+
+.add-btn:disabled {
+    background: transparent;
+    border-color: transparent;
+    color: rgba(255,255,255,0.3);
+    cursor: not-allowed;
+}
+
+.add-btn svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* Tools button */
 .tools-btn {
-    background: rgba(156,39,176,0.08);
-    border: 1px solid rgba(156,39,176,0.2);
+    background: transparent;
+    border: 1px solid transparent;
     color: var(--accent);
     padding: var(--space-1) var(--space-2);
     border-radius: var(--radius-lg);
@@ -416,46 +467,45 @@
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    backdrop-filter: blur(2px);
     justify-content: center;
     white-space: nowrap;
     flex-shrink: 0;
 }
 
 .tools-btn:hover:not(:disabled) {
-    background: rgba(156,39,176,0.12);
-    border-color: rgba(156,39,176,0.3);
-    color: var(--accent-light);
+    background: var(--bg-glass);
+    border-color: rgba(255,255,255,0.2);
+    color: var(--gray-100);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(156,39,176,0.15);
+    box-shadow: 0 4px 12px rgba(255,255,255,0.1);
 }
 
 .tools-btn:active:not(:disabled) {
-    background: rgba(156,39,176,0.15);
-    border-color: rgba(156,39,176,0.4);
+    background: var(--bg-glass-hover);
+    border-color: rgba(255,255,255,0.3);
     transform: scale(0.95);
 }
 
 .tools-btn:focus-visible {
-    outline: 2px solid rgba(156,39,176,0.5);
+    outline: 2px solid rgba(255,255,255,0.3);
     outline-offset: 2px;
 }
 
 .tools-btn:disabled {
-    background: rgba(156,39,176,0.04);
-    border-color: rgba(156,39,176,0.1);
-    color: rgba(156,39,176,0.4);
+    background: transparent;
+    border-color: transparent;
+    color: rgba(255,255,255,0.3);
     cursor: not-allowed;
 }
 
 .tools-btn.active {
-    background: rgba(76,175,80,0.15);
+    background: var(--bg-glass);
     border-color: rgba(76,175,80,0.3);
     color: var(--secondary);
 }
 
 .tools-btn.active:hover:not(:disabled) {
-    background: rgba(76,175,80,0.18);
+    background: var(--bg-glass-hover);
     border-color: rgba(76,175,80,0.4);
     color: var(--secondary-light);
 }
@@ -560,6 +610,11 @@
         height: 36px;
     }
     
+    .add-btn {
+        min-width: 36px;
+        height: 36px;
+    }
+    
     .btn-icon {
         width: 14px;
         height: 14px;
@@ -613,6 +668,11 @@
     }
     
     .send-btn {
+        min-width: 40px;
+        height: 40px;
+    }
+    
+    .add-btn {
         min-width: 40px;
         height: 40px;
     }
@@ -675,6 +735,11 @@
     }
     
     .send-btn {
+        min-width: 36px;
+        height: 36px;
+    }
+    
+    .add-btn {
         min-width: 36px;
         height: 36px;
     }
