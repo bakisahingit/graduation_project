@@ -179,7 +179,7 @@ Bu sprint'te molekül çizim sistemi ve AdmedLab API entegrasyonu tamamlanacak.
 
 ## 🎉 **GÜNCELLEME NOTLARI**
 
-### ✅ **Tamamlanan Görevler (Son Güncelleme: 20.09.2025)**
+### ✅ **Tamamlanan Görevler (Son Güncelleme: 20.12.2024)**
 - **UI/UX İyileştirmeleri**: Molekül Yapısı Butonu Geliştirme tamamen tamamlandı
   - Sade ve şık buton tasarımı
   - Gelişmiş hover/active/focus/disabled state'ler
@@ -188,14 +188,104 @@ Bu sprint'te molekül çizim sistemi ve AdmedLab API entegrasyonu tamamlanacak.
   - Smooth animasyonlar ve micro-interactions
   - Loading, pulse ve ripple efektleri
 
+- **Input Wrapper Güncellemeleri**: Model seçme ve molekül çiz butonları eklendi
+  - Input wrapper'a model seçme butonu eklendi (gönder butonunun solunda)
+  - Model seçme dropdown paneli eklendi (scroll özellikli)
+  - Model ekle butonu dropdown panelinin altına eklendi
+  - Molekül çiz butonu "+" panelinden input wrapper'a taşındı
+  - Sidebar'daki model seçme ve molekül çiz butonları kaldırıldı
+  - Welcome ve chat ekranları arasında model seçimi senkronizasyonu
+  - Tüm butonlar transparent tasarım ile güncellendi
+  - Hover efektleri ve glass effect'ler eklendi
+  - Responsive tasarım güncellemeleri
+
 ### 📊 **İlerleme Durumu**
 - **UI/UX İyileştirmeleri**: %100 ✅
+- **Input Wrapper Güncellemeleri**: %100 ✅
 - **LLM Entegrasyonu**: %0 ⏳
 - **Molekül Çizim Sistemi**: %0 ⏳
 - **Teknik Geliştirmeler**: %0 ⏳
 
 ---
 
-*Son güncelleme: 20 Eylül 2025*
-*Sprint durumu: UI/UX iyileştirmeleri tamamlandı*
-*Hedef tarih: 23 Eylül 2025*
+## 🚀 **YENİ GÖREVLER - SPRINT 2**
+
+### 🎯 **Öncelikli Görevler**
+
+#### 🗑️ **Konuşma Geçmişi İyileştirmeleri**
+- [ ] **Konuşma Silme Butonları Güncelleme**
+  - [ ] Mevcut silme butonlarının tasarımını iyileştir
+  - [ ] Hover efektleri ve animasyonlar ekle
+  - [ ] Onay dialog'u ekle (yanlışlıkla silmeyi önle)
+  - [ ] Bulk delete özelliği (çoklu seçim)
+  - [ ] Responsive tasarım optimizasyonu
+
+#### 🧪 **Molekül Çizme Paneli Güncelleme**
+- [ ] **Panel Tasarım İyileştirmeleri**
+  - [ ] Modern ve kullanıcı dostu arayüz
+  - [ ] Daha iyi molekül görüntüleme
+  - [ ] Zoom ve pan özellikleri
+  - [ ] Molekül bilgileri paneli
+  - [ ] Export özellikleri (PNG, SVG)
+
+- [ ] **Chat LLM Entegrasyonu**
+  - [ ] Molekül çizme panelinde chat LLM ekle
+  - [ ] Sadece sohbet yolu ile molekül çizdirme
+  - [ ] "Bu molekülü çiz" gibi doğal dil komutları
+  - [ ] Molekül açıklama ve bilgi alma
+  - [ ] Interactive molekül düzenleme
+
+#### ⚙️ **Model Seçimi İyileştirmeleri**
+- [ ] **Model Seçimi Kalıcılığı**
+  - [ ] Model seçimini localStorage'da sakla
+  - [ ] Sayfa yenilendiğinde son seçilen modeli koru
+  - [ ] Default model yerine kullanıcı tercihini öncelikle
+  - [ ] Model geçmişi (son kullanılan modeller)
+  - [ ] Favori modeller sistemi
+
+- [ ] **Model Seçme Paneli Güncelleme**
+  - [ ] Panel açılış yönünü yukarı yap
+  - [ ] Daha iyi görsel hiyerarşi
+  - [ ] Model kategorileri (GPT, Claude, vs.)
+  - [ ] Model özellik bilgileri
+  - [ ] Arama ve filtreleme özelliği
+
+#### 🐛 **Hata Düzeltmeleri**
+- [ ] **Bad Request Hatası Çözümü**
+  - [ ] Modeller ile konuşurken alınan bad request hatalarını analiz et
+  - [ ] API request formatını kontrol et
+  - [ ] Error handling iyileştirmeleri
+  - [ ] Retry mekanizması ekle
+  - [ ] Kullanıcı dostu hata mesajları
+
+#### 📁 **Dosya ve Molekül Ekleme İyileştirmeleri**
+- [ ] **Input Wrapper Üst Kısmı Görüntüleme**
+  - [ ] Dosya ekleme durumunda güzel görüntüleme
+  - [ ] Molekül çizme durumunda güzel görüntüleme
+  - [ ] Progress indicator'lar
+  - [ ] Preview özellikleri
+  - [ ] Drag & drop desteği
+
+#### ⚙️ **Ayarlar Optimizasyonu**
+- [ ] **Modeller Seçeneği İyileştirmeleri**
+  - [ ] Model yönetimi arayüzü iyileştirme
+  - [ ] Model ekleme/çıkarma sürecini optimize et
+  - [ ] Model test özelliği
+  - [ ] Model performans metrikleri
+  - [ ] Model karşılaştırma özelliği
+
+### 📋 **Görev Öncelik Sırası**
+1. **Model Seçimi Kalıcılığı** (Yüksek Öncelik)
+2. **Bad Request Hatası Çözümü** (Yüksek Öncelik)
+3. **Model Seçme Paneli Yukarı Açılış** (Orta Öncelik)
+4. **Konuşma Geçmişi Silme Butonları** (Orta Öncelik)
+5. **Dosya/Molekül Ekleme Görüntüleme** (Orta Öncelik)
+6. **Molekül Çizme Paneli Güncelleme** (Düşük Öncelik)
+7. **Chat LLM Entegrasyonu** (Düşük Öncelik)
+8. **Ayarlar Optimizasyonu** (Düşük Öncelik)
+
+---
+
+*Son güncelleme: 20 Aralık 2024*
+*Sprint durumu: Input wrapper güncellemeleri tamamlandı*
+*Yeni hedef: Sprint 2 görevleri başlatıldı*
