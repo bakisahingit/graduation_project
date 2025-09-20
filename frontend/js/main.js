@@ -686,31 +686,93 @@ class ChatApp {
      * Konuşma geçmişini render et
      */
     renderConversationHistory() {
+        this.renderPinnedConversations();
+        this.renderUnpinnedConversations();
+    }
+
+    /**
+     * Pinli konuşmaları render et
+     */
+    renderPinnedConversations() {
+        const pinnedList = document.getElementById('pinned-list');
+        pinnedList.innerHTML = '';
+
+        const pinnedConversations = this.conversation.getPinnedConversations();
+        pinnedConversations.forEach(conversation => {
+            const historyItem = this.createHistoryItem(conversation);
+            pinnedList.appendChild(historyItem);
+        });
+
+        // Pinli konuşma yoksa bölümü gizle
+        const pinnedSection = document.getElementById('pinned-conversations');
+        if (pinnedConversations.length === 0) {
+            pinnedSection.style.display = 'none';
+        } else {
+            pinnedSection.style.display = 'flex';
+        }
+    }
+
+    /**
+     * Pinli olmayan konuşmaları render et
+     */
+    renderUnpinnedConversations() {
         this.ui.elements.historyList.innerHTML = '';
 
-        const conversations = this.conversation.getAllConversations();
-        conversations.forEach(conversation => {
-            const historyItem = DOMUtils.create('div', { 
-                className: 'history-item'
-            });
-            
-            if (conversation.id === this.conversation.currentConversationId) {
-                DOMUtils.addClass(historyItem, 'active');
-            }
-
-            historyItem.innerHTML = `
-                <div class="history-item-title">${conversation.title}</div>
-                <div class="history-item-date">${HelperUtils.formatDate(conversation.updatedAt)}</div>
-                <button class="history-item-delete" onclick="app.deleteConversation('${conversation.id}')">×</button>
-            `;
-
-            DOMUtils.on(historyItem, 'click', (e) => {
-                if (!e.target.classList.contains('history-item-delete')) {
-                    this.loadConversation(conversation.id);
-                }
-            });
-
+        const unpinnedConversations = this.conversation.getUnpinnedConversations();
+        unpinnedConversations.forEach(conversation => {
+            const historyItem = this.createHistoryItem(conversation);
             this.ui.elements.historyList.appendChild(historyItem);
+        });
+    }
+
+    /**
+     * Konuşma öğesi oluştur
+     */
+    createHistoryItem(conversation) {
+        const historyItem = DOMUtils.create('div', { 
+            className: 'history-item'
+        });
+        
+        if (conversation.id === this.conversation.currentConversationId) {
+            DOMUtils.addClass(historyItem, 'active');
+        }
+
+        historyItem.innerHTML = `
+            <div class="history-item-title">${conversation.title}</div>
+            <input type="text" class="history-item-edit" value="${conversation.title}" data-conversation-id="${conversation.id}">
+            <button class="history-item-menu" onclick="app.toggleConversationMenu(event, '${conversation.id}')">
+                <img src="assets/ellipsis.svg" alt="Menu" class="ellipsis-icon">
+            </button>
+        `;
+
+        DOMUtils.on(historyItem, 'click', (e) => {
+            if (!e.target.classList.contains('history-item-menu') && 
+                !e.target.classList.contains('ellipsis-icon')) {
+                this.loadConversation(conversation.id);
+            }
+        });
+
+        return historyItem;
+    }
+
+    /**
+     * ID'ye göre konuşma öğesini bul
+     * @param {string} conversationId - Konuşma ID'si
+     * @returns {HTMLElement|null} - Konuşma öğesi
+     */
+    findHistoryItemById(conversationId) {
+        // Hem pinned hem de normal listede ara
+        const pinnedList = document.getElementById('pinned-list');
+        const historyList = document.getElementById('history-list');
+        
+        const allItems = [
+            ...pinnedList.querySelectorAll('.history-item'),
+            ...historyList.querySelectorAll('.history-item')
+        ];
+
+        return allItems.find(item => {
+            const editInput = item.querySelector('.history-item-edit');
+            return editInput && editInput.dataset.conversationId === conversationId;
         });
     }
 
@@ -1352,6 +1414,205 @@ class ChatApp {
                 `;
             }
         }
+    }
+
+    /**
+     * Context menu işlevleri
+     */
+    toggleConversationMenu(event, conversationId) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const menu = document.getElementById('conversation-menu');
+        const isVisible = menu.classList.contains('show');
+        
+        if (isVisible) {
+            this.hideConversationMenu();
+            return;
+        }
+        
+        // Menu'yu göster
+        this.currentMenuConversationId = conversationId;
+        menu.classList.add('show');
+        document.body.classList.add('menu-open');
+        
+        // Butonun parent elementini al (history-item-menu)
+        const buttonElement = event.target.closest('.history-item-menu');
+        const historyItem = buttonElement.closest('.history-item');
+        this.currentActiveButton = buttonElement;
+        this.currentActiveHistoryItem = historyItem;
+        
+        // Butonu ve history item'ı aktif göster
+        buttonElement.classList.add('active');
+        historyItem.classList.add('menu-active');
+        
+        // Menu pozisyonunu ayarla (sidebar'ın sağ tarafında)
+        const sidebar = document.querySelector('.sidebar');
+        const sidebarRect = sidebar.getBoundingClientRect();
+        const buttonRect = buttonElement.getBoundingClientRect();
+        
+        menu.style.left = `${sidebarRect.right + 5}px`;
+        menu.style.top = `${buttonRect.top}px`;
+        
+        // Dışarı tıklama ile kapatma
+        setTimeout(() => {
+            document.addEventListener('click', this.handleMenuOutsideClick.bind(this), { once: true });
+        }, 0);
+        
+        // Menu butonlarına event listener ekle
+        this.setupMenuEventListeners();
+        
+        // Pin butonunun görünümünü güncelle
+        this.updatePinButtonAppearance();
+    }
+    
+    hideConversationMenu() {
+        const menu = document.getElementById('conversation-menu');
+        menu.classList.remove('show');
+        document.body.classList.remove('menu-open');
+        
+        // Aktif butonu ve history item'ı temizle
+        if (this.currentActiveButton) {
+            this.currentActiveButton.classList.remove('active');
+            this.currentActiveButton = null;
+        }
+        
+        if (this.currentActiveHistoryItem) {
+            this.currentActiveHistoryItem.classList.remove('menu-active');
+            this.currentActiveHistoryItem = null;
+        }
+        
+        this.currentMenuConversationId = null;
+    }
+    
+    handleMenuOutsideClick(event) {
+        const menu = document.getElementById('conversation-menu');
+        if (!menu.contains(event.target)) {
+            this.hideConversationMenu();
+        }
+    }
+    
+    setupMenuEventListeners() {
+        const menuPin = document.getElementById('menu-pin');
+        const menuRename = document.getElementById('menu-rename');
+        const menuDelete = document.getElementById('menu-delete');
+        
+        // Eski event listener'ları temizle
+        menuPin.replaceWith(menuPin.cloneNode(true));
+        menuRename.replaceWith(menuRename.cloneNode(true));
+        menuDelete.replaceWith(menuDelete.cloneNode(true));
+        
+        // Yeni referansları al
+        const newMenuPin = document.getElementById('menu-pin');
+        const newMenuRename = document.getElementById('menu-rename');
+        const newMenuDelete = document.getElementById('menu-delete');
+        
+        newMenuPin.addEventListener('click', () => {
+            this.pinConversation(this.currentMenuConversationId);
+            this.hideConversationMenu();
+        });
+        
+        newMenuRename.addEventListener('click', () => {
+            this.renameConversation(this.currentMenuConversationId);
+            this.hideConversationMenu();
+        });
+        
+        newMenuDelete.addEventListener('click', () => {
+            this.deleteConversation(this.currentMenuConversationId);
+            this.hideConversationMenu();
+        });
+    }
+    
+    updatePinButtonAppearance() {
+        const conversation = this.conversation.loadConversation(this.currentMenuConversationId);
+        const menuPin = document.getElementById('menu-pin');
+        const menuIcon = menuPin.querySelector('.menu-icon');
+        const menuText = menuPin.querySelector('.menu-text');
+        
+        if (conversation && conversation.pinned) {
+            // Unpin görünümü
+            menuIcon.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12.4207 3.45395C13.5425 2.33208 15.3614 2.33208 16.4833 3.45395L20.546 7.51662C21.6679 8.63849 21.6679 10.4574 20.546 11.5793L17.1604 14.9648L19.8008 17.6052C20.1748 17.9792 20.1748 18.5855 19.8008 18.9594C19.4269 19.3334 18.8205 19.3334 18.4466 18.9594L16.0834 16.5962L15.674 18.8144C15.394 20.3314 13.5272 20.9118 12.4364 19.821L8.98476 16.3694L6.83948 18.5147C6.46552 18.8886 5.85922 18.8886 5.48526 18.5147C5.1113 18.1407 5.1113 17.5344 5.48525 17.1605L7.63054 15.0152L4.17891 11.5635C3.08815 10.4728 3.66858 8.60594 5.18551 8.32595L7.40369 7.91654L5.04048 5.55333C4.66652 5.17938 4.66652 4.57307 5.04048 4.19911C5.41444 3.82515 6.02075 3.82515 6.3947 4.19911L9.0351 6.83951L12.4207 3.45395ZM9.0351 9.54795L9.01673 9.56632L5.53313 10.2093L13.7906 18.4668L14.4336 14.9832L14.452 14.9648L9.0351 9.54795ZM15.8062 13.6106L10.3893 8.19373L13.7749 4.80818C14.1488 4.43422 14.7551 4.43422 15.1291 4.80818L19.1918 8.87084C19.5657 9.2448 19.5657 9.8511 19.1918 10.2251L15.8062 13.6106Z" fill="currentColor"/>
+                </svg>
+            `;
+            menuText.textContent = 'Unpin';
+        } else {
+            // Pin görünümü
+            menuIcon.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M11.9999 17V21M6.9999 12.6667V6C6.9999 4.89543 7.89533 4 8.9999 4H14.9999C16.1045 4 16.9999 4.89543 16.9999 6V12.6667L18.9135 15.4308C19.3727 16.094 18.898 17 18.0913 17H5.90847C5.1018 17 4.62711 16.094 5.08627 15.4308L6.9999 12.6667Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            `;
+            menuText.textContent = 'Pin';
+        }
+    }
+
+    pinConversation(conversationId) {
+        this.conversation.togglePinConversation(conversationId);
+        this.renderConversationHistory();
+    }
+    
+    renameConversation(conversationId) {
+        const conversation = this.conversation.loadConversation(conversationId);
+        if (!conversation) return;
+        
+        // Konuşma öğesini bul
+        const historyItem = this.findHistoryItemById(conversationId);
+        if (!historyItem) return;
+        
+        // Edit moduna geç
+        DOMUtils.addClass(historyItem, 'editing');
+        const editInput = historyItem.querySelector('.history-item-edit');
+        
+        // Input'u seç ve focus et
+        editInput.focus();
+        editInput.select();
+        
+        // Event listener'ları ekle
+        const handleSave = () => {
+            const newTitle = editInput.value.trim();
+            if (newTitle && newTitle !== conversation.title) {
+                conversation.title = newTitle;
+                this.conversation.saveConversations();
+                this.renderConversationHistory();
+            } else {
+                // Değişiklik yoksa eski haline döndür
+                editInput.value = conversation.title;
+                DOMUtils.removeClass(historyItem, 'editing');
+            }
+        };
+        
+        const handleCancel = () => {
+            editInput.value = conversation.title;
+            DOMUtils.removeClass(historyItem, 'editing');
+        };
+        
+        // Enter tuşu ile kaydet
+        editInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSave();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                handleCancel();
+            }
+        });
+        
+        // Focus kaybında kaydet
+        editInput.addEventListener('blur', handleSave);
+        
+        // Dışarı tıklama ile iptal
+        const handleOutsideClick = (e) => {
+            if (!historyItem.contains(e.target)) {
+                handleCancel();
+                document.removeEventListener('click', handleOutsideClick);
+            }
+        };
+        
+        setTimeout(() => {
+            document.addEventListener('click', handleOutsideClick);
+        }, 0);
     }
 }
 

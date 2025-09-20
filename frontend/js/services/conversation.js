@@ -39,6 +39,7 @@ export class ConversationService {
             title: title,
             model: model,
             messages: [],
+            pinned: false,
             createdAt: new Date(),
             updatedAt: new Date()
         };
@@ -115,6 +116,34 @@ export class ConversationService {
      */
     getAllConversations() {
         return this.conversations;
+    }
+
+    /**
+     * Konuşmayı pinle/unpinle
+     * @param {string} conversationId - Konuşma ID'si
+     */
+    togglePinConversation(conversationId) {
+        const conversation = this.conversations.find(c => c.id === conversationId);
+        if (conversation) {
+            conversation.pinned = !conversation.pinned;
+            this.saveConversations();
+        }
+    }
+
+    /**
+     * Pinli konuşmaları al
+     * @returns {Array} - Pinli konuşma listesi
+     */
+    getPinnedConversations() {
+        return this.conversations.filter(c => c.pinned);
+    }
+
+    /**
+     * Pinli olmayan konuşmaları al
+     * @returns {Array} - Pinli olmayan konuşma listesi
+     */
+    getUnpinnedConversations() {
+        return this.conversations.filter(c => !c.pinned);
     }
 
     /**
