@@ -209,18 +209,22 @@
 
 /* Special button states */
 .btn.stop-stream-btn {
-    background: rgba(255,107,107,0.2) !important;
-    border-color: rgba(255,107,107,0.4) !important;
-    color: var(--error) !important;
+    background: rgba(239, 68, 68, 0.25) !important;
+    border-color: rgba(239, 68, 68, 0.5) !important;
+    color: #ef4444 !important;
+    box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.3) !important;
 }
 
 .btn.stop-stream-btn .btn-icon {
-    filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(346deg) brightness(118%) contrast(119%) !important;
+    filter: brightness(0) saturate(100%) invert(27%) sepia(96%) saturate(1352%) hue-rotate(346deg) brightness(119%) contrast(119%) !important;
 }
 
 .btn.stop-stream-btn:hover:not(:disabled) {
-    background: rgba(255,107,107,0.3) !important;
-    color: var(--error-light) !important;
+    background: rgba(239, 68, 68, 0.35) !important;
+    border-color: rgba(239, 68, 68, 0.7) !important;
+    color: #dc2626 !important;
+    box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.5) !important;
+    transform: translateY(-1px) !important;
 }
 
 /* Send button specific */
@@ -243,12 +247,35 @@
     flex-shrink: 0;
 }
 
+/* Send button when it becomes stop button */
+.send-btn.stop-stream-btn {
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    color: #ef4444 !important;
+}
+
+.send-btn.stop-stream-btn .btn-icon {
+    filter: brightness(0) saturate(100%) invert(27%) sepia(96%) saturate(1352%) hue-rotate(346deg) brightness(119%) contrast(119%) !important;
+}
+
 .send-btn:hover:not(:disabled) {
     background: var(--bg-glass);
     border-color: rgba(79,195,247,0.3);
     color: var(--primary-light);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(79,195,247,0.15);
+}
+
+.send-btn.stop-stream-btn:hover:not(:disabled) {
+    background: var(--bg-glass) !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+    color: #dc2626 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15) !important;
+}
+
+.send-btn.stop-stream-btn:hover:not(:disabled) .btn-icon {
+    filter: brightness(0) saturate(100%) invert(20%) sepia(96%) saturate(1352%) hue-rotate(346deg) brightness(119%) contrast(119%) !important;
 }
 
 .send-btn:active:not(:disabled) {
