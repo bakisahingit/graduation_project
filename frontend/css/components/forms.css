@@ -110,8 +110,8 @@
 
 /* Tools dropdown artık ortak panel sistemi kullanıyor - panels.css'de tanımlı */
 
-/* AdMed tool için özel hover efekti - mor renk */
-.tool-option[id*="admed"]:hover:not(:disabled) {
+/* AdMet tool için özel hover efekti - mor renk */
+.tool-option[id*="admet"]:hover:not(:disabled) {
     background: var(--bg-glass-hover);
     border-color: rgba(227, 130, 248, 0.3);
     color: rgb(227, 130, 248);
