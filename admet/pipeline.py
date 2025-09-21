@@ -8,7 +8,7 @@ from .analysis import (
     simplified_pk_profile,
     uncertainty_notes,
 )
-from .config import rule_based_catalog, chembl_activity
+from .config import rule_based_catalog
 from admet_ai import ADMETModel
 from .queries import query_chembl, query_pubchem, name_to_smiles
 from .utils import mol_to_base64_image, rdkit_descriptors, smiles_to_mol

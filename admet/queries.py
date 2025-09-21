@@ -1,9 +1,8 @@
 # admet/queries.py
 
 import pubchempy as pcp
-from chembl_webresource_client.new_client import new_client
 
-from .config import chembl_activity
+from .config import get_chembl_client
 
 
 def name_to_smiles(name: str) -> str | None:
@@ -47,10 +46,11 @@ def query_pubchem(smiles: str):
 # --- ChEMBL Query Function ---
 def query_chembl(smiles: str, limit=5):
     """Queries ChEMBL for key bioactivity data."""
-    if not chembl_activity:
+    chembl_client = get_chembl_client()
+    if not chembl_client:
         return {"error": "ChEMBL client is not available."}
     try:
-        res = new_client.molecule.filter(molecule_structures__canonical_smiles=smiles)
+        res = chembl_client.molecule.filter(molecule_structures__canonical_smiles=smiles)
         if not res:
             return {
                 "error": "Compound not found in ChEMBL.",
@@ -59,7 +59,7 @@ def query_chembl(smiles: str, limit=5):
             }
 
         chembl_id = res[0]["molecule_chembl_id"]
-        activities = new_client.activity.filter(molecule_chembl_id=chembl_id).order_by(
+        activities = chembl_client.activity.filter(molecule_chembl_id=chembl_id).order_by(
             "-pchembl_value"
         )
 
