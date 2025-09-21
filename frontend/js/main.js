@@ -387,20 +387,32 @@ class ChatApp {
      * @param {string} model - Model
      */
     async processMessage(text, model) {
-        // Yeni konuşma oluştur
+        // Yeni konuşma oluştur (geçici başlık ile)
         if (!this.conversation.currentConversationId) {
-            const conversation = this.conversation.createConversation(text, model);
+            const conversation = this.conversation.createConversationWithTempTitle(text, model);
             this.conversation.setCurrentConversation(conversation.id);
+            
+            // Sidebar'da konuşmayı göster
+            this.renderConversationHistory();
+            
+            // Başlık üretimini asenkron olarak başlat
+            this.conversation.onTitleUpdated = (conversationId, newTitle, isLoading) => {
+                this.updateConversationTitleInUI(conversationId, newTitle, isLoading);
+            };
+            this.conversation.updateConversationTitleAsync(conversation.id, text, model);
         }
 
         // Kullanıcı mesajını ekle
         this.ui.appendMessage(text, 'user');
 
-        // Kullanıcı mesajını konuşmaya kaydet
-        this.conversation.updateConversation(this.conversation.currentConversationId, { 
-            role: 'user', 
-            content: text 
-        });
+        // Kullanıcı mesajını konuşmaya kaydet (sadece mevcut konuşmaya ekleniyorsa)
+        const currentConversation = this.conversation.getCurrentConversation();
+        if (currentConversation && currentConversation.messages.length > 0) {
+            this.conversation.updateConversation(this.conversation.currentConversationId, { 
+                role: 'user', 
+                content: text 
+            });
+        }
 
         // Input'u temizle ve devre dışı bırak
         const isInChatMode = this.ui.elements.chatInterface.style.display !== 'none';
@@ -727,8 +739,10 @@ class ChatApp {
 
     /**
      * Konuşma öğesi oluştur
+     * @param {Object} conversation - Konuşma objesi
+     * @param {boolean} isLoading - Loading durumu
      */
-    createHistoryItem(conversation) {
+    createHistoryItem(conversation, isLoading = false) {
         const historyItem = DOMUtils.create('div', { 
             className: 'history-item'
         });
@@ -737,8 +751,12 @@ class ChatApp {
             DOMUtils.addClass(historyItem, 'active');
         }
 
+        // Loading durumuna göre title class'ını belirle
+        const titleClass = isLoading ? 'history-item-title loading' : 'history-item-title';
+        const titleText = isLoading ? 'Başlık üretiliyor, lütfen bekleyiniz...' : conversation.title;
+
         historyItem.innerHTML = `
-            <div class="history-item-title">${conversation.title}</div>
+            <div class="${titleClass}">${titleText}</div>
             <input type="text" class="history-item-edit" value="${conversation.title}" data-conversation-id="${conversation.id}">
             <button class="history-item-menu" onclick="app.toggleConversationMenu(event, '${conversation.id}')">
                 <img src="assets/ellipsis.svg" alt="Menu" class="ellipsis-icon">
@@ -774,6 +792,44 @@ class ChatApp {
             const editInput = item.querySelector('.history-item-edit');
             return editInput && editInput.dataset.conversationId === conversationId;
         });
+    }
+
+    /**
+     * Konuşma başlığını UI'da güncelle
+     * @param {string} conversationId - Konuşma ID'si
+     * @param {string|null} newTitle - Yeni başlık (null ise loading veya hata)
+     * @param {boolean} isLoading - Loading durumu
+     */
+    updateConversationTitleInUI(conversationId, newTitle, isLoading) {
+        console.log('updateConversationTitleInUI called:', { conversationId, newTitle, isLoading });
+        
+        const historyItem = this.findHistoryItemById(conversationId);
+        if (!historyItem) {
+            console.log('History item not found for:', conversationId);
+            return;
+        }
+
+        const titleElement = historyItem.querySelector('.history-item-title');
+        const editInput = historyItem.querySelector('.history-item-edit');
+        
+        if (isLoading) {
+            // Loading durumu - çok bulanık metin
+            console.log('Setting loading state...');
+            titleElement.textContent = 'Başlık üretiliyor, lütfen bekleyiniz...';
+            titleElement.className = 'history-item-title loading';
+        } else if (newTitle) {
+            // Final başlık
+            console.log('Setting final title:', newTitle);
+            titleElement.textContent = newTitle;
+            titleElement.className = 'history-item-title';
+            editInput.value = newTitle;
+        } else {
+            // Hata durumu - başlığı "Yeni Sohbet" olarak bırak
+            console.log('Setting fallback title');
+            titleElement.textContent = 'Yeni Sohbet';
+            titleElement.className = 'history-item-title';
+            editInput.value = 'Yeni Sohbet';
+        }
     }
 
     /**

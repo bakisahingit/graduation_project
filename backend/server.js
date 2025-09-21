@@ -7,6 +7,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const OpenAI = require('openai');
 const path = require('path');
+const TitleGeneratorService = require('./title_generator/service');
 
 dotenv.config();
 
@@ -39,11 +40,15 @@ const openai = new OpenAI({
     }
 });
 
+// Title Generator Service instance
+const titleGenerator = new TitleGeneratorService();
+
 app.post('/api/chat', async (req, res) => {
     const message = req.body?.message;
     const model = req.body?.model || DEFAULT_MODEL;
     const conversationHistory = req.body?.conversationHistory || [];
     const tools = req.body?.tools || {};
+    const generateTitle = req.body?.generateTitle || false; // Yeni parametre
     
     if (!message) return res.status(400).json({ error: 'Missing `message` in request body' });
     if (!OPENROUTER_API_KEY) {
@@ -54,10 +59,22 @@ app.post('/api/chat', async (req, res) => {
         message: message.substring(0, 100) + '...', 
         model, 
         tools,
-        conversationLength: conversationHistory.length 
+        conversationLength: conversationHistory.length,
+        generateTitle: generateTitle
     });
     
     try {
+        // Başlık üretimi isteği ise
+        if (generateTitle) {
+            console.log('Başlık üretimi isteği...');
+            const title = await titleGenerator.generateTitle(message, openai, model);
+            console.log('Başlık üretildi:', title);
+            return res.json({ 
+                title: title,
+                type: 'title_generation'
+            });
+        }
+        
         // Tools durumuna göre mesajı işle
         let processedMessage = message;
         let systemPrompt = null;
@@ -94,12 +111,21 @@ app.post('/api/chat', async (req, res) => {
         
         console.log('Response generated successfully');
         return res.json(finalResponse);
-    } catch (err) {
-        console.error('Upstream request failed', err);
-        return res.status(500).json({ error: String(err) });
-    }
+        } catch (err) {
+            console.error('Upstream request failed', err);
+            
+            // Rate limit hatası durumunda özel mesaj
+            if (err.status === 429) {
+                return res.status(429).json({ 
+                    error: 'Günlük istek limiti aşıldı. Lütfen yarın tekrar deneyin veya farklı bir model kullanın.',
+                    type: 'rate_limit',
+                    retryAfter: err.headers?.['x-ratelimit-reset']
+                });
+            }
+            
+            return res.status(500).json({ error: String(err) });
+        }
 });
-
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Server listening on http://localhost:${port}`));

@@ -58,6 +58,51 @@ export class ApiService {
     }
 
     /**
+     * Başlık üret
+     * @param {string} message - İlk mesaj
+     * @param {string} model - Model (opsiyonel)
+     * @returns {Promise<string>} - Üretilen başlık
+     */
+    async generateTitle(message, model = null) {
+        const requestBody = { 
+            message,
+            generateTitle: true // Başlık üretimi isteği
+        };
+        
+        if (model) {
+            requestBody.model = model;
+        }
+
+        try {
+            const response = await fetch(`${this.baseUrl}/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            // Başlık üretimi yanıtı kontrolü
+            if (data.type === 'title_generation' && data.title) {
+                return data.title;
+            }
+            
+            // Fallback
+            return 'Yeni Sohbet';
+            
+        } catch (error) {
+            console.error('Title generation failed:', error);
+            // Fallback: mesajın ilk kelimelerini kullan
+            const words = message.split(' ').slice(0, 4);
+            return words.join(' ') + (message.split(' ').length > 4 ? '...' : '');
+        }
+    }
+
+    /**
      * Mevcut modelleri getir
      * @returns {Promise<Array>}
      */
