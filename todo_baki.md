@@ -32,11 +32,11 @@
   - [x] Panel pozisyonlama algoritması iyileştirilecek
   - [x] Ekran sınırlarına göre otomatik yön değiştirme
 
-- [ ] **Otomatik İsimlendirme Sistemi**
-  - [ ] LLM'e istek atıp kısa bir sohbet için başlık isimlendirmesi istenecek
-  - [ ] Yeni konuşma oluşturulduğunda otomatik başlık üretimi
-  - [ ] Kullanıcı onayı ile başlık değiştirme seçeneği
-  - [ ] Başlık üretimi için API entegrasyonu
+- [x] **Otomatik İsimlendirme Sistemi** ✅
+  - [x] LLM'e istek atıp kısa bir sohbet için başlık isimlendirmesi istenecek
+  - [x] Yeni konuşma oluşturulduğunda otomatik başlık üretimi
+  - [x] Kullanıcı onayı ile başlık değiştirme seçeneği
+  - [x] Başlık üretimi için API entegrasyonu
 
 #### 🧪 Molekül Çizme Paneli Güncelleme
 - [ ] **Panel Tasarım İyileştirmeleri**
@@ -61,12 +61,12 @@
   - [ ] Model geçmişi (son kullanılan modeller)
   - [ ] Favori modeller sistemi
 
-- [ ] **Model Seçme Paneli Güncelleme**
-  - [ ] Panel açılış yönünü yukarı yap
-  - [ ] Daha iyi görsel hiyerarşi
-  - [ ] Model kategorileri (GPT, Claude, vs.)
-  - [ ] Model özellik bilgileri
-  - [ ] Arama ve filtreleme özelliği
+- [x] **Model Seçme Paneli Güncelleme**
+  - [x] Panel açılış yönünü yukarı yap
+  - [x] Daha iyi görsel hiyerarşi
+  - [x] Model kategorileri (GPT, Claude, vs.)
+  - [x] Model özellik bilgileri
+  - [x] Arama ve filtreleme özelliği
 
 #### 🐛 Hata Düzeltmeleri
 - [ ] **Bad Request Hatası Çözümü**
@@ -89,8 +89,8 @@
   - [ ] Model yönetimi arayüzü iyileştirme
   - [ ] Model ekleme/çıkarma sürecini optimize et
   - [ ] Model test özelliği
-  - [ ] Model performans metrikleri
-  - [ ] Model karşılaştırma özelliği
+
+
 
 ---
 
@@ -136,6 +136,16 @@
 ---
 
 ## 📝 Güncellemeler
+
+### 21.01.2025 - Otomatik İsimlendirme Sistemi
+- TitleGeneratorService ile yaratıcı başlık üretimi sistemi eklendi
+- Asenkron başlık üretimi chat endpoint'i üzerinden entegre edildi
+- Loading UI ile bulanık yazı ve shimmer efekti eklendi
+- ConversationService geçici başlık oluşturma ve asenkron güncelleme sistemi
+- Debug sistemi ile başlık üretimi süreci takip edilebilir hale getirildi
+- Kullanıcı deneyimi: Hemen konuşma oluşur, arka planda başlık üretilir
+- CSS background-clip: text ile sadece yazı üzerinde shimmer efekti
+- JavaScript callback sistemi ile UI güncellemeleri
 
 ### 21.09.2025 - Arayüz İyileştirmeleri
 - Model selection panel konumlandırma iyileştirmeleri tamamlandı
@@ -196,3 +206,4 @@
 - Tamamlanan TODO'ları "Tamamlanan TODO'lar" bölümüne taşıyın
 - Güncellemeleri tarih bazlı olarak kaydedin
 - Öncelik sırası: Model Seçimi Kalıcılığı > Bad Request Hatası > Model Seçme Paneli > Konuşma Geçmişi
+

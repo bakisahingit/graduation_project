@@ -26,8 +26,8 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.8);
+    /* backdrop-filter: blur(8px); - PERFORMANS İÇİN KALDIRILDI */
 }
 
 .settings-content, .tools-content {
@@ -35,8 +35,8 @@
     width: 90%;
     max-width: 600px;
     max-height: 80vh;
-    background: linear-gradient(180deg, rgba(26,26,26,0.95), rgba(20,20,20,0.98));
-    backdrop-filter: blur(20px);
+    background: rgba(20, 20, 20, 0.98);
+    /* backdrop-filter: blur(20px); - PERFORMANS İÇİN KALDIRILDI */
     border: 1px solid var(--border-secondary);
     border-radius: var(--radius-2xl);
     box-shadow: var(--shadow-xl);
@@ -149,27 +149,35 @@
     gap: var(--space-2);
 }
 
-.model-item {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-lg);
-    padding: var(--space-3) var(--space-4);
-    transition: var(--transition-normal);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
+/* Models list artık ortak panel sistemi kullanıyor */
+.models-list .panel-item {
+    margin: 0;
 }
 
-.model-item:hover {
-    background: var(--gray-950);
-    border-color: var(--border-secondary);
-    transform: translateY(-1px);
+/* Model item artık ortak panel sistemi kullanıyor - panels.css'de tanımlı */
+
+.model-item.loading {
+    opacity: 0.7;
+    pointer-events: none;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.model-item.error {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error);
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.7;
+    }
+    50% {
+        opacity: 1;
+    }
 }
 
 .model-item.selected {
     background: rgba(79,195,247,0.1);
-    border-color: rgba(79,195,247,0.3);
 }
 
 .model-item.selected .model-name {
@@ -234,6 +242,45 @@
 
 .model-switch:hover {
     transform: scale(1.05);
+}
+
+/* Models search */
+.models-search-container {
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border-accent);
+}
+
+.models-search {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    background: var(--gray-950);
+    border: 1px solid var(--border-accent);
+    border-radius: var(--radius-md);
+    color: var(--accent);
+    font-size: var(--text-sm);
+    transition: var(--transition-fast);
+}
+
+.models-search:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.1);
+}
+
+.models-search::placeholder {
+    color: var(--gray-500);
+}
+
+/* No results message */
+.no-results {
+    padding: var(--space-6);
+    text-align: center;
+    color: var(--gray-500);
+}
+
+.no-results-text {
+    font-size: var(--text-sm);
+    font-style: italic;
 }
 
 /* Models list scrollbar */

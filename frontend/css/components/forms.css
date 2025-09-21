@@ -62,85 +62,21 @@
 }
 
 /* Add dropdown */
+/* Add dropdown artık ortak panel sistemi kullanıyor - panels.css'de tanımlı */
 .add-dropdown {
+    /* Ortak panel container stilleri panels.css'de */
     position: absolute;
     bottom: 100%;
     left: 0;
     margin-bottom: var(--space-2);
-    background: rgba(15, 17, 19, 0.95);
-    backdrop-filter: blur(20px) saturate(150%);
-    -webkit-backdrop-filter: blur(20px) saturate(150%);
-    border: 1px solid var(--border-secondary);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-lg), inset 0 1px 0 var(--gray-950);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(10px);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: var(--z-dropdown);
-    min-width: 200px;
 }
 
-.add-dropdown.open {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
-
-.add-options {
-    display: flex;
-    flex-direction: column;
-    padding: 0;
-    gap: 0;
-}
-
-.add-option {
-    background: transparent;
-    border: 1px solid transparent;
-    color: var(--accent);
-    padding: var(--space-3) var(--space-4);
-    border-radius: var(--radius-lg);
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    text-align: left;
-    width: 100%;
-    justify-content: flex-start;
-}
-
-.add-option:hover:not(:disabled) {
-    background: var(--bg-glass-hover);
-    border-color: rgba(255,255,255,0.1);
-    color: var(--gray-100);
-}
-
-.add-option:active:not(:disabled) {
-    background: var(--bg-glass-hover);
-    border-color: rgba(255,255,255,0.15);
-    transform: scale(0.98);
-}
-
-.add-option:focus-visible {
-    outline: 2px solid rgba(255,255,255,0.3);
-    outline-offset: 2px;
-}
-
-.add-option:disabled {
-    background: transparent;
-    border-color: transparent;
-    color: rgba(255,255,255,0.3);
-    cursor: not-allowed;
-}
+/* Add options artık ortak panel sistemi kullanıyor - panels.css'de tanımlı */
 
 .add-option svg {
+    /* Ortak panel item icon stilleri panels.css'de */
     width: 16px;
     height: 16px;
-    flex-shrink: 0;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Molekül çizme butonu için özel hover efekti */
@@ -150,24 +86,13 @@
     color: var(--secondary-light);
 }
 
-/* Tools dropdown - add dropdown ile aynı tasarım */
+/* Tools dropdown artık ortak panel sistemi kullanıyor - panels.css'de tanımlı */
 .tools-dropdown {
+    /* Ortak panel container stilleri panels.css'de */
     position: absolute;
     bottom: 100%;
     left: 0;
     margin-bottom: var(--space-2);
-    background: rgba(15, 17, 19, 0.95);
-    backdrop-filter: blur(20px) saturate(150%);
-    -webkit-backdrop-filter: blur(20px) saturate(150%);
-    border: 1px solid var(--border-secondary);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-lg), inset 0 1px 0 var(--gray-950);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(10px);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: var(--z-dropdown);
-    min-width: 200px;
 }
 
 /* Tools butonunu relative yap ki dropdown ona göre konumlanabilsin */
@@ -183,42 +108,7 @@
     margin-bottom: var(--space-2);
 }
 
-.tools-dropdown.open {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
-
-.tools-options {
-    display: flex;
-    flex-direction: column;
-    padding: 0;
-    gap: 0;
-}
-
-.tool-option {
-    background: transparent;
-    border: 1px solid transparent;
-    color: var(--accent);
-    padding: var(--space-3) var(--space-4);
-    border-radius: var(--radius-lg);
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    text-align: left;
-    width: 100%;
-    justify-content: flex-start;
-}
-
-.tool-option:hover:not(:disabled) {
-    background: var(--bg-glass-hover);
-    border-color: rgba(255,255,255,0.1);
-    color: var(--gray-100);
-}
+/* Tools dropdown artık ortak panel sistemi kullanıyor - panels.css'de tanımlı */
 
 /* AdMed tool için özel hover efekti - mor renk */
 .tool-option[id*="admed"]:hover:not(:disabled) {
@@ -330,34 +220,20 @@
     transform: rotate(0deg);
 }
 
+/* Model dropdown artık ortak panel sistemi kullanıyor - panels.css'de tanımlı */
 .select-options-input {
+    /* Ortak panel container stilleri panels.css'de */
     position: absolute;
     top: 100%;
     left: 0;
     right: 0;
-    background: rgba(15, 17, 19, 0.95);
-    backdrop-filter: blur(20px) saturate(150%);
-    -webkit-backdrop-filter: blur(20px) saturate(150%);
-    border: 1px solid var(--border-secondary);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-lg), inset 0 1px 0 var(--gray-950);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(10px);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: var(--z-dropdown);
     margin-top: var(--space-1);
-    min-width: 200px;
     max-height: 200px;
     overflow-y: auto;
     overflow-x: hidden;
 }
 
-.select-options-input.open {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
+/* Model dropdown open durumu artık ortak panel sistemi kullanıyor - panels.css'de tanımlı */
 
 /* Chat ekranında yukarı açılma için özel stil */
 .select-options-input.open-upward {
@@ -398,33 +274,9 @@
     background: rgba(255, 255, 255, 0.3);
 }
 
+/* Model dropdown option artık ortak panel sistemi kullanıyor - panels.css'de tanımlı */
 .select-option-input {
-    background: transparent;
-    border: 1px solid transparent;
-    color: var(--accent);
     padding: var(--space-2) var(--space-3);
-    border-radius: var(--radius-lg);
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    text-align: left;
-    width: 100%;
-    justify-content: flex-start;
-}
-
-.select-option-input:hover:not(:disabled) {
-    background: var(--bg-glass-hover);
-    border-color: rgba(255,255,255,0.1);
-    color: var(--gray-100);
-}
-
-.select-option-input.selected {
-    background: var(--bg-glass);
-    border-color: rgba(79,195,247,0.3);
-    color: var(--primary-light);
 }
 
 /* Model Ekle Butonu */

@@ -587,7 +587,7 @@ class ChatApp {
                 // Welcome dropdown seçeneklerine ekle (görsel)
                 if (this.ui.elements.selectOptionsWelcome) {
                     const welcomeOption = DOMUtils.create('div', {
-                        className: 'select-option-input',
+                        className: 'panel-item select-option-input',
                         dataset: { value: model },
                         textContent: model
                     });
@@ -606,7 +606,7 @@ class ChatApp {
                 // Chat dropdown seçeneklerine ekle (görsel)
                 if (this.ui.elements.selectOptionsChat) {
                     const chatOption = DOMUtils.create('div', {
-                        className: 'select-option-input',
+                        className: 'panel-item select-option-input',
                         dataset: { value: model },
                         textContent: model
                     });
@@ -744,7 +744,7 @@ class ChatApp {
      */
     createHistoryItem(conversation, isLoading = false) {
         const historyItem = DOMUtils.create('div', { 
-            className: 'history-item'
+            className: 'panel-item history-item'
         });
         
         if (conversation.id === this.conversation.currentConversationId) {
@@ -756,7 +756,7 @@ class ChatApp {
         const titleText = isLoading ? 'Başlık üretiliyor, lütfen bekleyiniz...' : conversation.title;
 
         historyItem.innerHTML = `
-            <div class="${titleClass}">${titleText}</div>
+            <div class="panel-item-text ${titleClass}">${titleText}</div>
             <input type="text" class="history-item-edit" value="${conversation.title}" data-conversation-id="${conversation.id}">
             <button class="history-item-menu" onclick="app.toggleConversationMenu(event, '${conversation.id}')">
                 <img src="assets/ellipsis.svg" alt="Menu" class="ellipsis-icon">
@@ -1123,6 +1123,12 @@ class ChatApp {
         
         DOMUtils.addClass(this.ui.elements.settingsModal, 'open');
         this.populateModelsList();
+        
+        // Event delegation için models list'e click listener ekle
+        this.setupModelsListEventDelegation();
+        
+        // Arama özelliğini kur
+        this.setupModelsSearch();
     }
 
     /**
@@ -1132,45 +1138,222 @@ class ChatApp {
         if (!this.ui.elements.settingsModal) return;
         
         DOMUtils.removeClass(this.ui.elements.settingsModal, 'open');
+        
+        // Event delegation listener'ını kaldır
+        this.removeModelsListEventDelegation();
+        
+        // Arama özelliğini temizle
+        this.removeModelsSearch();
     }
 
     /**
-     * Models listesini doldur
+     * Models list için event delegation kur
+     */
+    setupModelsListEventDelegation() {
+        if (!this.ui.elements.modelsList) return;
+        
+        // Eski listener'ı kaldır
+        this.removeModelsListEventDelegation();
+        
+        // Yeni listener ekle
+        this.modelsListClickHandler = (e) => {
+            const switchElement = e.target.closest('.model-switch');
+            if (switchElement) {
+                e.stopPropagation();
+                const modelName = switchElement.dataset.modelName || switchElement.dataset.model;
+                if (modelName) {
+                    this.toggleModelActive(modelName, switchElement);
+                }
+            }
+        };
+        
+        DOMUtils.on(this.ui.elements.modelsList, 'click', this.modelsListClickHandler);
+    }
+
+    /**
+     * Models list event delegation'ını kaldır
+     */
+    removeModelsListEventDelegation() {
+        if (this.ui.elements.modelsList && this.modelsListClickHandler) {
+            DOMUtils.off(this.ui.elements.modelsList, 'click', this.modelsListClickHandler);
+            this.modelsListClickHandler = null;
+        }
+    }
+
+    /**
+     * Models arama özelliğini kur
+     */
+    setupModelsSearch() {
+        const searchInput = document.getElementById('models-search');
+        if (!searchInput) return;
+        
+        // Eski listener'ı kaldır
+        this.removeModelsSearch();
+        
+        // Debounced search handler
+        this.modelsSearchHandler = this.debounce((e) => {
+            const query = e.target.value.toLowerCase().trim();
+            this.filterModels(query);
+        }, 300);
+        
+        DOMUtils.on(searchInput, 'input', this.modelsSearchHandler);
+        
+        // Arama input'una focus
+        searchInput.focus();
+    }
+
+    /**
+     * Models arama özelliğini kaldır
+     */
+    removeModelsSearch() {
+        const searchInput = document.getElementById('models-search');
+        if (searchInput && this.modelsSearchHandler) {
+            DOMUtils.off(searchInput, 'input', this.modelsSearchHandler);
+            this.modelsSearchHandler = null;
+            searchInput.value = '';
+        }
+    }
+
+    /**
+     * Modelleri filtrele
+     * @param {string} query - Arama sorgusu
+     */
+    filterModels(query) {
+        if (!this.ui.elements.modelsList) return;
+        
+        const modelItems = this.ui.elements.modelsList.querySelectorAll('.model-item');
+        let visibleCount = 0;
+        
+        modelItems.forEach(item => {
+            const modelName = item.querySelector('.model-name');
+            if (!modelName) return;
+            
+            const modelText = modelName.textContent.toLowerCase();
+            const isVisible = !query || modelText.includes(query);
+            
+            if (isVisible) {
+                item.style.display = 'flex';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Eğer hiç sonuç yoksa mesaj göster
+        this.showNoResultsMessage(visibleCount === 0 && query);
+    }
+
+    /**
+     * Sonuç bulunamadı mesajını göster/gizle
+     * @param {boolean} show - Göster/gizle
+     */
+    showNoResultsMessage(show) {
+        let noResultsEl = this.ui.elements.modelsList.querySelector('.no-results');
+        
+        if (show && !noResultsEl) {
+            noResultsEl = DOMUtils.create('div', {
+                className: 'no-results',
+                innerHTML: '<div class="no-results-text">Arama kriterlerinize uygun model bulunamadı</div>'
+            });
+            this.ui.elements.modelsList.appendChild(noResultsEl);
+        } else if (!show && noResultsEl) {
+            noResultsEl.remove();
+        }
+    }
+
+    /**
+     * Debounce utility
+     * @param {Function} func - Fonksiyon
+     * @param {number} wait - Bekleme süresi (ms)
+     * @returns {Function} - Debounced fonksiyon
+     */
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    /**
+     * Models listesini doldur (Optimized)
      */
     async populateModelsList() {
         if (!this.ui.elements.modelsList) return;
         
-        this.ui.elements.modelsList.innerHTML = '';
+        // Loading state göster
+        this.ui.elements.modelsList.innerHTML = '<div class="model-item loading">Modeller yükleniyor...</div>';
         
         try {
             const models = await this.model.getAllModels();
 
-            models.forEach(model => {
+            // DocumentFragment kullanarak performansı artır
+            const fragment = document.createDocumentFragment();
+            
+            // Batch processing ile modelleri işle (57 model için)
+            const batchSize = 15; // Her seferde 15 model işle
+            let currentIndex = 0;
+            
+            const processBatch = () => {
+                const endIndex = Math.min(currentIndex + batchSize, models.length);
+                
+                for (let i = currentIndex; i < endIndex; i++) {
+                    const model = models[i];
+                    const modelItem = this.createModelItem(model);
+                    fragment.appendChild(modelItem);
+                }
+                
+                currentIndex = endIndex;
+                
+                // Eğer daha model varsa, bir sonraki batch'i işle
+                if (currentIndex < models.length) {
+                    // UI'yi güncelle ve sonraki batch'i işle
+                    this.ui.elements.modelsList.appendChild(fragment.cloneNode(true));
+                    requestAnimationFrame(processBatch);
+                } else {
+                    // Son batch - loading state'i kaldır ve fragment'i ekle
+                    this.ui.elements.modelsList.innerHTML = '';
+                    this.ui.elements.modelsList.appendChild(fragment);
+                }
+            };
+            
+            // İlk batch'i başlat
+            requestAnimationFrame(processBatch);
+            
+        } catch (error) {
+            this.ui.elements.modelsList.innerHTML = '<div class="model-item error">Modeller yüklenemedi</div>';
+        }
+    }
+
+    /**
+     * Tek bir model item'ı oluştur (Optimized)
+     * @param {string} model - Model adı
+     * @returns {HTMLElement} - Model item elementi
+     */
+    createModelItem(model) {
                 const modelItem = DOMUtils.create('div', { 
-                    className: 'model-item',
+            className: 'panel-item model-item',
                     innerHTML: `
-                        <span class="model-name">${model}</span>
-                        <div class="model-controls">
+                <span class="panel-item-text model-name">${model}</span>
+                <div class="panel-item-controls model-controls">
                             <span class="model-status">free</span>
                             <div class="model-switch ${this.model.isModelActive(model) ? 'active' : ''}" data-model="${model}"></div>
                         </div>
                     `
                 });
 
-                // Switch click handler
+        // Event delegation kullanarak performansı artır
                 const switchElement = modelItem.querySelector('.model-switch');
                 if (switchElement) {
-                    DOMUtils.on(switchElement, 'click', (e) => {
-                        e.stopPropagation();
-                        this.toggleModelActive(model, switchElement);
-                    });
-                }
-
-                this.ui.elements.modelsList.appendChild(modelItem);
-            });
-        } catch (error) {
-            this.ui.elements.modelsList.innerHTML = '<div class="model-item">Modeller yüklenemedi</div>';
+            // Data attribute ile model bilgisini sakla
+            switchElement.dataset.modelName = model;
         }
+
+        return modelItem;
     }
 
     /**

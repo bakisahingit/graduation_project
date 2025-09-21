@@ -50,6 +50,7 @@ export class UIComponent {
             settingsOverlay: DOMUtils.select('#settings-overlay'),
             settingsClose: DOMUtils.select('#settings-close'),
             modelsList: DOMUtils.select('#models-list'),
+            modelsSearch: DOMUtils.select('#models-search'),
             addModelOption: DOMUtils.select('#add-model-option'),
             selectOptionsScroll: DOMUtils.select('#select-options-scroll'),
             
