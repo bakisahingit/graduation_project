@@ -223,6 +223,12 @@ export class UIComponent {
             el.textContent = '';
             
             const step = () => {
+                // Stream durduruldu mu kontrol et
+                if (window.app && !window.app.isStreaming) {
+                    resolve();
+                    return;
+                }
+                
                 if (i < text.length && this.isStreaming) {
                     el.textContent += text[i++];
                     this.smartScroll();
@@ -405,6 +411,11 @@ export class UIComponent {
      */
     stopStream() {
         this.setStreamingState(false);
+        
+        // Ana uygulama seviyesindeki streaming flag'ini de güncelle
+        if (window.app && window.app.isStreaming !== undefined) {
+            window.app.isStreaming = false;
+        }
         
         // Abort controller'ı kullan
         if (this.currentStreamController) {

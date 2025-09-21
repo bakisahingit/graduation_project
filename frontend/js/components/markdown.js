@@ -68,6 +68,12 @@ export class MarkdownComponent {
             element.innerHTML = '';
             
             const step = () => {
+                // Stream durduruldu mu kontrol et
+                if (window.app && !window.app.isStreaming) {
+                    resolve();
+                    return;
+                }
+                
                 if (i < text.length) {
                     buffer += text[i++];
                     try {

@@ -445,6 +445,7 @@ class ChatApp {
             
             this.ui.removeThinkingIndicator(typingEl);
 
+            // Stream durduruldu mu kontrol et
             if (this.isStreaming) {
                 const reply = HelperUtils.extractTextFromResponse(data) || 'Boş yanıt';
 
@@ -463,6 +464,9 @@ class ChatApp {
                 // Final enhancements: syntax highlighting ve copy butonları
                 this.markdown.applySyntaxHighlighting(botEl);
                 this.markdown.addCopyButtons(botEl);
+            } else {
+                // Stream durduruldu, sadece thinking indicator'ı kaldır
+                console.log('Stream durduruldu, response işlenmedi');
             }
         } catch (err) {
             if (err.name !== 'AbortError') {
