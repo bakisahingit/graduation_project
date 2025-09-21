@@ -2,15 +2,49 @@
 
 ## 📋 Aktif TODO'lar
 
+### 21.09.2025 - Eklenen TODO'lar
+
+#### 🎨 Arayüz İyileştirmeleri
+- [x] **Model Selection Panel Konumlandırma İyileştirmeleri** ✅ **TAMAMLANDI**
+  - [x] Üç nokta butonunda açılan panelin akıllı konumlandırması (en aşağıdayken yukarı açılma) ✅
+  - [x] Input wrapper model selection menüsünün akıllı konumlandırması ✅
+  - [x] Welcome ekranında aşağı açılma, chat ekranında yukarı açılma ✅
+  - [x] Ok simgesi yön düzeltmeleri (chat ekranında yukarı açılma için) ✅
+  - [x] Panel z-index sorunları çözüldü ✅
+  - [x] Sayfa scroll sorunları çözüldü (hiçbir koşulda scroll yapılmaması) ✅
+
+- [x] **Chat Ekranı Layout İyileştirmeleri** ✅ **TAMAMLANDI**
+  - [x] Sohbet penceresi ve input wrapper tek panel yapısı ✅
+  - [x] Aralarındaki çizgi kaldırıldı, aynı arka plan rengi ✅
+  - [x] Sohbet ekranı ile input alanı arasına güzel hafif çizgi eklendi ✅
+  - [x] Çizgi tam genişlikte (sidebar'dan ekranın sağına kadar) ✅
+  - [x] Model selection paneli yukarı açılabilir hale getirildi ✅
+
 ### 20.09.2025 - Eklenen TODO'lar
 
 #### 🗑️ Konuşma Geçmişi İyileştirmeleri
-- [ ] **Konuşma Silme Butonları Güncelleme**
-  - [ ] Mevcut silme butonlarının tasarımını iyileştir
-  - [ ] Hover efektleri ve animasyonlar ekle
-  - [ ] Onay dialog'u ekle (yanlışlıkla silmeyi önle)
-  - [ ] Bulk delete özelliği (çoklu seçim)
-  - [ ] Responsive tasarım optimizasyonu
+- [x] **Konuşma Geçmişi UI/UX İyileştirmeleri** ✅ **TAMAMLANDI**
+  - [x] Konuşma geçmişi butonlarını şeffaf yapıldı, hover efektleri eklendi ✅
+  - [x] Tarih bilgileri kaldırıldı, başlık fontları optimize edildi ✅
+  - [x] X butonu yerine üç nokta (ellipsis) SVG butonu eklendi ✅
+  - [x] Context menu sistemi eklendi (Pin, Rename, Delete) ✅
+  - [x] Pin/Unpin fonksiyonalitesi eklendi, ayrı Pinned bölümü oluşturuldu ✅
+  - [x] Inline rename özelliği eklendi, buton boyutu sabit kalıyor ✅
+  - [x] Konuşma başlıkları tek satırda ellipsis ile kesiliyor ✅
+  - [x] Estetik şeffaf scrollbar tasarımı eklendi ✅
+  - [x] Flexbox layout ile responsive tasarım iyileştirildi ✅
+  - [x] SVG iconlar currentColor ile dinamik renklendirme ✅
+
+- [x] **Context Menu İyileştirmeleri**
+  - [x] Üç nokta butonunda açılan paneli en aşağıdayken yukarı açılacak şekilde yapılacak
+  - [x] Panel pozisyonlama algoritması iyileştirilecek
+  - [x] Ekran sınırlarına göre otomatik yön değiştirme
+
+- [ ] **Otomatik İsimlendirme Sistemi**
+  - [ ] LLM'e istek atıp kısa bir sohbet için başlık isimlendirmesi istenecek
+  - [ ] Yeni konuşma oluşturulduğunda otomatik başlık üretimi
+  - [ ] Kullanıcı onayı ile başlık değiştirme seçeneği
+  - [ ] Başlık üretimi için API entegrasyonu
 
 #### 🧪 Molekül Çizme Paneli Güncelleme
 - [ ] **Panel Tasarım İyileştirmeleri**
@@ -70,6 +104,22 @@
 
 ## ✅ Tamamlanan TODO'lar
 
+### 21.09.2025 - Tamamlananlar
+- [x] **Model Selection Panel Konumlandırma İyileştirmeleri** ✅ **TAMAMLANDI**
+  - [x] Üç nokta butonunda açılan panelin akıllı konumlandırması (en aşağıdayken yukarı açılma) ✅
+  - [x] Input wrapper model selection menüsünün akıllı konumlandırması ✅
+  - [x] Welcome ekranında aşağı açılma, chat ekranında yukarı açılma ✅
+  - [x] Ok simgesi yön düzeltmeleri (chat ekranında yukarı açılma için) ✅
+  - [x] Panel z-index sorunları çözüldü ✅
+  - [x] Sayfa scroll sorunları çözüldü (hiçbir koşulda scroll yapılmaması) ✅
+
+- [x] **Chat Ekranı Layout İyileştirmeleri** ✅ **TAMAMLANDI**
+  - [x] Sohbet penceresi ve input wrapper tek panel yapısı ✅
+  - [x] Aralarındaki çizgi kaldırıldı, aynı arka plan rengi ✅
+  - [x] Sohbet ekranı ile input alanı arasına güzel hafif çizgi eklendi ✅
+  - [x] Çizgi tam genişlikte (sidebar'dan ekranın sağına kadar) ✅
+  - [x] Model selection paneli yukarı açılabilir hale getirildi ✅
+
 ### 20.09.2025 - Tamamlananlar
 - [x] **Molekül Yapısı Butonu Geliştirme** ✅ **TAMAMLANDI**
   - [x] Buton tasarımını daha estetik hale getir ✅
@@ -95,6 +145,21 @@
 
 ## 📝 Güncellemeler
 
+### 21.09.2025 - Arayüz İyileştirmeleri
+- Model selection panel konumlandırma iyileştirmeleri tamamlandı
+- Üç nokta butonunda açılan panelin akıllı konumlandırması eklendi
+- Input wrapper model selection menüsünün akıllı konumlandırması eklendi
+- Welcome ekranında aşağı açılma, chat ekranında yukarı açılma özelliği
+- Ok simgesi yön düzeltmeleri (chat ekranında yukarı açılma için)
+- Panel z-index sorunları çözüldü
+- Sayfa scroll sorunları çözüldü (hiçbir koşulda scroll yapılmaması)
+- Chat ekranı layout iyileştirmeleri tamamlandı
+- Sohbet penceresi ve input wrapper tek panel yapısı
+- Aralarındaki çizgi kaldırıldı, aynı arka plan rengi
+- Sohbet ekranı ile input alanı arasına güzel hafif çizgi eklendi
+- Çizgi tam genişlikte (sidebar'dan ekranın sağına kadar)
+- Model selection paneli yukarı açılabilir hale getirildi
+
 ### 20.09.2025
 - TODO takip sistemi oluşturuldu
 - Basit markdown formatında yapılandırıldı
@@ -104,12 +169,27 @@
 - Sadece seçilen yeni görevler aktif TODO listesine eklendi
 - Diğer eski görevler kaldırıldı
 
+### 20.09.2025 - Konuşma Geçmişi UI/UX İyileştirmeleri
+- Konuşma geçmişi butonlarını şeffaf yapıldı, hover efektleri eklendi
+- Tarih bilgileri kaldırıldı, başlık fontları optimize edildi
+- X butonu yerine üç nokta (ellipsis) SVG butonu eklendi
+- Context menu sistemi eklendi (Pin, Rename, Delete)
+- Pin/Unpin fonksiyonalitesi eklendi, ayrı Pinned bölümü oluşturuldu
+- Inline rename özelliği eklendi, buton boyutu sabit kalıyor
+- Konuşma başlıkları tek satırda ellipsis ile kesiliyor
+- Estetik şeffaf scrollbar tasarımı eklendi
+- Flexbox layout ile responsive tasarım iyileştirildi
+- SVG iconlar currentColor ile dinamik renklendirme
+- Git commit: "feat: Konuşma geçmişi UI/UX iyileştirmeleri"
+
 ---
 
 ## 📊 İlerleme Durumu
 - **UI/UX İyileştirmeleri**: %100 ✅
 - **Input Wrapper Güncellemeleri**: %100 ✅
-- **Konuşma Geçmişi İyileştirmeleri**: %0 ⏳
+- **Model Selection Panel İyileştirmeleri**: %100 ✅
+- **Chat Ekranı Layout İyileştirmeleri**: %100 ✅
+- **Konuşma Geçmişi İyileştirmeleri**: %80 ⏳
 - **Molekül Çizme Paneli Güncelleme**: %0 ⏳
 - **Model Seçimi İyileştirmeleri**: %0 ⏳
 - **Hata Düzeltmeleri**: %0 ⏳

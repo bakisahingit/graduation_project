@@ -926,6 +926,23 @@ class ChatApp {
         const elements = this.getInputSelectElements(type);
         if (!elements.selectOptions || !elements.selectTrigger) return;
         
+        // Tüm stilleri temizle
+        elements.selectOptions.style.position = '';
+        elements.selectOptions.style.top = '';
+        elements.selectOptions.style.bottom = '';
+        elements.selectOptions.style.left = '';
+        elements.selectOptions.style.right = '';
+        elements.selectOptions.style.width = '';
+        elements.selectOptions.style.zIndex = '';
+        
+        // Chat ekranında yukarı açılma için özel sınıf ekle
+        if (type === 'chat') {
+            DOMUtils.addClass(elements.selectOptions, 'open-upward');
+        } else {
+            DOMUtils.removeClass(elements.selectOptions, 'open-upward');
+        }
+        
+        // Menüyü göster
         DOMUtils.addClass(elements.selectOptions, 'open');
         DOMUtils.addClass(elements.selectTrigger, 'active');
         elements.selectTrigger.setAttribute('aria-expanded', 'true');
@@ -939,9 +956,20 @@ class ChatApp {
         const elements = this.getInputSelectElements(type);
         if (!elements.selectOptions || !elements.selectTrigger) return;
         
+        // Tüm sınıfları ve stilleri temizle
         DOMUtils.removeClass(elements.selectOptions, 'open');
+        DOMUtils.removeClass(elements.selectOptions, 'open-upward');
         DOMUtils.removeClass(elements.selectTrigger, 'active');
         elements.selectTrigger.setAttribute('aria-expanded', 'false');
+        
+        // Tüm inline stilleri sıfırla
+        elements.selectOptions.style.position = '';
+        elements.selectOptions.style.top = '';
+        elements.selectOptions.style.bottom = '';
+        elements.selectOptions.style.left = '';
+        elements.selectOptions.style.right = '';
+        elements.selectOptions.style.width = '';
+        elements.selectOptions.style.zIndex = '';
     }
 
     /**
@@ -1451,8 +1479,39 @@ class ChatApp {
         const sidebarRect = sidebar.getBoundingClientRect();
         const buttonRect = buttonElement.getBoundingClientRect();
         
+        // Menüyü geçici olarak göster ve yüksekliğini hesapla
+        menu.style.visibility = 'hidden';
+        menu.style.opacity = '0';
+        menu.style.display = 'block';
+        
+        const menuHeight = menu.offsetHeight;
+        const viewportHeight = window.innerHeight;
+        
+        // Menünün ekranın alt kısmına taşacağını kontrol et
+        const wouldOverflowBottom = (buttonRect.top + menuHeight) > viewportHeight;
+        
+        // Menüyü tekrar gizle (show class'ı ile tekrar gösterilecek)
+        menu.style.visibility = '';
+        menu.style.opacity = '';
+        menu.style.display = '';
+        
         menu.style.left = `${sidebarRect.right + 5}px`;
-        menu.style.top = `${buttonRect.top}px`;
+        
+        if (wouldOverflowBottom) {
+            // Menüyü butonun üstüne yerleştir
+            const topPosition = buttonRect.bottom - menuHeight;
+            
+            // Menünün ekranın üst kısmına taşmamasını kontrol et
+            if (topPosition < 0) {
+                // Menüyü ekranın üst kısmına yapıştır
+                menu.style.top = '10px';
+            } else {
+                menu.style.top = `${topPosition}px`;
+            }
+        } else {
+            // Menüyü butonun altına yerleştir (varsayılan)
+            menu.style.top = `${buttonRect.top}px`;
+        }
         
         // Dışarı tıklama ile kapatma
         setTimeout(() => {
