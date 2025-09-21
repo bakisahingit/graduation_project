@@ -3,17 +3,29 @@
 import { Router } from 'express';
 import { handleChatMessage } from '../handlers/chatHandler.js';
 import { getChatCompletion } from '../services/llmService.js';
+import { openai } from '../config/index.js';
+import TitleGeneratorService from '../../title_generator/service.js';
 
 const router = Router();
 
 router.post('/', async (req, res) => {
-    const { message, conversationHistory = [], tools = {} } = req.body;
+    const { message, conversationHistory = [], tools = {}, generateTitle = false, model } = req.body;
 
     if (!message) {
         return res.status(400).json({ error: 'Missing `message` in request body' });
     }
 
     try {
+        // Eğer başlık üretimi isteği ise
+        if (generateTitle) {
+            const titleGenerator = new TitleGeneratorService();
+            const title = await titleGenerator.generateTitle(message, openai, model || 'openai/gpt-3.5-turbo');
+            return res.json({ 
+                type: 'title_generation',
+                title: title 
+            });
+        }
+
         const result = await handleChatMessage(message, conversationHistory, tools);
 
         // Check for a direct error response from the handler

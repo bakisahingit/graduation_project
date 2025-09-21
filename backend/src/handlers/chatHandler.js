@@ -50,7 +50,7 @@ async function handleAdmetTool(message) {
 }
 
 export async function handleChatMessage(message, conversationHistory, tools) {
-    if (tools.active === 'ADMET') {
+    if (tools.active === 'admet' || tools.active === 'ADMET') {
         return handleAdmetTool(message);
     }
 

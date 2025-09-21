@@ -252,15 +252,15 @@ class ChatApp {
         });
 
 
-        if (this.ui.elements.welcomeAdmedTool) {
-            DOMUtils.on(this.ui.elements.welcomeAdmedTool, 'click', () => {
-                this.handleAdmedTool();
+        if (this.ui.elements.welcomeAdmetTool) {
+            DOMUtils.on(this.ui.elements.welcomeAdmetTool, 'click', () => {
+                this.handleAdmetTool();
             });
         }
 
-        if (this.ui.elements.chatAdmedTool) {
-            DOMUtils.on(this.ui.elements.chatAdmedTool, 'click', () => {
-                this.handleAdmedTool();
+        if (this.ui.elements.chatAdmetTool) {
+            DOMUtils.on(this.ui.elements.chatAdmetTool, 'click', () => {
+                this.handleAdmetTool();
             });
         }
 
@@ -1498,8 +1498,9 @@ class ChatApp {
             return;
         }
         
-        // Diğer dropdown'ı kapat ve bu dropdown'ı aç
+        // Diğer dropdown'ları kapat ve bu dropdown'ı aç
         this.closeAllToolsDropdowns();
+        this.closeAllAddDropdowns();
         DOMUtils.addClass(dropdown, 'open');
     }
 
@@ -1619,7 +1620,7 @@ class ChatApp {
     /**
      * AdMet tool handler
      */
-    handleAdmedTool() {
+    handleAdmetTool() {
         // Tool'u aktif/pasif yap
         if (this.activeTool === 'admet') {
             this.activeTool = null;

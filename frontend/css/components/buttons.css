@@ -500,14 +500,14 @@
 
 .tools-btn.active {
     background: var(--bg-glass);
-    border-color: rgba(76,175,80,0.3);
-    color: var(--secondary);
+    border-color: rgba(227, 130, 248, 0.3);
+    color: rgb(227, 130, 248);
 }
 
 .tools-btn.active:hover:not(:disabled) {
     background: var(--bg-glass-hover);
-    border-color: rgba(76,175,80,0.4);
-    color: var(--secondary-light);
+    border-color: rgba(227, 130, 248, 0.4);
+    color: rgb(227, 130, 248);
 }
 
 .tools-btn svg {

@@ -94,4 +94,4 @@ KURALLAR:
     }
 }
 
-module.exports = TitleGeneratorService;
+export default TitleGeneratorService;
