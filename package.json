@@ -2,14 +2,15 @@
 	"name": "bitirme-backend",
 	"version": "1.0.0",
 	"description": "",
-  	"type": "module",
+	"type": "module",
 	"private": true,
 	"main": "backend/server.js",
-	"scripts": {
-		"start": "node backend/server.js",
-		"dev": "nodemon backend/server.js"
-	},
-	"dependencies": {
+	  "scripts": {
+	    "start": "node backend/server.js",
+	    "dev": "concurrently \"npm:dev:backend\" \"npm:start:admet\"",
+	    "dev:backend": "nodemon backend/server.js",
+	    "start:admet": "uvicorn admet.main:app --port 8000"
+	  },	"dependencies": {
 		"axios": "^1.12.2",
 		"cors": "^2.8.5",
 		"dotenv": "^16.0.3",
@@ -18,6 +19,7 @@
 		"openai": "^4.10.0"
 	},
 	"devDependencies": {
+		"concurrently": "^9.2.1",
 		"nodemon": "^2.0.22"
 	}
 }
