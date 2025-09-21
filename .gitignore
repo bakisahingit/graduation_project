@@ -3,3 +3,11 @@ node_modules/
 *.log
 .DS_Store
 Thumbs.db
+admet/venv/
+__pycache__/
+*.pyc
+dist/
+build/
+*.egg-info/
+.vscode/
+.idea/

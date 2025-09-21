@@ -14,7 +14,7 @@ export class ApiService {
      * @param {string} model - Model
      * @param {Array} conversationHistory - Konuşma geçmişi
      * @param {AbortSignal} signal - Abort signal
-     * @param {string} activeTool - Aktif tool (null, 'admed', vs.)
+     * @param {string} activeTool - Aktif tool (null, 'ADMET', vs.)
      * @returns {Promise<any>}
      */
     async sendMessage(message, model, conversationHistory = [], signal = null, activeTool = null) {

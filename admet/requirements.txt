@@ -1,0 +1,11 @@
+# backend/requirements.txt
+
+fastapi
+uvicorn[standard]
+python-multipart
+pandas
+admet-ai==1.3.1
+rdkit==2024.3.1
+Pillow
+chembl_webresource_client
+PubChemPy 

@@ -24,7 +24,7 @@ class ChatApp {
         this.isStreaming = false;
         this.userScrolledUp = false;
         this.currentStreamController = null;
-        this.activeTool = null; // Aktif tool (null, 'admed', vs.)
+        this.activeTool = null; // Aktif tool (null, 'ADMET', vs.)
         
         this.init();
     }
@@ -206,15 +206,15 @@ class ChatApp {
         });
 
 
-        if (this.ui.elements.welcomeAdmedTool) {
-            DOMUtils.on(this.ui.elements.welcomeAdmedTool, 'click', () => {
-                this.handleAdmedTool();
+        if (this.ui.elements.welcomeAdmetTool) {
+            DOMUtils.on(this.ui.elements.welcomeAdmetTool, 'click', () => {
+                this.handleAdmetTool();
             });
         }
 
-        if (this.ui.elements.chatAdmedTool) {
-            DOMUtils.on(this.ui.elements.chatAdmedTool, 'click', () => {
-                this.handleAdmedTool();
+        if (this.ui.elements.chatAdmetTool) {
+            DOMUtils.on(this.ui.elements.chatAdmetTool, 'click', () => {
+                this.handleAdmetTool();
             });
         }
 
@@ -328,6 +328,9 @@ class ChatApp {
 
         // Thinking indicator göster
         const typingEl = this.ui.showThinkingIndicator();
+
+        // Force repaint to ensure the indicator is shown before the long API call
+        await new Promise(resolve => setTimeout(resolve, 50));
 
         // Streaming durumunu set et
         this.isStreaming = true;
@@ -686,7 +689,7 @@ class ChatApp {
                     this.selectSidebarOption(firstModel, firstModel);
                 } else {
                     if (this.ui.elements.selectValueSidebar) {
-                        this.ui.elements.selectValueSidebar.textContent = 'Model seçiliyor...';
+                        this.ui.elements.selectValueSdebar.textContent = 'Model seçiliyor...';
                     }
                 }
             });
@@ -809,15 +812,15 @@ class ChatApp {
     }
 
     /**
-     * AdMed tool handler
+     * ADMET tool handler
      */
-    handleAdmedTool() {
+    handleAdmetTool() {
         // Tool'u aktif/pasif yap
-        if (this.activeTool === 'admed') {
+        if (this.activeTool === 'ADMET') {
             this.activeTool = null;
             this.updateToolButtonState();
         } else {
-            this.activeTool = 'admed';
+            this.activeTool = 'ADMET';
             this.updateToolButtonState();
         }
 
@@ -841,11 +844,11 @@ class ChatApp {
         const toolsBtn = isInChatMode ? this.ui.elements.chatToolsBtn : this.ui.elements.welcomeToolsBtn;
         
         if (toolsBtn) {
-            if (this.activeTool === 'admed') {
+            if (this.activeTool === 'ADMET') {
                 DOMUtils.addClass(toolsBtn, 'active');
                 toolsBtn.innerHTML = `
-                    <img src="assets/admed.svg" alt="AdMed" class="tool-icon" width="16" height="16">
-                    <span>AdMed</span>
+                    <img src="assets/ADMET.svg" alt="ADMET" class="tool-icon" width="16" height="16">
+                    <span>ADMET</span>
                     <button class="tool-remove-btn" type="button">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>

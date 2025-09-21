@@ -67,8 +67,8 @@ export class UIComponent {
             chatToolsDropdown: DOMUtils.select('#chat-tools-dropdown'),
             welcomeToolsBtn: DOMUtils.select('#welcome-tools-btn'),
             chatToolsBtn: DOMUtils.select('#chat-tools-btn'),
-            welcomeAdmedTool: DOMUtils.select('#welcome-admed-tool'),
-            chatAdmedTool: DOMUtils.select('#chat-admed-tool')
+            welcomeAdmetTool: DOMUtils.select('#welcome-admet-tool'),
+            chatAdmetTool: DOMUtils.select('#chat-admet-tool')
         };
     }
 
