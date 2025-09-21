@@ -5,11 +5,14 @@
 
 import { StorageUtils } from '../utils/storage.js';
 import { HelperUtils } from '../utils/helpers.js';
+import { ApiService } from './api.js';
 
 export class ConversationService {
     constructor() {
         this.conversations = [];
         this.currentConversationId = null;
+        this.apiService = new ApiService();
+        this.loadingTitles = new Set(); // Loading durumundaki konuşma ID'leri
         this.loadConversations();
     }
 
@@ -39,6 +42,7 @@ export class ConversationService {
             title: title,
             model: model,
             messages: [],
+            pinned: false,
             createdAt: new Date(),
             updatedAt: new Date()
         };
@@ -46,6 +50,75 @@ export class ConversationService {
         this.conversations.unshift(conversation);
         this.saveConversations();
         return conversation;
+    }
+
+    /**
+     * Yeni konuşma oluştur (başlık üretimi olmadan)
+     * @param {string} firstMessage - İlk mesaj
+     * @param {string} model - Model
+     * @returns {Object} - Konuşma objesi
+     */
+    createConversationWithTempTitle(firstMessage, model) {
+        // Geçici başlık ile konuşma oluştur
+        const tempTitle = 'Yeni Sohbet';
+        const conversation = this.createConversation(tempTitle, model);
+        
+        // İlk mesajı ekle
+        this.updateConversation(conversation.id, {
+            role: 'user',
+            content: firstMessage,
+            timestamp: new Date()
+        });
+        
+        return conversation;
+    }
+
+    /**
+     * Konuşma başlığını asenkron olarak güncelle
+     * @param {string} conversationId - Konuşma ID'si
+     * @param {string} firstMessage - İlk mesaj
+     * @param {string} model - Model
+     * @returns {Promise<void>}
+     */
+    async updateConversationTitleAsync(conversationId, firstMessage, model) {
+        // Loading durumunu başlat
+        this.loadingTitles.add(conversationId);
+        
+        // UI'yi güncelle (loading durumu)
+        console.log('Starting title generation for:', conversationId);
+        if (this.onTitleUpdated) {
+            console.log('Calling onTitleUpdated with loading=true');
+            this.onTitleUpdated(conversationId, null, true); // true = loading
+        } else {
+            console.log('onTitleUpdated callback not set!');
+        }
+        
+        try {
+            const generatedTitle = await this.apiService.generateTitle(firstMessage, model);
+            const conversation = this.conversations.find(c => c.id === conversationId);
+            if (conversation) {
+                conversation.title = generatedTitle;
+                this.saveConversations();
+                console.log('Otomatik başlık üretildi:', generatedTitle);
+                
+                // Loading durumunu kaldır
+                this.loadingTitles.delete(conversationId);
+                
+                // UI'yi güncelle (final başlık)
+                if (this.onTitleUpdated) {
+                    this.onTitleUpdated(conversationId, generatedTitle, false);
+                }
+            }
+        } catch (error) {
+            console.error('Başlık üretimi başarısız:', error);
+            // Loading durumunu kaldır
+            this.loadingTitles.delete(conversationId);
+            
+            // UI'yi güncelle (hata durumu - başlık değişmez)
+            if (this.onTitleUpdated) {
+                this.onTitleUpdated(conversationId, null, false);
+            }
+        }
     }
 
     /**
@@ -58,13 +131,6 @@ export class ConversationService {
         if (conversation) {
             conversation.messages.push(message);
             conversation.updatedAt = new Date();
-            
-            // İlk kullanıcı mesajı ise başlığı güncelle
-            if (conversation.messages.length === 1 && message.role === 'user') {
-                conversation.title = message.content.substring(0, 50) + 
-                    (message.content.length > 50 ? '...' : '');
-            }
-            
             this.saveConversations();
         }
     }
@@ -115,6 +181,34 @@ export class ConversationService {
      */
     getAllConversations() {
         return this.conversations;
+    }
+
+    /**
+     * Konuşmayı pinle/unpinle
+     * @param {string} conversationId - Konuşma ID'si
+     */
+    togglePinConversation(conversationId) {
+        const conversation = this.conversations.find(c => c.id === conversationId);
+        if (conversation) {
+            conversation.pinned = !conversation.pinned;
+            this.saveConversations();
+        }
+    }
+
+    /**
+     * Pinli konuşmaları al
+     * @returns {Array} - Pinli konuşma listesi
+     */
+    getPinnedConversations() {
+        return this.conversations.filter(c => c.pinned);
+    }
+
+    /**
+     * Pinli olmayan konuşmaları al
+     * @returns {Array} - Pinli olmayan konuşma listesi
+     */
+    getUnpinnedConversations() {
+        return this.conversations.filter(c => !c.pinned);
     }
 
     /**
