@@ -162,6 +162,20 @@ class ChatApp {
             });
         }
 
+        // Comparison Modal
+        if (this.ui.elements.compareToolBtn) {
+            DOMUtils.on(this.ui.elements.compareToolBtn, 'click', () => this.openCompareModal());
+        }
+        if (this.ui.elements.compareClose) {
+            DOMUtils.on(this.ui.elements.compareClose, 'click', () => this.closeCompareModal());
+        }
+        if (this.ui.elements.compareOverlay) {
+            DOMUtils.on(this.ui.elements.compareOverlay, 'click', () => this.closeCompareModal());
+        }
+        if (this.ui.elements.runComparisonBtn) {
+            DOMUtils.on(this.ui.elements.runComparisonBtn, 'click', () => this.handleComparisonSubmit());
+        }
+
         // New chat button
         if (this.ui.elements.newChatBtn) {
             DOMUtils.on(this.ui.elements.newChatBtn, 'click', () => {
@@ -225,6 +239,8 @@ class ChatApp {
                     this.closeSettingsModal();
                 } else if (this.ui.elements.moleculeModal.classList.contains('open')) {
                     this.closeMoleculeModal();
+                } else if (this.ui.elements.compareModal.classList.contains('open')) {
+                    this.closeCompareModal();
                 } else if ((this.ui.elements.welcomeToolsDropdown && this.ui.elements.welcomeToolsDropdown.classList.contains('open')) ||
                           (this.ui.elements.chatToolsDropdown && this.ui.elements.chatToolsDropdown.classList.contains('open'))) {
                     this.closeAllToolsDropdowns();
@@ -296,6 +312,25 @@ class ChatApp {
     }
 
     /**
+     * Comparison form submit handler
+     */
+    async handleComparisonSubmit() {
+        const text = this.ui.elements.compareInput.value.trim();
+        if (!text) return;
+
+        const molecules = text.split('\n').map(m => m.trim()).filter(m => m);
+        if (molecules.length < 2) {
+            alert('Lütfen karşılaştırmak için en az 2 molekül girin.');
+            return;
+        }
+
+        this.closeCompareModal();
+        const model = this.ui.elements.modelSelectSidebar.value;
+        this.ui.switchToChatMode(model);
+        await this.processComparison(molecules, model);
+    }
+
+    /**
      * Mesaj işleme
      * @param {string} text - Mesaj metni
      * @param {string} model - Model
@@ -360,14 +395,17 @@ class ChatApp {
                 });
 
                 // Bot mesajını oluştur ve typewriter efekti ile render et
-                const botEl = this.ui.createBotMessage();
-                await this.markdown.typeWriteMarkdown(botEl, reply, 0.1, () => {
+                const botMessageContainer = this.ui.createBotMessage();
+                const contentEl = botMessageContainer.querySelector('.message-content');
+                await this.markdown.typeWriteMarkdown(contentEl, reply, 0.1, () => {
                     this.ui.smartScroll();
                 });
 
-                // Final enhancements: syntax highlighting ve copy butonları
-                this.markdown.applySyntaxHighlighting(botEl);
-                this.markdown.addCopyButtons(botEl);
+                // Final enhancements
+                this.markdown.applySyntaxHighlighting(contentEl);
+                this.markdown.addCopyButtons(contentEl);
+                this.renderAdmetChart(contentEl);
+                this.addExportButtons(botMessageContainer);
             }
         } catch (err) {
             if (err.name !== 'AbortError') {
@@ -384,6 +422,227 @@ class ChatApp {
             this.ui.setInputsEnabled(true);
         }
     }
+
+    /**
+     * Karşılaştırma işleme
+     * @param {string[]} molecules - Molekül listesi
+     * @param {string} model - Model
+     */
+    async processComparison(molecules, model) {
+        const userMessage = `Bu molekülleri karşılaştır: ${molecules.join(', ')}`;
+        // Yeni konuşma oluştur
+        if (!this.conversation.currentConversationId) {
+            const conversation = this.conversation.createConversation(userMessage, model);
+            this.conversation.setCurrentConversation(conversation.id);
+        }
+
+        this.ui.appendMessage(userMessage, 'user');
+        this.conversation.updateConversation(this.conversation.currentConversationId, { role: 'user', content: userMessage });
+
+        const typingEl = this.ui.showThinkingIndicator();
+        await new Promise(resolve => setTimeout(resolve, 50));
+        this.isStreaming = true;
+        this.ui.setStreamingState(true);
+
+        try {
+            const controller = new AbortController();
+            this.ui.setAbortController(controller);
+
+            const data = await this.api.sendComparisonRequest(molecules, model, controller.signal);
+
+            this.ui.removeThinkingIndicator(typingEl);
+
+            if (this.isStreaming) {
+                const reply = HelperUtils.extractTextFromResponse(data) || 'Boş yanıt';
+                this.conversation.updateConversation(this.conversation.currentConversationId, { role: 'bot', content: reply });
+
+                const botMessageContainer = this.ui.createBotMessage();
+                const contentEl = botMessageContainer.querySelector('.message-content');
+                await this.markdown.typeWriteMarkdown(contentEl, reply, 0.1, () => this.ui.smartScroll());
+
+                this.markdown.applySyntaxHighlighting(contentEl);
+                this.markdown.addCopyButtons(contentEl);
+            }
+        } catch (err) {
+            if (err.name !== 'AbortError') {
+                this.ui.removeThinkingIndicator(typingEl);
+                this.ui.appendMessage('Sunucu hatası: ' + String(err), 'bot');
+            }
+        } finally {
+            this.isStreaming = false;
+            this.ui.setStreamingState(false);
+            this.ui.setAbortController(null);
+            this.ui.setInputsEnabled(true);
+        }
+    }
+
+    /**
+     * Renders a radar chart for ADMET analysis if data is available.
+     * @param {HTMLElement} messageElement The bot message element containing the chart data.
+     */
+    renderAdmetChart(messageElement) {
+        const dataScript = messageElement.querySelector('#admet-radar-chart-data');
+        const canvas = messageElement.querySelector('#admet-radar-chart');
+
+        if (!dataScript || !canvas) {
+            return; // No chart data or canvas found
+        }
+
+        try {
+            const chartData = JSON.parse(dataScript.textContent);
+            const ctx = canvas.getContext('2d');
+
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [{
+                        label: 'Risk Profile (0=low, 1=high)',
+                        data: chartData.values,
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1,
+                        pointBackgroundColor: 'rgba(255, 99, 132, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                color: 'rgba(255, 255, 255, 0.2)'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.2)'
+                            },
+                            pointLabels: {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                font: {
+                                    size: 12
+                                }
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                backdropColor: 'rgba(0, 0, 0, 0.5)',
+                                stepSize: 0.2,
+                                max: 1,
+                                min: 0
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: 'rgba(255, 255, 255, 0.7)'
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (e) {
+            console.error("Failed to render ADMET chart:", e);
+        }
+    }
+
+    /**
+     * Adds export buttons to a message if it contains ADMET data.
+     * @param {HTMLElement} messageElement The bot message element.
+     */
+    addExportButtons(messageElement) {
+        const rawDataScript = messageElement.querySelector('#admet-raw-data');
+        if (!rawDataScript) return;
+
+        const actionsContainer = messageElement.querySelector('.message-actions');
+        if (!actionsContainer) return;
+
+        try {
+            const rawData = JSON.parse(rawDataScript.textContent);
+
+            const pdfButton = DOMUtils.create('button', { 
+                className: 'message-action-btn', 
+                textContent: 'PDF',
+                title: 'Raporu PDF olarak indir'
+            });
+            DOMUtils.on(pdfButton, 'click', () => this.exportToPdf(rawData));
+
+            const csvButton = DOMUtils.create('button', { 
+                className: 'message-action-btn', 
+                textContent: 'CSV',
+                title: 'Tahminleri CSV olarak indir'
+            });
+            DOMUtils.on(csvButton, 'click', () => this.exportToCsv(rawData));
+
+            actionsContainer.appendChild(pdfButton);
+            actionsContainer.appendChild(csvButton);
+
+        } catch (e) {
+            console.error("Failed to add export buttons:", e);
+        }
+    }
+
+    /**
+     * Exports ADMET prediction data to a CSV file.
+     * @param {object} rawData The full raw data from the analysis.
+     */
+    exportToCsv(rawData) {
+        if (!rawData || !rawData.admetPredictions) return;
+
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Property,Prediction\r\n"; // Header
+
+        rawData.admetPredictions.forEach(p => {
+            const row = `${p.property},${p.prediction}`;
+            csvContent += row + "\r\n";
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `${rawData.moleculeName || rawData.smiles}_admet_report.csv`);
+        document.body.appendChild(link); 
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    /**
+     * Exports the full ADMET report to a PDF file.
+     * @param {object} rawData The full raw data from the analysis.
+     */
+    exportToPdf(rawData) {
+        if (!rawData || !window.jspdf) return;
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const title = `ADMET Analysis Report: ${rawData.moleculeName || rawData.smiles}`;
+        doc.setFontSize(18);
+        doc.text(title, 14, 22);
+
+        doc.setFontSize(11);
+        doc.setTextColor(100);
+        doc.text(`SMILES: ${rawData.smiles}`, 14, 32);
+        doc.text(`Overall Risk Score: ${rawData.riskScore.toFixed(1)}/100`, 14, 38);
+
+        const tableData = rawData.admetPredictions.map(p => [p.property, p.prediction]);
+
+        doc.autoTable({
+            startY: 50,
+            head: [['Property', 'Prediction']],
+            body: tableData,
+            theme: 'grid',
+            headStyles: { fillColor: [22, 160, 133] },
+        });
+
+        const finalY = doc.lastAutoTable.finalY || 100;
+        doc.setFontSize(12);
+        doc.text("Pharmacokinetic Profile", 14, finalY + 15);
+        doc.setFontSize(10);
+        doc.text(rawData.pkProfile.replace(/\*\*/g, ''), 14, finalY + 22, { maxWidth: 180 });
+
+        doc.save(`${rawData.moleculeName || rawData.smiles}_admet_report.pdf`);
+    }
+
 
     /**
      * Modelleri yükle
@@ -498,15 +757,21 @@ class ChatApp {
                     this.ui.appendMessage(msg.content, msg.role);
                 } else {
                     // Bot mesajları: markdown olarak render et
-                    const botEl = DOMUtils.create('div', { 
-                        className: 'message bot',
+                    const botMessageContainer = DOMUtils.create('div', { className: 'message bot' });
+                    const contentEl = DOMUtils.create('div', { 
+                        className: 'message-content',
                         innerHTML: this.markdown.renderToHtml(msg.content)
                     });
-                    this.ui.elements.messagesEl.appendChild(botEl);
+                    const actionsEl = DOMUtils.create('div', { className: 'message-actions' });
+                    botMessageContainer.appendChild(actionsEl);
+                    botMessageContainer.appendChild(contentEl);
+                    this.ui.elements.messagesEl.appendChild(botMessageContainer);
 
-                    // Syntax highlighting ve copy butonları uygula
-                    this.markdown.applySyntaxHighlighting(botEl);
-                    this.markdown.addCopyButtons(botEl);
+                    // Final enhancements
+                    this.markdown.applySyntaxHighlighting(contentEl);
+                    this.markdown.addCopyButtons(contentEl);
+                    this.renderAdmetChart(contentEl);
+                    this.addExportButtons(botMessageContainer);
                 }
             });
 
@@ -542,6 +807,23 @@ class ChatApp {
         
         // Tool buton durumunu güncelle (welcome moduna geçtikten sonra)
         this.updateToolButtonState();
+    }
+
+    /**
+     * Compare modal aç
+     */
+    openCompareModal() {
+        if (!this.ui.elements.compareModal) return;
+        DOMUtils.addClass(this.ui.elements.compareModal, 'open');
+        this.ui.elements.compareInput.focus();
+    }
+
+    /**
+     * Compare modal kapat
+     */
+    closeCompareModal() {
+        if (!this.ui.elements.compareModal) return;
+        DOMUtils.removeClass(this.ui.elements.compareModal, 'open');
     }
 
     /**
@@ -689,7 +971,7 @@ class ChatApp {
                     this.selectSidebarOption(firstModel, firstModel);
                 } else {
                     if (this.ui.elements.selectValueSidebar) {
-                        this.ui.elements.selectValueSdebar.textContent = 'Model seçiliyor...';
+                        this.ui.elements.selectValueSidebar.textContent = 'Model seçiliyor...';
                     }
                 }
             });
@@ -723,6 +1005,23 @@ class ChatApp {
         if (!this.ui.elements.moleculeModal) return;
         
         DOMUtils.removeClass(this.ui.elements.moleculeModal, 'open');
+    }
+
+    /**
+     * Compare modal aç
+     */
+    openCompareModal() {
+        if (!this.ui.elements.compareModal) return;
+        DOMUtils.addClass(this.ui.elements.compareModal, 'open');
+        this.ui.elements.compareInput.focus();
+    }
+
+    /**
+     * Compare modal kapat
+     */
+    closeCompareModal() {
+        if (!this.ui.elements.compareModal) return;
+        DOMUtils.removeClass(this.ui.elements.compareModal, 'open');
     }
 
     /**

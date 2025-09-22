@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width,initial-scale=1">
-	<title>ADMETGPT</title>
+	<title>Havalı Chat</title>
 	<link rel="stylesheet" href="css/main.css">
 	<!-- Prism.js stylesheet for beautiful code highlighting -->
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
@@ -73,7 +73,7 @@
 			<!-- Initial welcome screen -->
 			<div class="welcome-screen" id="welcome-screen">
 			<div class="welcome-content">
-				<h1 class="welcome-title">ADMETGPT</h1>
+				<h1 class="welcome-title">Havalı Chat</h1>
 				<form id="welcome-form" class="welcome-input-wrapper">
 					<div class="input-area">
 						<textarea id="welcome-input" placeholder="Bir şey yazın... Enter ile gönder, Shift+Enter ile alt satıra" aria-label="Havalı giriş" rows="1"></textarea>
@@ -93,6 +93,13 @@
 									<div class="tool-item-content">
 										<span class="tool-name">ADMET</span>
 										<span class="tool-description">Backend bağlantı noktası</span>
+									</div>
+								</button>
+								<button class="tool-item" id="compare-tool">
+									<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 20V10M12 20V4M6 20V14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+									<div class="tool-item-content">
+										<span class="tool-name">Molekül Karşılaştır</span>
+										<span class="tool-description">İki veya daha fazla molekülü karşılaştırır.</span>
 									</div>
 								</button>
 							</div>
@@ -129,7 +136,7 @@
 									<img src="assets/ADMET.svg" alt="ADMET" class="tool-item-icon" width="16" height="16">
 									<div class="tool-item-content">
 										<span class="tool-name">ADMET</span>
-										<span class="tool-description">Backend bağlantı noktası</span>
+										<span class="tool-description">Tek bir molekül için ADMET analizi yapar.</span>
 									</div>
 								</button>
 							</div>
@@ -216,6 +223,35 @@
 			</div>
 		</div>
 	</div>
+
+    <!-- Comparison Modal -->
+    <div class="modal" id="compare-modal">
+        <div class="modal-overlay" id="compare-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Molekülleri Karşılaştır</h2>
+                <button class="modal-close" id="compare-close">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">Karşılaştırmak istediğiniz moleküllerin SMILES veya isimlerini her satıra bir tane olacak şekilde girin.</p>
+                <textarea id="compare-input" class="compare-textarea" placeholder="Kafein
+CCO
+C1=CC=CC=C1" rows="5"></textarea>
+                <div class="modal-actions">
+                    <button class="modal-action-btn primary" id="run-comparison">Karşılaştırmayı Başlat</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+	<!-- Charting Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- PDF Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 
 	<!-- Markdown renderer, sanitizer and syntax highlighter -->
 	<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
