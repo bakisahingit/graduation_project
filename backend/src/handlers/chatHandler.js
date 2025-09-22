@@ -45,7 +45,8 @@ async function handleAdmetTool(message) {
     const admetReport = formatAdmetReport(admetData);
     return {
         systemPrompt: admetContextPrompt,
-        finalMessage: `The user requested an ADMET analysis and the results are below. Please summarize these findings and present them to the user.\n\nADMET ANALYSIS REPORT:\n---\n${admetReport}`
+        finalMessage: `The user requested an ADMET analysis and the results are below. Please summarize these findings and present them to the user.\n\nADMET ANALYSIS REPORT:\n---\n${admetReport}`,
+        rawAdmetData: admetData // Add raw ADMET data
     };
 }
 
@@ -123,7 +124,8 @@ Your task is to compare these molecules based on their ADMET properties.
 
     return {
         systemPrompt: admetContextPrompt,
-        finalMessage: finalMessage.trim()
+        finalMessage: finalMessage.trim(),
+        rawComparisonData: { successfulResults, failedResults } // Add raw data
     };
 }
 

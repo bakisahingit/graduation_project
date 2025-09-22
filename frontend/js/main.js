@@ -401,6 +401,16 @@ class ChatApp {
                     this.ui.smartScroll();
                 });
 
+                // Embed raw ADMET data for export
+                if (data.rawAdmetData) {
+                    const scriptEl = DOMUtils.create('script', {
+                        type: 'application/json',
+                        id: 'admet-raw-data',
+                        textContent: JSON.stringify(data.rawAdmetData)
+                    });
+                    botMessageContainer.appendChild(scriptEl);
+                }
+
                 // Final enhancements
                 this.markdown.applySyntaxHighlighting(contentEl);
                 this.markdown.addCopyButtons(contentEl);
@@ -460,8 +470,20 @@ class ChatApp {
                 const contentEl = botMessageContainer.querySelector('.message-content');
                 await this.markdown.typeWriteMarkdown(contentEl, reply, 0.1, () => this.ui.smartScroll());
 
+                // Embed raw comparison data for export
+                if (data.rawComparisonData) {
+                    const scriptEl = DOMUtils.create('script', {
+                        type: 'application/json',
+                        id: 'admet-raw-data', // Reuse the same ID as single ADMET reports
+                        textContent: JSON.stringify(data.rawComparisonData)
+                    });
+                    botMessageContainer.appendChild(scriptEl);
+                }
+
                 this.markdown.applySyntaxHighlighting(contentEl);
                 this.markdown.addCopyButtons(contentEl);
+                // Call addExportButtons for comparison reports as well
+                this.addExportButtons(botMessageContainer);
             }
         } catch (err) {
             if (err.name !== 'AbortError') {
@@ -550,34 +572,49 @@ class ChatApp {
      * @param {HTMLElement} messageElement The bot message element.
      */
     addExportButtons(messageElement) {
+        console.log("addExportButtons called for messageElement:", messageElement);
         const rawDataScript = messageElement.querySelector('#admet-raw-data');
-        if (!rawDataScript) return;
+        if (!rawDataScript) {
+            console.log("rawDataScript not found for messageElement:", messageElement);
+            return;
+        }
+        console.log("rawDataScript found:", rawDataScript);
 
         const actionsContainer = messageElement.querySelector('.message-actions');
-        if (!actionsContainer) return;
+        if (!actionsContainer) {
+            console.log("actionsContainer not found for messageElement:", messageElement);
+            return;
+        }
+        console.log("actionsContainer found:", actionsContainer);
 
         try {
             const rawData = JSON.parse(rawDataScript.textContent);
+            console.log("Parsed rawData:", rawData);
+
+            // Determine if it's a single ADMET report or a comparison report
+            const isComparison = rawData.successfulResults && Array.isArray(rawData.successfulResults);
+            console.log("isComparison:", isComparison);
 
             const pdfButton = DOMUtils.create('button', { 
                 className: 'message-action-btn', 
                 textContent: 'PDF',
-                title: 'Raporu PDF olarak indir'
+                title: isComparison ? 'Karşılaştırma Raporunu PDF olarak indir' : 'Raporu PDF olarak indir'
             });
-            DOMUtils.on(pdfButton, 'click', () => this.exportToPdf(rawData));
+            DOMUtils.on(pdfButton, 'click', () => this.exportToPdf(rawData, isComparison));
 
             const csvButton = DOMUtils.create('button', { 
                 className: 'message-action-btn', 
                 textContent: 'CSV',
-                title: 'Tahminleri CSV olarak indir'
+                title: isComparison ? 'Karşılaştırma Verilerini CSV olarak indir' : 'Tahminleri CSV olarak indir'
             });
-            DOMUtils.on(csvButton, 'click', () => this.exportToCsv(rawData));
+            DOMUtils.on(csvButton, 'click', () => this.exportToCsv(rawData, isComparison));
 
             actionsContainer.appendChild(pdfButton);
             actionsContainer.appendChild(csvButton);
+            console.log("PDF and CSV buttons appended to actionsContainer.");
 
         } catch (e) {
-            console.error("Failed to add export buttons:", e);
+            console.error("Failed to add export buttons (exception caught):", e);
         }
     }
 
@@ -585,21 +622,38 @@ class ChatApp {
      * Exports ADMET prediction data to a CSV file.
      * @param {object} rawData The full raw data from the analysis.
      */
-    exportToCsv(rawData) {
-        if (!rawData || !rawData.admetPredictions) return;
-
+    exportToCsv(rawData, isComparison = false) {
         let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "Property,Prediction\r\n"; // Header
+        let fileName = "report.csv";
 
-        rawData.admetPredictions.forEach(p => {
-            const row = `${p.property},${p.prediction}`;
-            csvContent += row + "\r\n";
-        });
+        if (isComparison) {
+            fileName = "comparison_report.csv";
+            csvContent += "Molecule,Property,Prediction,Error\r\n"; // Header for comparison
+
+            rawData.successfulResults.forEach(mol => {
+                mol.data.admetPredictions.forEach(p => {
+                    csvContent += `${mol.data.moleculeName || mol.identifier},${p.property},${p.prediction},\r\n`;
+                });
+            });
+            rawData.failedResults.forEach(mol => {
+                csvContent += `${mol.identifier},,,${mol.error}\r\n`;
+            });
+
+        } else {
+            if (!rawData || !rawData.admetPredictions) return;
+            fileName = `${rawData.moleculeName || rawData.smiles}_admet_report.csv`;
+            csvContent += "Property,Prediction\r\n"; // Header for single ADMET
+
+            rawData.admetPredictions.forEach(p => {
+                const row = `${p.property},${p.prediction}`;
+                csvContent += row + "\r\n";
+            });
+        }
 
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `${rawData.moleculeName || rawData.smiles}_admet_report.csv`);
+        link.setAttribute("download", fileName);
         document.body.appendChild(link); 
         link.click();
         document.body.removeChild(link);
@@ -609,38 +663,84 @@ class ChatApp {
      * Exports the full ADMET report to a PDF file.
      * @param {object} rawData The full raw data from the analysis.
      */
-    exportToPdf(rawData) {
+    exportToPdf(rawData, isComparison = false) {
         if (!rawData || !window.jspdf) return;
 
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
+        let yPos = 22;
 
-        const title = `ADMET Analysis Report: ${rawData.moleculeName || rawData.smiles}`;
-        doc.setFontSize(18);
-        doc.text(title, 14, 22);
+        if (isComparison) {
+            const title = `Molecule Comparison Report`;
+            doc.setFontSize(18);
+            doc.text(title, 14, yPos);
+            yPos += 10;
 
-        doc.setFontSize(11);
-        doc.setTextColor(100);
-        doc.text(`SMILES: ${rawData.smiles}`, 14, 32);
-        doc.text(`Overall Risk Score: ${rawData.riskScore.toFixed(1)}/100`, 14, 38);
+            rawData.successfulResults.forEach(mol => {
+                doc.setFontSize(14);
+                doc.text(`Molecule: ${mol.data.moleculeName || mol.identifier}`, 14, yPos);
+                yPos += 7;
+                doc.setFontSize(10);
+                doc.text(`SMILES: ${mol.data.smiles}`, 14, yPos);
+                yPos += 5;
+                doc.text(`Overall Risk Score: ${mol.data.riskScore.toFixed(1)}/100`, 14, yPos);
+                yPos += 10;
 
-        const tableData = rawData.admetPredictions.map(p => [p.property, p.prediction]);
+                const tableData = mol.data.admetPredictions.map(p => [p.property, p.prediction]);
+                doc.autoTable({
+                    startY: yPos,
+                    head: [['Property', 'Prediction']],
+                    body: tableData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [22, 160, 133] },
+                });
+                yPos = doc.lastAutoTable.finalY + 10;
+            });
 
-        doc.autoTable({
-            startY: 50,
-            head: [['Property', 'Prediction']],
-            body: tableData,
-            theme: 'grid',
-            headStyles: { fillColor: [22, 160, 133] },
-        });
+            if (rawData.failedResults.length > 0) {
+                doc.setFontSize(14);
+                doc.text('Failed Analyses:', 14, yPos);
+                yPos += 7;
+                rawData.failedResults.forEach(mol => {
+                    doc.setFontSize(10);
+                    doc.text(`- ${mol.identifier}: ${mol.error}`, 14, yPos);
+                    yPos += 5;
+                });
+            }
 
-        const finalY = doc.lastAutoTable.finalY || 100;
-        doc.setFontSize(12);
-        doc.text("Pharmacokinetic Profile", 14, finalY + 15);
-        doc.setFontSize(10);
-        doc.text(rawData.pkProfile.replace(/\*\*/g, ''), 14, finalY + 22, { maxWidth: 180 });
+            doc.save(`comparison_report.pdf`);
 
-        doc.save(`${rawData.moleculeName || rawData.smiles}_admet_report.pdf`);
+        } else {
+            const title = `ADMET Analysis Report: ${rawData.moleculeName || rawData.smiles}`;
+            doc.setFontSize(18);
+            doc.text(title, 14, yPos);
+            yPos += 10;
+
+            doc.setFontSize(11);
+            doc.setTextColor(100);
+            doc.text(`SMILES: ${rawData.smiles}`, 14, yPos);
+            yPos += 6;
+            doc.text(`Overall Risk Score: ${rawData.riskScore.toFixed(1)}/100`, 14, yPos);
+            yPos += 12;
+
+            const tableData = rawData.admetPredictions.map(p => [p.property, p.prediction]);
+
+            doc.autoTable({
+                startY: yPos,
+                head: [['Property', 'Prediction']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { fillColor: [22, 160, 133] },
+            });
+
+            const finalY = doc.lastAutoTable.finalY || 100;
+            doc.setFontSize(12);
+            doc.text("Pharmacokinetic Profile", 14, finalY + 15);
+            doc.setFontSize(10);
+            doc.text(rawData.pkProfile.replace(/\*\*/g, ''), 14, finalY + 22, { maxWidth: 180 });
+
+            doc.save(`${rawData.moleculeName || rawData.smiles}_admet_report.pdf`);
+        }
     }
 
 

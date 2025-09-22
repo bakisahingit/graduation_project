@@ -40,7 +40,10 @@ router.post('/', async (req, res) => {
             return res.json({ output: "I'm sorry, but I received an empty response from the model. Please try again." });
         }
 
-        return res.json({ output: llmContent });
+        return res.json({
+            output: llmContent,
+            rawAdmetData: result.rawAdmetData
+        });
 
     } catch (err) {
         console.error('Upstream request failed', err);
@@ -75,7 +78,10 @@ router.post('/compare', async (req, res) => {
             return res.json({ output: "I'm sorry, but I received an empty response from the model. Please try again." });
         }
 
-        return res.json({ output: llmContent });
+        return res.json({ 
+            output: llmContent,
+            rawComparisonData: result.rawComparisonData // Pass the raw data through
+        });
 
     } catch (err) {
         console.error('Comparison request failed', err);
