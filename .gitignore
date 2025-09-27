@@ -4,6 +4,7 @@ node_modules/
 .DS_Store
 Thumbs.db
 admet/venv/
+venv/
 __pycache__/
 *.pyc
 dist/
@@ -11,3 +12,4 @@ build/
 *.egg-info/
 .vscode/
 .idea/
+.venv/

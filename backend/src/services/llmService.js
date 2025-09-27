@@ -40,7 +40,9 @@ export async function translateWithLLM(turkishName) {
     }
 }
 
-export async function getChatCompletion(messages) {
+export async function getChatCompletion(messages, model = null) {
     console.log("Generating final response...");
-    return await openai.chat.completions.create({ model: config.llmModel, messages });
+    const selectedModel = model || config.llmModel;
+    console.log(`Using model: ${selectedModel}`);
+    return await openai.chat.completions.create({ model: selectedModel, messages });
 }

@@ -531,6 +531,7 @@ class ChatApp {
 
             // İlk modeli seçili olarak ayarla
             const firstModel = activeModelsList[0];
+            
             // Sidebar model select kaldırıldı
             // if (this.ui.elements.selectValueSidebar) {
             //     this.ui.elements.selectValueSidebar.textContent = firstModel;
@@ -557,7 +558,10 @@ class ChatApp {
                         value: model, 
                         textContent: model 
                     });
-                    if (idx === 0) optWelcome.selected = true;
+                    if (idx === 0) {
+                        optWelcome.selected = true;
+                        this.ui.elements.modelSelectWelcome.value = model;
+                    }
                     this.ui.elements.modelSelectWelcome.appendChild(optWelcome);
                 }
 
@@ -567,7 +571,10 @@ class ChatApp {
                         value: model, 
                         textContent: model 
                     });
-                    if (idx === 0) optChat.selected = true;
+                    if (idx === 0) {
+                        optChat.selected = true;
+                        this.ui.elements.modelSelectChat.value = model;
+                    }
                     this.ui.elements.modelSelectChat.appendChild(optChat);
                 }
 
@@ -600,7 +607,9 @@ class ChatApp {
                         DOMUtils.addClass(welcomeOption, 'selected');
                     }
 
-                    DOMUtils.on(welcomeOption, 'click', () => {
+                    DOMUtils.on(welcomeOption, 'click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         this.selectInputOption('welcome', model, model);
                     });
 
@@ -619,7 +628,9 @@ class ChatApp {
                         DOMUtils.addClass(chatOption, 'selected');
                     }
 
-                    DOMUtils.on(chatOption, 'click', () => {
+                    DOMUtils.on(chatOption, 'click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         this.selectInputOption('chat', model, model);
                     });
 

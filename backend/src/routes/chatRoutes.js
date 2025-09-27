@@ -44,7 +44,8 @@ router.post('/', async (req, res) => {
         }
         messages.push({ role: 'user', content: finalMessage });
 
-        const completion = await getChatCompletion(messages);
+        console.log(`Frontend selected model: ${model}`);
+        const completion = await getChatCompletion(messages, model);
         
         // Check if LLM returned empty content
         const llmContent = completion.choices[0].message.content;
