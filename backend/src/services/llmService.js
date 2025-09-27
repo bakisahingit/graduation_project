@@ -3,11 +3,13 @@
 import { openai, config } from '../config/index.js';
 import { entityExtractionPrompt, translationPrompt } from '../utils/constants.js';
 
-export async function extractChemicalWithLLM(userMessage) {
+export async function extractChemicalWithLLM(userMessage, model = null) {
     console.log("Attempting to extract chemical with LLM...");
+    const selectedModel = model || config.llmModel;
+    console.log(`Using model for extraction: ${selectedModel}`);
     try {
         const completion = await openai.chat.completions.create({
-            model: config.llmModel,
+            model: selectedModel,
             messages: [{ role: 'system', content: entityExtractionPrompt }, { role: 'user', content: userMessage }],
             temperature: 0,
             max_tokens: 60
@@ -22,12 +24,14 @@ export async function extractChemicalWithLLM(userMessage) {
     }
 }
 
-export async function translateWithLLM(turkishName) {
+export async function translateWithLLM(turkishName, model = null) {
     console.log(`Translating "${turkishName}" to English with LLM...`);
+    const selectedModel = model || config.llmModel;
+    console.log(`Using model for translation: ${selectedModel}`);
     const prompt = translationPrompt.replace('{turkishName}', turkishName);
     try {
         const completion = await openai.chat.completions.create({
-            model: config.llmModel,
+            model: selectedModel,
             messages: [{ role: 'user', content: prompt }],
             temperature: 0,
             max_tokens: 10

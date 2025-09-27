@@ -7,11 +7,11 @@ import { admetContextPrompt } from '../utils/constants.js';
 import { formatAdmetReport } from '../utils/formatters.js';
 import { extractChemicalNameByRegex } from '../utils/nameResolvers.js';
 
-async function handleAdmetTool(message) {
+async function handleAdmetTool(message, model = null) {
     let smiles = null;
     let chemicalName = null;
 
-    const extractedEntity = await extractChemicalWithLLM(message);
+    const extractedEntity = await extractChemicalWithLLM(message, model);
 
     if (extractedEntity.type === 'smiles') {
         smiles = extractedEntity.value;
@@ -22,9 +22,17 @@ async function handleAdmetTool(message) {
     }
 
     if (chemicalName && !smiles) {
-        const englishName = await translateWithLLM(chemicalName);
-        if (englishName !== chemicalName) console.log(`Translated "${chemicalName}" to "${englishName}"`);
-        smiles = await getSmilesFromName(englishName);
+        // Önce direkt olarak kimyasal ismi dene
+        smiles = await getSmilesFromName(chemicalName);
+        
+        // Eğer başarısız olursa, çeviri yap
+        if (!smiles) {
+            const englishName = await translateWithLLM(chemicalName, model);
+            if (englishName !== chemicalName) {
+                console.log(`Translated "${chemicalName}" to "${englishName}"`);
+                smiles = await getSmilesFromName(englishName);
+            }
+        }
     }
 
     if (!smiles) {
@@ -34,6 +42,7 @@ async function handleAdmetTool(message) {
         };
     }
 
+    console.log(`Attempting ADMET analysis for SMILES: ${smiles}`);
     const admetData = await getAdmetPredictions(smiles, chemicalName);
 
     if (!admetData) {
@@ -42,6 +51,8 @@ async function handleAdmetTool(message) {
         };
     }
 
+    console.log(`ADMET analysis completed successfully for ${chemicalName || smiles}`);
+
     const admetReport = formatAdmetReport(admetData);
     return {
         systemPrompt: admetContextPrompt,
@@ -49,9 +60,9 @@ async function handleAdmetTool(message) {
     };
 }
 
-export async function handleChatMessage(message, conversationHistory, tools) {
+export async function handleChatMessage(message, conversationHistory, tools, model = null) {
     if (tools.active === 'admet' || tools.active === 'ADMET') {
-        return handleAdmetTool(message);
+        return handleAdmetTool(message, model);
     }
 
     let systemPrompt = "You are a helpful assistant.";

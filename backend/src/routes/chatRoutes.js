@@ -26,7 +26,7 @@ router.post('/', async (req, res) => {
             });
         }
 
-        const result = await handleChatMessage(message, conversationHistory, tools);
+        const result = await handleChatMessage(message, conversationHistory, tools, model);
 
         // Check for a direct error response from the handler
         if (result.error) {

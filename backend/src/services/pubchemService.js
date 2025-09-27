@@ -14,7 +14,7 @@ export async function getSmilesFromName(name) {
         }
         return null;
     } catch (error) {
-        console.error(`!!! PubChem API request failed for "${name}" !!!`, error.message);
+        console.error(`!!! PubChem API request failed for "${name}" !!!`, error.response ? `Request failed with status code ${error.response.status}` : error.message);
         return null;
     }
 }

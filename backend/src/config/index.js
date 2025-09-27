@@ -19,7 +19,7 @@ if (!process.env.OPENROUTER_API_KEY) {
 export const config = {
     port: process.env.PORT || 3000,
     admetApiUrl: process.env.ADMET_API_URL || 'http://127.0.0.1:8000',
-    llmModel: 'google/gemini-flash-1.5',
+    llmModel: 'deepseek/deepseek-chat-v3.1:free',
     siteUrl: process.env.SITE_URL || '',
     siteName: process.env.SITE_NAME || '',
     openrouterUrl: (process.env.OPENROUTER_URL || 'https://openrouter.ai/api/v1').replace(/\/$/, '').replace(/\/chat\/completions\/?$/i, '')
