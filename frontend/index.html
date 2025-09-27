@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width,initial-scale=1">
-	<title>ADMETGPT</title>
+	<title>Havalı Chat</title>
 	<link rel="stylesheet" href="css/main.css">
 	<!-- Prism.js stylesheet for beautiful code highlighting -->
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
@@ -50,7 +50,7 @@
 			<!-- Initial welcome screen -->
 			<div class="welcome-screen" id="welcome-screen">
 			<div class="welcome-content">
-				<h1 class="welcome-title">ADMETGPT</h1>
+				<h1 class="welcome-title">Havalı Chat</h1>
 				<form id="welcome-form" class="welcome-input-wrapper">
 					<div class="input-area">
 						<textarea id="welcome-input" placeholder="Bir şey yazın... Enter ile gönder, Shift+Enter ile alt satıra" aria-label="Havalı giriş" rows="1"></textarea>
@@ -91,13 +91,21 @@
 								</svg>
 								Tools
 							</button>
-							<div class="panel-container tools-dropdown" id="welcome-tools-dropdown">
-								<div class="panel-content tools-options">
-									<button class="panel-item tool-option" id="welcome-admet-tool">
-										<svg class="tool-option-icon" viewBox="0 0 32 32" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-											<path d="M 14 5 C 12.90625 5 12 5.90625 12 7 L 12 8 L 6 8 C 4.355469 8 3 9.355469 3 11 L 3 26 L 29 26 L 29 11 C 29 9.355469 27.644531 8 26 8 L 20 8 L 20 7 C 20 5.90625 19.09375 5 18 5 Z M 14 7 L 18 7 L 18 8 L 14 8 Z M 6 10 L 26 10 C 26.566406 10 27 10.433594 27 11 L 27 24 L 5 24 L 5 11 C 5 10.433594 5.433594 10 6 10 Z M 15 13 L 15 16 L 12 16 L 12 18 L 15 18 L 15 21 L 17 21 L 17 18 L 20 18 L 20 16 L 17 16 L 17 13 Z" fill="currentColor"/>
-										</svg>
-										AdMet
+							<div class="tools-dropdown" id="welcome-tools-dropdown">
+								<div class="tools-list">
+									<button class="tool-item" id="welcome-admet-tool">
+										<img src="assets/ADMET.svg" alt="ADMET" class="tool-item-icon" width="16" height="16">
+										<div class="tool-item-content">
+											<span class="tool-name">ADMET</span>
+											<span class="tool-description">Backend bağlantı noktası</span>
+										</div>
+									</button>
+									<button class="tool-item" id="compare-tool">
+										<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 20V10M12 20V4M6 20V14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+										<div class="tool-item-content">
+											<span class="tool-name">Molekül Karşılaştır</span>
+											<span class="tool-description">İki veya daha fazla molekülü karşılaştırır.</span>
+										</div>
 									</button>
 								</div>
 							</div>
@@ -172,13 +180,14 @@
 								</svg>
 								Tools
 							</button>
-							<div class="panel-container tools-dropdown" id="chat-tools-dropdown">
-								<div class="panel-content tools-options">
-									<button class="panel-item tool-option" id="chat-admet-tool">
-										<svg class="tool-option-icon" viewBox="0 0 32 32" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-											<path d="M 14 5 C 12.90625 5 12 5.90625 12 7 L 12 8 L 6 8 C 4.355469 8 3 9.355469 3 11 L 3 26 L 29 26 L 29 11 C 29 9.355469 27.644531 8 26 8 L 20 8 L 20 7 C 20 5.90625 19.09375 5 18 5 Z M 14 7 L 18 7 L 18 8 L 14 8 Z M 6 10 L 26 10 C 26.566406 10 27 10.433594 27 11 L 27 24 L 5 24 L 5 11 C 5 10.433594 5.433594 10 6 10 Z M 15 13 L 15 16 L 12 16 L 12 18 L 15 18 L 15 21 L 17 21 L 17 18 L 20 18 L 20 16 L 17 16 L 17 13 Z" fill="currentColor"/>
-										</svg>
-										AdMet
+							<div class="tools-dropdown" id="chat-tools-dropdown">
+								<div class="tools-list">
+									<button class="tool-item" id="chat-admet-tool">
+										<img src="assets/ADMET.svg" alt="ADMET" class="tool-item-icon" width="16" height="16">
+										<div class="tool-item-content">
+											<span class="tool-name">ADMET</span>
+											<span class="tool-description">Tek bir molekül için ADMET analizi yapar.</span>
+										</div>
 									</button>
 								</div>
 							</div>
@@ -316,6 +325,35 @@
 			<span class="menu-text">Delete</span>
 		</button>
 	</div>
+
+    <!-- Comparison Modal -->
+    <div class="modal" id="compare-modal">
+        <div class="modal-overlay" id="compare-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Molekülleri Karşılaştır</h2>
+                <button class="modal-close" id="compare-close">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">Karşılaştırmak istediğiniz moleküllerin SMILES veya isimlerini her satıra bir tane olacak şekilde girin.</p>
+                <textarea id="compare-input" class="compare-textarea" placeholder="Kafein
+CCO
+C1=CC=CC=C1" rows="5"></textarea>
+                <div class="modal-actions">
+                    <button class="modal-action-btn primary" id="run-comparison">Karşılaştırmayı Başlat</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+	<!-- Charting Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- PDF Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 
 	<!-- Markdown renderer, sanitizer and syntax highlighter -->
 	<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>

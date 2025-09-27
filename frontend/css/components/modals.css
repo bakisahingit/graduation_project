@@ -4,7 +4,7 @@
  */
 
 /* Base modal styles */
-.settings-modal, .molecule-modal, .tools-modal {
+.settings-modal, .molecule-modal, .tools-modal, .modal {
     position: fixed;
     top: 0;
     left: 0;
@@ -16,11 +16,11 @@
     justify-content: center;
 }
 
-.settings-modal.open, .molecule-modal.open, .tools-modal.open {
+.settings-modal.open, .molecule-modal.open, .tools-modal.open, .modal.open {
     display: flex;
 }
 
-.settings-overlay, .molecule-overlay, .tools-overlay {
+.settings-overlay, .molecule-overlay, .tools-overlay, .modal-overlay {
     position: absolute;
     top: 0;
     left: 0;
@@ -60,7 +60,22 @@
     overflow: hidden;
 }
 
-.settings-header, .molecule-header, .tools-header {
+.modal-content {
+    position: relative;
+    width: 90%;
+    max-width: 600px; /* Using max-width from settings-content */
+    max-height: 80vh;
+    background: linear-gradient(180deg, rgba(26,26,26,0.95), rgba(20,20,20,0.98));
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-xl);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.settings-header, .molecule-header, .tools-header, .modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -68,14 +83,14 @@
     border-bottom: 1px solid var(--border-secondary);
 }
 
-.settings-title, .molecule-title, .tools-title {
+.settings-title, .molecule-title, .tools-title, .modal-title {
     margin: 0;
     font-size: var(--text-2xl);
     font-weight: var(--font-semibold);
     color: var(--accent);
 }
 
-.settings-close, .molecule-close, .tools-close {
+.settings-close, .molecule-close, .tools-close, .modal-close {
     background: var(--gray-950);
     border: 1px solid var(--border-secondary);
     color: var(--gray-300);
@@ -94,7 +109,7 @@
     color: var(--gray-100);
 }
 
-.settings-body, .molecule-body, .tools-body {
+.settings-body, .molecule-body, .tools-body, .modal-body {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -391,7 +406,25 @@
     justify-content: flex-end;
 }
 
+.modal-actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+}
+
 .molecule-action-btn {
+    background: var(--gray-950);
+    border: 1px solid var(--border-secondary);
+    color: var(--gray-200);
+    padding: 10px var(--space-5);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-md);
+    font-weight: var(--font-medium);
+    cursor: pointer;
+    transition: var(--transition-normal);
+}
+
+.modal-action-btn {
     background: var(--gray-950);
     border: 1px solid var(--border-secondary);
     color: var(--gray-200);

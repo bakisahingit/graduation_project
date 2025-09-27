@@ -103,6 +103,46 @@ export class ApiService {
     }
 
     /**
+     * Sends a comparison request for multiple molecules.
+     * @param {string[]} molecules - Array of molecule names or SMILES.
+     * @param {string} model - The selected LLM model.
+     * @param {AbortSignal} signal - Abort signal.
+     * @returns {Promise<any>}
+     */
+    async sendComparisonRequest(molecules, model, signal = null) {
+        const requestBody = {
+            molecules,
+            model,
+        };
+
+        const requestOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        };
+
+        if (signal) {
+            requestOptions.signal = signal;
+        }
+
+        try {
+            const response = await fetch(`${this.baseUrl}/chat/compare`, requestOptions);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+            
+            return await response.json();
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                throw new Error('Request aborted');
+            }
+            throw error;
+        }
+    }
+
+    /**
      * Mevcut modelleri getir
      * @returns {Promise<Array>}
      */

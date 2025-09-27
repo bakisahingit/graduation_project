@@ -36,7 +36,7 @@ export const openai = new OpenAI({
 });
 
 export const httpClient = axios.create({
-    timeout: 10000,
+    timeout: 30000, // Increased timeout to 30 seconds for ADMET API calls
     httpAgent: new http.Agent({ keepAlive: true }),
     httpsAgent: new https.Agent({ keepAlive: true }),
     headers: { 'User-Agent': 'axios/1.6.8' }

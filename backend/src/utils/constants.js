@@ -26,16 +26,16 @@ export const entityExtractionPrompt = `Your task is to analyze the user's text a
 - The chemical name might be in Turkish; return it as you see it. Do not translate it.
 - Your response must be ONLY the JSON object and nothing else.`;
 
-export const translationPrompt = `Translate the following Turkish chemical name to its common English equivalent. Respond ONLY with the English name and nothing else.
+export const translationPrompt = `Translate the following Turkish chemical name to its common English equivalent. Respond in JSON format: {"englishName": "the_english_name"}. If you cannot find a direct translation, return the original Turkish name in the "englishName" field.
 
 Turkish: kafein
-English: caffeine
+English: {"englishName": "caffeine"}
 
 Turkish: aspirin
-English: aspirin
+English: {"englishName": "aspirin"}
 
 Turkish: asetik asit
-English: acetic acid
+English: {"englishName": "acetic acid"}
 
 Turkish: {turkishName}
 English:`;

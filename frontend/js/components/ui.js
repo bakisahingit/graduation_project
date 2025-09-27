@@ -94,7 +94,15 @@ export class UIComponent {
             welcomeToolsBtn: DOMUtils.select('#welcome-tools-btn'),
             chatToolsBtn: DOMUtils.select('#chat-tools-btn'),
             welcomeAdmetTool: DOMUtils.select('#welcome-admet-tool'),
-            chatAdmetTool: DOMUtils.select('#chat-admet-tool')
+            chatAdmetTool: DOMUtils.select('#chat-admet-tool'),
+            compareToolBtn: DOMUtils.select('#compare-tool'),
+
+            // Comparison Modal
+            compareModal: DOMUtils.select('#compare-modal'),
+            compareOverlay: DOMUtils.select('#compare-overlay'),
+            compareClose: DOMUtils.select('#compare-close'),
+            compareInput: DOMUtils.select('#compare-input'),
+            runComparisonBtn: DOMUtils.select('#run-comparison')
         };
     }
 
@@ -203,10 +211,20 @@ export class UIComponent {
     createBotMessage() {
         const el = DOMUtils.create('div', { 
             className: 'message bot',
-            textContent: ''
         });
+
+        // Add a container for message-specific actions (e.g., export, copy)
+        const actionsEl = DOMUtils.create('div', { className: 'message-actions' });
+        el.appendChild(actionsEl);
+
+        // Add a container for the actual content
+        const contentEl = DOMUtils.create('div', { className: 'message-content' });
+        el.appendChild(contentEl);
+
         this.elements.messagesEl.appendChild(el);
         this.smartScroll();
+        
+        // Return the main message container element
         return el;
     }
 
