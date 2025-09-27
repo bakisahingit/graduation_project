@@ -278,6 +278,18 @@ class ChatApp {
             });
         }
 
+        if (this.ui.elements.welcomeCompareTool) {
+            DOMUtils.on(this.ui.elements.welcomeCompareTool, 'click', () => {
+                this.openCompareModal();
+            });
+        }
+
+        if (this.ui.elements.chatCompareTool) {
+            DOMUtils.on(this.ui.elements.chatCompareTool, 'click', () => {
+                this.openCompareModal();
+            });
+        }
+
         // Keyboard shortcuts
         DOMUtils.on(document, 'keydown', (e) => {
             if (e.key === 'Escape') {

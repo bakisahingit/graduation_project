@@ -95,6 +95,8 @@ export class UIComponent {
             chatToolsBtn: DOMUtils.select('#chat-tools-btn'),
             welcomeAdmetTool: DOMUtils.select('#welcome-admet-tool'),
             chatAdmetTool: DOMUtils.select('#chat-admet-tool'),
+            welcomeCompareTool: DOMUtils.select('#welcome-compare-tool'),
+            chatCompareTool: DOMUtils.select('#chat-compare-tool'),
             compareToolBtn: DOMUtils.select('#compare-tool'),
 
             // Comparison Modal
