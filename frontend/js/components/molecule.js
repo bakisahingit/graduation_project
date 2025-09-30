@@ -22,6 +22,8 @@ export class MoleculeComponent {
             this.ctx = this.canvas.getContext('2d');
             this.drawer = new MoleculeDrawer(this.canvas, this.ctx);
             this.isInitialized = true;
+            // default: hide implicit hydrogens
+            this.showHydrogens = false;
             // Attach pan/zoom listeners
             this._attachCanvasInteractions();
         }
@@ -97,7 +99,7 @@ export class MoleculeComponent {
                 const a = atoms[i];
                 const dx = mx - a.x;
                 const dy = my - a.y;
-                const r = Math.max(6, this.drawer.baseAtomRadius * this.drawer.zoom) * 1.2;
+                const r = Math.max(3.5, this.drawer.baseAtomRadius * this.drawer.zoom) * 1.02;
                 if (dx * dx + dy * dy <= r * r) {
                     found = a;
                     break;
@@ -138,7 +140,7 @@ export class MoleculeComponent {
                 const a = atoms[i];
                 const dx = mx - a.x;
                 const dy = my - a.y;
-                const r = Math.max(6, this.drawer.baseAtomRadius * this.drawer.zoom) * 1.2;
+                const r = Math.max(3.5, this.drawer.baseAtomRadius * this.drawer.zoom) * 1.02;
                 if (dx * dx + dy * dy <= r * r) { found = a; break; }
             }
             if (found && this.drawer.currentGraph && typeof found.index === 'number') {
@@ -251,6 +253,33 @@ export class MoleculeComponent {
             }
         }
     }
+
+    /**
+     * Zoom in
+     */
+    zoomIn() {
+        if (this.drawer) {
+            this.drawer.zoomIn();
+        }
+    }
+
+    /**
+     * Zoom out
+     */
+    zoomOut() {
+        if (this.drawer) {
+            this.drawer.zoomOut();
+        }
+    }
+
+    /**
+     * Reset view
+     */
+    resetView() {
+        if (this.drawer) {
+            this.drawer.resetView();
+        }
+    }
 }
 
 /**
@@ -266,8 +295,10 @@ class MoleculeDrawer {
         this.centerX = 0;
         this.centerY = 0;
         // Visual scaling and base sizes
-        this.baseAtomRadius = 18;
-        this.baseBondWidth = 3;
+        // Reduce defaults to make molecules appear smaller and more compact
+        this.baseAtomRadius = 9;
+        // Increase base bond width so bonds appear bolder while atoms remain small
+        this.baseBondWidth = 1.8;
         this.scale = 1;
         this.padding = 32; // padding when fitting to canvas
         // Pan/zoom state
@@ -359,6 +390,12 @@ class MoleculeDrawer {
 
         this.ctx.save();
 
+        // If this is an implicit H atom and hydrogens are hidden, don't draw it
+        if (meta && meta.implicit && !this.showHydrogens) {
+            this.ctx.restore();
+            return;
+        }
+
         // soft shadow / glow for hover or selected
         if (meta && (meta.selected || meta._hover)) {
             this.ctx.shadowColor = 'rgba(255,235,59,0.9)';
@@ -379,16 +416,16 @@ class MoleculeDrawer {
         this.ctx.fillStyle = grad;
         this.ctx.fill();
 
-        // Outline
+        // Outline (thinner white ring; selected/invalid still noticeable but reduced)
         if (meta && meta.invalid) {
             this.ctx.strokeStyle = '#e53935';
-            this.ctx.lineWidth = Math.max(2, Math.round(2.5 * z));
+            this.ctx.lineWidth = Math.max(1.2, 1.6 * z);
         } else if (meta && (meta.selected || meta._hover)) {
             this.ctx.strokeStyle = '#ffeb3b';
-            this.ctx.lineWidth = Math.max(2, Math.round(2.5 * z));
+            this.ctx.lineWidth = Math.max(1.2, 1.6 * z);
         } else {
             this.ctx.strokeStyle = '#ffffff';
-            this.ctx.lineWidth = Math.max(1, Math.round(1.8 * z));
+            this.ctx.lineWidth = Math.max(0.6, 1.0 * z);
         }
         this.ctx.stroke();
 
@@ -478,11 +515,17 @@ class MoleculeDrawer {
      * @param {string} type - Bağ türü
      * @param {string} color - Renk
      */
-    drawBond(x1, y1, x2, y2, type = 'single', color = '#81d4fa') {
+    drawBond(x1, y1, x2, y2, type = 'single', color = '#81d4fa', meta = {}) {
         // Accept optional stereo parameter via arguments[6]
         const stereo = arguments.length >= 7 ? arguments[6] : null;
 
         this.ctx.save();
+
+        // If this bond connects to an implicit H atom and hydrogens are hidden, don't draw it
+        if (meta && meta.hasImplicitH && !this.showHydrogens) {
+            this.ctx.restore();
+            return;
+        }
 
         // create subtle gradient along bond
         const grad = this.ctx.createLinearGradient(x1, y1, x2, y2);
@@ -684,7 +727,7 @@ class MoleculeDrawer {
                 throw new Error('Parse failed');
             }
 
-            // Add implicit hydrogens based on typical valences
+            // Always add implicit hydrogens to the graph
             this._addImplicitHydrogens(graph);
 
             // Check valence violations and mark atoms
@@ -704,7 +747,9 @@ class MoleculeDrawer {
                     const y1 = this.centerY + (a1.y - this.centerY) * this.zoom + this.offsetY;
                     const x2 = this.centerX + (a2.x - this.centerX) * this.zoom + this.offsetX;
                     const y2 = this.centerY + (a2.y - this.centerY) * this.zoom + this.offsetY;
-                    this.drawBond(x1, y1, x2, y2, b.type);
+                    // Check if this bond connects to an implicit H atom
+                    const hasImplicitH = (a1.implicit && a1.symbol === 'H') || (a2.implicit && a2.symbol === 'H');
+                    this.drawBond(x1, y1, x2, y2, b.type, '#81d4fa', { hasImplicitH });
                 }
             });
 
@@ -740,7 +785,7 @@ class MoleculeDrawer {
 
         this.clear();
         // draw background
-        this.ctx.fillStyle = 'rgba(26, 26, 26, 0.8)';
+        this.ctx.fillStyle = 'rgba(26, 26, 26, 0.0)';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         // draw bonds then atoms using current zoom/offset
@@ -752,10 +797,12 @@ class MoleculeDrawer {
             const y1 = this.centerY + (a1.y - this.centerY) * this.zoom + this.offsetY;
             const x2 = this.centerX + (a2.x - this.centerX) * this.zoom + this.offsetX;
             const y2 = this.centerY + (a2.y - this.centerY) * this.zoom + this.offsetY;
+            // Check if this bond connects to an implicit H atom
+            const hasImplicitH = (a1.implicit && a1.symbol === 'H') || (a2.implicit && a2.symbol === 'H');
             // draw bonds slightly below atom layer for better overlap
             this.ctx.save();
             this.ctx.globalCompositeOperation = 'destination-over';
-            this.drawBond(x1, y1, x2, y2, b.type, b.color, b.stereo);
+            this.drawBond(x1, y1, x2, y2, b.type, b.color, { hasImplicitH });
             this.ctx.restore();
         });
 
@@ -1176,5 +1223,77 @@ class MoleculeDrawer {
         // reset pan offsets
         this.offsetX = 0;
         this.offsetY = 0;
+    }
+
+    /**
+     * Zoom in
+     */
+    zoomIn() {
+        this.targetZoom = Math.min(this.targetZoom * 1.2, 5);
+        this._animateToTarget();
+    }
+
+    /**
+     * Zoom out
+     */
+    zoomOut() {
+        this.targetZoom = Math.max(this.targetZoom / 1.2, 0.1);
+        this._animateToTarget();
+    }
+
+    /**
+     * Reset view
+     */
+    resetView() {
+        this.targetZoom = this.scale;
+        this.targetOffsetX = 0;
+        this.targetOffsetY = 0;
+        this._animateToTarget();
+    }
+
+    /**
+     * Animate to target values
+     */
+    _animateToTarget() {
+        if (this._animating) return;
+        
+        this._animating = true;
+        const animate = () => {
+            const diff = 0.1;
+            let changed = false;
+            
+            if (Math.abs(this.zoom - this.targetZoom) > 0.01) {
+                this.zoom += (this.targetZoom - this.zoom) * diff;
+                changed = true;
+            }
+            
+            if (Math.abs(this.offsetX - this.targetOffsetX) > 0.01) {
+                this.offsetX += (this.targetOffsetX - this.offsetX) * diff;
+                changed = true;
+            }
+            
+            if (Math.abs(this.offsetY - this.targetOffsetY) > 0.01) {
+                this.offsetY += (this.targetOffsetY - this.offsetY) * diff;
+                changed = true;
+            }
+            
+            if (changed) {
+                this.redraw();
+                requestAnimationFrame(animate);
+            } else {
+                this._animating = false;
+            }
+        };
+        
+        animate();
+    }
+
+    /**
+     * Redraw the molecule
+     */
+    redraw() {
+        if (this.currentGraph) {
+            this.parseAndDraw(this.currentGraph.smiles || '');
+        }
     }
 }

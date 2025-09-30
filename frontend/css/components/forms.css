@@ -22,6 +22,30 @@
     scroll-behavior: smooth;
 }
 
+/* Ensure molecule query wrapper uses the same look as the welcome input wrapper */
+#molecule-query-form.welcome-input-wrapper {
+    background: var(--bg-secondary);
+    backdrop-filter: blur(calc(var(--glass-blur) - 2px));
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur) - 2px));
+    box-shadow: var(--shadow-lg), inset 0 1px 0 var(--gray-950);
+    border: 1px solid var(--border-secondary);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-2xl);
+}
+
+/* Make molecule query wider and center it within the modal */
+.smiles-input-section .welcome-input-wrapper {
+    width: 90%;
+    max-width: 980px;
+    margin: 0 auto; /* center horizontally */
+}
+
+/* ADMET tool aktif olduğunda input wrapper border rengi */
+.input-wrapper.admet-active, .welcome-input-wrapper.admet-active {
+    border-color: rgba(227, 130, 248, 0.5);
+    box-shadow: var(--shadow-lg), inset 0 1px 0 var(--gray-950), 0 0 0 1px rgba(227, 130, 248, 0.2);
+}
+
 
 /* Input area */
 .input-area {

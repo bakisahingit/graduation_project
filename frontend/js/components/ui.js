@@ -33,6 +33,10 @@ export class UIComponent {
             welcomeSendBtn: DOMUtils.select('#welcome-send-btn'),
             chatSendBtn: DOMUtils.select('#chat-send-btn'),
             
+            // Input wrapper elementleri
+            inputWrapper: DOMUtils.select('.input-wrapper'),
+            welcomeInputWrapper: DOMUtils.select('.welcome-input-wrapper'),
+            
             // Sidebar elementleri
             sidebar: DOMUtils.select('#sidebar'),
             newChatBtn: DOMUtils.select('#new-chat-btn'),

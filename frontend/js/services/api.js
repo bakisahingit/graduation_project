@@ -143,6 +143,31 @@ export class ApiService {
     }
 
     /**
+     * Resolve a chemical name to a SMILES string using PubChem PUG REST.
+     * Returns the CanonicalSMILES string or null if not found.
+     * This runs in the browser and uses the public PubChem REST API.
+     * @param {string} name
+     * @returns {Promise<string|null>}
+     */
+    async getSmilesFromName(name) {
+        if (!name || typeof name !== 'string') return null;
+        const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(name)}/property/CanonicalSMILES/JSON`;
+        try {
+            const res = await fetch(url);
+            if (!res.ok) return null;
+            const data = await res.json();
+            const props = data?.PropertyTable?.Properties?.[0];
+            if (props && (props.CanonicalSMILES || props.ConnectivitySMILES)) {
+                return props.CanonicalSMILES || props.ConnectivitySMILES || null;
+            }
+            return null;
+        } catch (e) {
+            console.error('PubChem lookup failed for', name, e);
+            return null;
+        }
+    }
+
+    /**
      * Mevcut modelleri getir
      * @returns {Promise<Array>}
      */

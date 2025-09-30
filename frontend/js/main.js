@@ -145,6 +145,95 @@ class ChatApp {
             });
         }
 
+        // Resolve & Draw button (new UI flow)
+        // New molecule query input + send button
+        const moleculeQueryInput = DOMUtils.select('#molecule-query-input');
+        const moleculeQuerySend = DOMUtils.select('#molecule-query-send');
+        if (moleculeQueryInput && moleculeQuerySend) {
+            DOMUtils.on(moleculeQuerySend, 'click', async (e) => {
+                e.preventDefault();
+                const q = moleculeQueryInput.value.trim();
+                if (!q) return;
+
+                // We'll send q to backend chat endpoint (same as normal chat) but force extraction of chemical entity
+                try {
+                    // Use ApiService.sendMessage to reuse backend's LLM extraction + pubchem/translation flow
+                    const model = this.ui.elements.modelSelectChat ? this.ui.elements.modelSelectChat.value : null;
+                    const data = await this.api.sendMessage(q, model, [], null, 'admet');
+
+                    // If backend returned rawAdmetData and a smiles value, use it; otherwise try to extract SMILES from response text
+                    let resolvedSmiles = null;
+                    if (data.rawAdmetData && data.rawAdmetData.smiles) {
+                        resolvedSmiles = data.rawAdmetData.smiles;
+                    }
+
+                    // Fallback: try to parse SMILES-like token from the textual output
+                    if (!resolvedSmiles && typeof data.output === 'string') {
+                        const maybe = data.output.match(/([A-Za-z0-9@+\-\[\]()=#\\\/%.]{3,200})/);
+                        if (maybe) resolvedSmiles = maybe[1];
+                    }
+
+                    if (resolvedSmiles) {
+                        if (this.ui.elements.smilesInput) this.ui.elements.smilesInput.value = resolvedSmiles;
+                        const smilesDisplay = document.getElementById('smiles-display');
+                        if (smilesDisplay) smilesDisplay.textContent = resolvedSmiles;
+                        this.updateMoleculeDisplay();
+
+                        // Also insert the resolved SMILES into chat input for user's convenience
+                        if (this.ui.elements.input) {
+                            this.ui.elements.input.value = (this.ui.elements.input.value || '') + '\nMolekül: ' + resolvedSmiles;
+                        }
+                        // Close molecule modal for smoother UX
+                        this.closeMoleculeModal();
+                    } else {
+                        alert('Molekül SMILES formatı çözümlenemedi. Lütfen ismi net yazın.');
+                    }
+                } catch (err) {
+                    console.error('Molecule query failed', err);
+                    alert('Sorgu sırasında hata oluştu. Konsolu kontrol edin.');
+                }
+            });
+        }
+
+        // When ADMET tool is active and user types a name (not SMILES) into the smiles input,
+        // attempt to resolve it to SMILES automatically using PubChem and populate the field.
+        if (this.ui.elements.smilesInput) {
+            // debounce to avoid too many requests
+            let timeout = null;
+            DOMUtils.on(this.ui.elements.smilesInput, 'change', async () => {
+                // Only run when admet tool is active
+                if (this.activeTool !== 'admet') return;
+
+                const raw = this.ui.elements.smilesInput.value.trim();
+                if (!raw) return;
+
+                // Quick heuristic: if it looks like a SMILES, do nothing
+                const smilesLike = /^[A-Za-z0-9@+\-\[\]()=#\\\/%.]+$/.test(raw);
+                if (smilesLike && raw.length > 1 && raw.length < 200 && /[=#@0-9]/.test(raw)) {
+                    // Probably already a SMILES, don't resolve
+                    return;
+                }
+
+                clearTimeout(timeout);
+                timeout = setTimeout(async () => {
+                    try {
+                        const api = this.api;
+                        const resolved = await api.getSmilesFromName(raw);
+                        if (resolved) {
+                            // populate the input and trigger display update
+                            this.ui.elements.smilesInput.value = resolved;
+                            this.updateMoleculeDisplay();
+                        } else {
+                            // try translating via LLM by sending a normal chat request (fallback not implemented here)
+                            console.log('Could not resolve name to SMILES for:', raw);
+                        }
+                    } catch (e) {
+                        console.error('Name-to-SMILES resolution error:', e);
+                    }
+                }, 450);
+            });
+        }
+
         if (this.ui.elements.clearMoleculeBtn) {
             DOMUtils.on(this.ui.elements.clearMoleculeBtn, 'click', () => {
                 this.clearMolecule();
@@ -156,6 +245,14 @@ class ChatApp {
                 this.insertMoleculeToChat();
             });
         }
+
+        // Molekül örnekleri kaldırıldı
+
+        // Zoom kontrolleri için event listener'lar
+        this.setupMoleculeControls();
+
+        // Export ve arama butonları için event listener'lar
+        this.setupMoleculeActions();
 
         // Comparison Modal
         if (this.ui.elements.compareToolBtn) {
@@ -1863,6 +1960,203 @@ class ChatApp {
         
         const smiles = this.ui.elements.smilesInput.value.trim();
         this.molecule.updateDisplay(smiles);
+        
+        // Molekül bilgilerini güncelle
+        if (smiles) {
+            this.updateMoleculeInfo(smiles);
+        } else {
+            this.hideMoleculeInfo();
+        }
+    }
+
+    /**
+     * Molekül bilgilerini güncelle
+     */
+    updateMoleculeInfo(smiles) {
+        const infoPanel = document.getElementById('molecule-info-panel');
+        if (!infoPanel) return;
+
+        // SMILES'i güncelle
+        const smilesElement = document.getElementById('info-smiles');
+        if (smilesElement) {
+            smilesElement.textContent = smiles;
+        }
+
+        // Sol paneldeki SMILES display'i güncelle
+        const smilesDisplay = document.getElementById('smiles-display');
+        if (smilesDisplay) {
+            smilesDisplay.textContent = smiles;
+        }
+
+        // Basit molekül analizi
+        this.analyzeMolecule(smiles);
+    }
+
+    /**
+     * Molekül analizi yap
+     */
+    analyzeMolecule(smiles) {
+        try {
+            // Basit atom sayısı hesaplama
+            const atomCount = this.countAtoms(smiles);
+            const molecularWeight = this.calculateMolecularWeight(smiles);
+            const formula = this.generateMolecularFormula(smiles);
+
+            // Atom sayısını güncelle
+            const atomCountElement = document.getElementById('info-atom-count');
+            if (atomCountElement) {
+                atomCountElement.textContent = atomCount.toString();
+            }
+
+            // Molekül ağırlığını güncelle
+            const weightElement = document.getElementById('info-molecular-weight');
+            if (weightElement) {
+                weightElement.textContent = molecularWeight > 0 ? `${molecularWeight.toFixed(2)} g/mol` : '-';
+            }
+
+            // Formülü güncelle
+            const formulaElement = document.getElementById('info-formula');
+            if (formulaElement) {
+                formulaElement.textContent = formula || '-';
+            }
+        } catch (error) {
+            console.error('Molekül analizi hatası:', error);
+        }
+    }
+
+    /**
+     * Atom sayısını hesapla
+     */
+    countAtoms(smiles) {
+        // Basit atom sayısı hesaplama (sadece C, H, N, O, S, P, F, Cl, Br, I)
+        const atomPatterns = {
+            'C': /C(?!l|a)/g,
+            'H': /H/g,
+            'N': /N/g,
+            'O': /O/g,
+            'S': /S/g,
+            'P': /P/g,
+            'F': /F/g,
+            'Cl': /Cl/g,
+            'Br': /Br/g,
+            'I': /I/g
+        };
+
+        let totalAtoms = 0;
+        Object.values(atomPatterns).forEach(pattern => {
+            const matches = smiles.match(pattern);
+            if (matches) {
+                totalAtoms += matches.length;
+            }
+        });
+
+        return totalAtoms;
+    }
+
+    /**
+     * Molekül ağırlığını hesapla
+     */
+    calculateMolecularWeight(smiles) {
+        const atomicWeights = {
+            'C': 12.01,
+            'H': 1.008,
+            'N': 14.01,
+            'O': 16.00,
+            'S': 32.07,
+            'P': 30.97,
+            'F': 19.00,
+            'Cl': 35.45,
+            'Br': 79.90,
+            'I': 126.90
+        };
+
+        const atomPatterns = {
+            'C': /C(?!l|a)/g,
+            'H': /H/g,
+            'N': /N/g,
+            'O': /O/g,
+            'S': /S/g,
+            'P': /P/g,
+            'F': /F/g,
+            'Cl': /Cl/g,
+            'Br': /Br/g,
+            'I': /I/g
+        };
+
+        let totalWeight = 0;
+        Object.entries(atomPatterns).forEach(([atom, pattern]) => {
+            const matches = smiles.match(pattern);
+            if (matches) {
+                totalWeight += matches.length * atomicWeights[atom];
+            }
+        });
+
+        return totalWeight;
+    }
+
+    /**
+     * Moleküler formül oluştur
+     */
+    generateMolecularFormula(smiles) {
+        const atomCounts = {
+            'C': 0,
+            'H': 0,
+            'N': 0,
+            'O': 0,
+            'S': 0,
+            'P': 0,
+            'F': 0,
+            'Cl': 0,
+            'Br': 0,
+            'I': 0
+        };
+
+        const atomPatterns = {
+            'C': /C(?!l|a)/g,
+            'H': /H/g,
+            'N': /N/g,
+            'O': /O/g,
+            'S': /S/g,
+            'P': /P/g,
+            'F': /F/g,
+            'Cl': /Cl/g,
+            'Br': /Br/g,
+            'I': /I/g
+        };
+
+        Object.entries(atomPatterns).forEach(([atom, pattern]) => {
+            const matches = smiles.match(pattern);
+            if (matches) {
+                atomCounts[atom] = matches.length;
+            }
+        });
+
+        // Formülü oluştur (sadece sıfır olmayan atomları dahil et)
+        const formulaParts = [];
+        Object.entries(atomCounts).forEach(([atom, count]) => {
+            if (count > 0) {
+                formulaParts.push(`${atom}${count > 1 ? count : ''}`);
+            }
+        });
+
+        return formulaParts.join('');
+    }
+
+    /**
+     * Molekül bilgi panelini gizle
+     */
+    hideMoleculeInfo() {
+        // Sol paneldeki SMILES display'i temizle
+        const smilesDisplay = document.getElementById('smiles-display');
+        if (smilesDisplay) {
+            smilesDisplay.textContent = '-';
+        }
+
+        // Sağ paneldeki bilgileri temizle
+        const smilesElement = document.getElementById('info-smiles');
+        if (smilesElement) {
+            smilesElement.textContent = '-';
+        }
     }
 
     /**
@@ -1906,6 +2200,170 @@ class ChatApp {
 
         // Modal'ı kapat
         this.closeMoleculeModal();
+    }
+
+
+    /**
+     * Molekül kontrolleri için event listener'ları kur
+     */
+    setupMoleculeControls() {
+        const zoomInBtn = document.getElementById('zoom-in');
+        const zoomOutBtn = document.getElementById('zoom-out');
+        const resetViewBtn = document.getElementById('reset-view');
+        const toggleHBtn = document.getElementById('toggle-hydrogens');
+
+        if (zoomInBtn) {
+            DOMUtils.on(zoomInBtn, 'click', () => {
+                this.molecule.zoomIn();
+            });
+        }
+
+        if (zoomOutBtn) {
+            DOMUtils.on(zoomOutBtn, 'click', () => {
+                this.molecule.zoomOut();
+            });
+        }
+
+        if (resetViewBtn) {
+            DOMUtils.on(resetViewBtn, 'click', () => {
+                this.molecule.resetView();
+            });
+        }
+
+        if (toggleHBtn) {
+            // toggleHBtn is checkbox input now
+            DOMUtils.on(toggleHBtn, 'change', (e) => {
+                const checked = e.currentTarget.checked;
+                if (this.molecule) {
+                    this.molecule.showHydrogens = checked;
+                    if (this.molecule.drawer) this.molecule.drawer.showHydrogens = checked;
+                    // if a graph is already drawn, redraw to reflect change
+                    if (this.molecule.drawer && this.molecule.drawer.currentGraph) {
+                        this.molecule.drawer.parseAndDrawFromGraph(this.molecule.drawer.currentGraph);
+                    } else if (this.molecule.isInitialized) {
+                        // if no graph yet but input exists, trigger update
+                        const smiles = this.ui.elements.smilesInput ? this.ui.elements.smilesInput.value.trim() : '';
+                        if (smiles) this.molecule.updateDisplay(smiles);
+                    }
+                }
+            });
+        }
+    }
+
+    /**
+     * Molekül aksiyonları için event listener'ları kur
+     */
+    setupMoleculeActions() {
+        const searchBtn = document.getElementById('search-molecule');
+        const exportBtn = document.getElementById('export-molecule');
+
+        if (searchBtn) {
+            DOMUtils.on(searchBtn, 'click', () => {
+                this.searchMoleculeInPubChem();
+            });
+        }
+
+        if (exportBtn) {
+            DOMUtils.on(exportBtn, 'click', () => {
+                this.exportMolecule();
+            });
+        }
+    }
+
+    /**
+     * PubChem'de molekül ara
+     */
+    searchMoleculeInPubChem() {
+        if (!this.ui.elements.smilesInput) return;
+        
+        const smiles = this.ui.elements.smilesInput.value.trim();
+        if (!smiles) {
+            alert('Lütfen önce bir SMILES formatı girin.');
+            return;
+        }
+
+        // PubChem arama URL'si oluştur
+        const searchUrl = `https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(smiles)}`;
+        window.open(searchUrl, '_blank');
+    }
+
+    /**
+     * Molekülü dışa aktar
+     */
+    exportMolecule() {
+        if (!this.ui.elements.smilesInput) return;
+        
+        const smiles = this.ui.elements.smilesInput.value.trim();
+        if (!smiles) {
+            alert('Lütfen önce bir SMILES formatı girin.');
+            return;
+        }
+
+        // Export seçenekleri göster
+        const exportOptions = [
+            { name: 'PNG', action: () => this.exportAsPNG() },
+            { name: 'SVG', action: () => this.exportAsSVG() },
+            { name: 'SMILES', action: () => this.exportAsSMILES() }
+        ];
+
+        // Basit export menüsü (şimdilik sadece SMILES)
+        this.exportAsSMILES();
+    }
+
+    /**
+     * SMILES olarak dışa aktar
+     */
+    exportAsSMILES() {
+        const smiles = this.ui.elements.smilesInput.value.trim();
+        if (!smiles) return;
+
+        const blob = new Blob([smiles], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `molecule_${Date.now()}.smiles`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    /**
+     * PNG olarak dışa aktar
+     */
+    exportAsPNG() {
+        const canvas = document.getElementById('molecule-canvas');
+        if (!canvas) return;
+
+        const link = document.createElement('a');
+        link.download = `molecule_${Date.now()}.png`;
+        link.href = canvas.toDataURL();
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    /**
+     * SVG olarak dışa aktar
+     */
+    exportAsSVG() {
+        // SVG export için basit bir implementasyon
+        const smiles = this.ui.elements.smilesInput.value.trim();
+        if (!smiles) return;
+
+        const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300">
+            <text x="200" y="150" text-anchor="middle" fill="white" font-family="monospace">${smiles}</text>
+        </svg>`;
+
+        const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `molecule_${Date.now()}.svg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     /**
@@ -2074,10 +2532,15 @@ class ChatApp {
     updateToolButtonState() {
         const isInChatMode = this.ui.elements.chatInterface.style.display !== 'none';
         const toolsBtn = isInChatMode ? this.ui.elements.chatToolsBtn : this.ui.elements.welcomeToolsBtn;
+        const inputWrapper = isInChatMode ? this.ui.elements.inputWrapper : this.ui.elements.welcomeInputWrapper;
         
         if (toolsBtn) {
             if (this.activeTool === 'admet') {
                 DOMUtils.addClass(toolsBtn, 'active');
+                // Input wrapper'a ADMET aktif class'ı ekle
+                if (inputWrapper) {
+                    DOMUtils.addClass(inputWrapper, 'admet-active');
+                }
                 toolsBtn.innerHTML = `
                     <svg width="16" height="16" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M 14 5 C 12.90625 5 12 5.90625 12 7 L 12 8 L 6 8 C 4.355469 8 3 9.355469 3 11 L 3 26 L 29 26 L 29 11 C 29 9.355469 27.644531 8 26 8 L 20 8 L 20 7 C 20 5.90625 19.09375 5 18 5 Z M 14 7 L 18 7 L 18 8 L 14 8 Z M 6 10 L 26 10 C 26.566406 10 27 10.433594 27 11 L 27 24 L 5 24 L 5 11 C 5 10.433594 5.433594 10 6 10 Z M 15 13 L 15 16 L 12 16 L 12 18 L 15 18 L 15 21 L 17 21 L 17 18 L 20 18 L 20 16 L 17 16 L 17 13 Z" fill="currentColor"/>
@@ -2100,6 +2563,10 @@ class ChatApp {
                 }
             } else {
                 DOMUtils.removeClass(toolsBtn, 'active');
+                // Input wrapper'dan ADMET aktif class'ını kaldır
+                if (inputWrapper) {
+                    DOMUtils.removeClass(inputWrapper, 'admet-active');
+                }
                 toolsBtn.innerHTML = `
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
