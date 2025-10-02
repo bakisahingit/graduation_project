@@ -7,6 +7,47 @@ import { admetContextPrompt } from '../utils/constants.js';
 import { formatAdmetReport } from '../utils/formatters.js';
 import { extractChemicalNameByRegex } from '../utils/nameResolvers.js';
 
+/**
+ * Sadece SMILES formatını çıkarmak için kullanılan fonksiyon
+ * ADMET analizi yapmaz, sadece molekül isminden SMILES bulur
+ */
+export async function extractSmilesOnly(message, model = null) {
+    let smiles = null;
+    let chemicalName = null;
+
+    // Önce LLM ile kimyasal maddeyi çıkar
+    const extractedEntity = await extractChemicalWithLLM(message, model);
+
+    if (extractedEntity.type === 'smiles') {
+        smiles = extractedEntity.value;
+    } else if (extractedEntity.type === 'name') {
+        chemicalName = extractedEntity.value;
+    } else {
+        chemicalName = extractChemicalNameByRegex(message);
+    }
+
+    if (chemicalName && !smiles) {
+        // Önce direkt olarak kimyasal ismi dene
+        smiles = await getSmilesFromName(chemicalName);
+        
+        // Eğer başarısız olursa, çeviri yap
+        if (!smiles) {
+            const englishName = await translateWithLLM(chemicalName, model);
+            if (englishName !== chemicalName) {
+                console.log(`Translated "${chemicalName}" to "${englishName}"`);
+                smiles = await getSmilesFromName(englishName);
+            }
+        }
+    }
+
+    return {
+        smiles,
+        chemicalName,
+        success: !!smiles,
+        message: smiles ? `SMILES bulundu: ${smiles}` : 'Geçerli bir molekül bulunamadı'
+    };
+}
+
 async function handleAdmetTool(message, model = null) {
     let smiles = null;
     let chemicalName = null;

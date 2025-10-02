@@ -43,6 +43,9 @@
     transition: transform 0.3s ease;
     display: flex;
     flex-direction: column;
+    /* spacing token used to make all panel gaps consistent */
+    /* tuned gap after analysis: balances panel padding + margins to shorten vertical spacing */
+    --molecule-gap: 15px;
 }
 
 .molecule-modal.open .molecule-content {
@@ -117,9 +120,10 @@
 
 /* Body */
 .molecule-body {
-    padding: 16px;
+    padding: var(--molecule-gap);
     flex: 1;
-    overflow-y: auto;
+    /* prevent the whole modal body from scrolling; child panels will scroll internally */
+    overflow: hidden;
     display: flex;
     flex-direction: column;
 }
@@ -127,9 +131,14 @@
 .molecule-main-content {
     display: grid;
     grid-template-columns: 1fr 260px;
-    gap: 16px;
-    flex: 1;
+    gap: var(--molecule-gap);
+    /* make the main content fill available vertical space inside molecule-body */
+    flex: 1 1 auto;
     min-height: 0;
+    height: 100%;
+    /* split the gap equally between the panels block and the input block so border-to-border
+       spacing is perceived as uniform regardless of inner padding on either block */
+    margin-bottom: calc(var(--molecule-gap) / 2);
 }
 
 /* Align the smiles input section with the molecule main grid so the
@@ -155,28 +164,93 @@
 .molecule-panel {
     background: linear-gradient(135deg, #0a0b0d 0%, #111214 100%);
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    /* Replace subtle outer dark border with a single green frame */
+    border: 1px solid rgba(26, 188, 156, 0.35);
+    /* remove internal padding so the drawing area can touch the panel border */
+    padding: 0;
     overflow: hidden;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 .molecule-display {
     position: relative;
-    height: 300px;
+    /* let the display take remaining space inside the panel */
+    flex: 1 1 auto;
     display: flex;
     align-items: center;
     justify-content: center;
     background: transparent; /* let the panel's background show through */
     border-radius: 12px; /* match panel corners */
-    overflow: hidden; /* clip canvas/glow to panel corners */
+    overflow: visible; /* allow canvas to fill the panel fully */
+    /* Ensure there is no inner frame; the only visible frame is the panel's green border */
+    border: none;
+    outline: none;
+    box-shadow: none;
 }
 
 #molecule-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: 300px;
+    height: 100%;
     display: block;
     background: transparent;
     cursor: grab;
+}
+
+/* Molecule modal - make the send button green and input wrapper border green
+   Only scoped to the molecule drawer's input area so global inputs remain unchanged */
+.molecule-modal .smiles-input-section .send-btn {
+    color: var(--secondary);
+    /* hide border/outline by default; show on hover only */
+    border-color: transparent;
+    box-shadow: none;
+    background: transparent;
+}
+
+.molecule-modal .smiles-input-section .send-btn:hover:not(:disabled) {
+    background: var(--bg-glass);
+    border-color: rgba(76,175,80,0.35);
+    color: var(--secondary-light);
+    box-shadow: 0 4px 12px rgba(76,175,80,0.15);
+}
+
+/* Show focus/hover styles for send button only on :hover of the button itself */
+.molecule-modal .smiles-input-section .send-btn:not(:hover):not(:focus) {
+    /* ensure no borders/shadows when not hovered/focused */
+    border-color: transparent !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+
+.molecule-modal .smiles-input-section .send-btn:active:not(:disabled) {
+    background: var(--bg-glass-hover);
+    border-color: rgba(76,175,80,0.45);
+}
+
+.molecule-modal .smiles-input-section .send-btn:focus-visible {
+    outline: 2px solid rgba(76,175,80,0.5);
+    outline-offset: 2px;
+}
+
+.molecule-modal .smiles-input-section .send-btn .btn-icon {
+    /* tint send icon toward green */
+    filter: brightness(0) saturate(100%) invert(61%) sepia(36%) saturate(417%) hue-rotate(77deg) brightness(93%) contrast(92%);
+}
+
+/* Input wrapper green border within molecule modal */
+.molecule-modal .smiles-input-section #molecule-query-form.welcome-input-wrapper {
+    border-color: rgba(76,175,80,0.35) !important;
+    box-shadow: var(--shadow-lg), inset 0 1px 0 var(--gray-950), 0 0 0 1px rgba(76,175,80,0.18);
+}
+
+.molecule-modal .smiles-input-section #molecule-query-form.welcome-input-wrapper:focus-within {
+    border-color: rgba(76,175,80,0.5) !important;
+    box-shadow: var(--shadow-lg), inset 0 1px 0 var(--gray-950), 0 0 0 2px rgba(76,175,80,0.18);
 }
 
 #molecule-canvas:active {
@@ -269,6 +343,9 @@
     position: absolute;
     bottom: 8px;
     left: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(2px);
     border: 1px solid rgba(255, 255, 255, 0.15);
@@ -280,6 +357,14 @@
     transition: opacity 0.2s ease;
 }
 
+/* top-left variation for the SMILES overlay */
+.molecule-smiles-overlay.top-left {
+    top: 8px;
+    left: 8px;
+    bottom: auto;
+    transform: none;
+}
+
 .molecule-smiles-overlay:hover {
     opacity: 1;
     background: rgba(0, 0, 0, 0.6);
@@ -288,19 +373,20 @@
 .smiles-overlay-label {
     font-size: 9px;
     color: #b0b0b0;
-    margin-bottom: 1px;
+    margin: 0 8px 0 0; /* inline spacing instead of bottom margin */
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.3px;
+    display: inline-block;
+    vertical-align: middle;
 }
 
 .smiles-overlay-value {
     font-size: 11px;
     color: #ffffff;
     font-family: 'JetBrains Mono', monospace;
-    word-break: break-all;
     line-height: 1.2;
-    max-width: 180px;
+    max-width: 220px; /* allow a bit more horizontal space now that label is inline */
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -398,7 +484,11 @@
     display: flex;
     flex-direction: column;
     gap: 0;
-    overflow-y: auto;
+    /* Let individual panels manage their own scrolling so the sidebar doesn't push layout
+       (we'll make the info panel content scroll internally). */
+    overflow: visible;
+    min-height: 0;
+    height: 100%;
 }
 
 /* Info Panel */
@@ -406,10 +496,11 @@
     background: linear-gradient(135deg, #0a0b0d 0%, #111214 100%);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
-    padding: 16px;
+    padding: var(--molecule-gap);
     height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .info-title {
@@ -424,6 +515,11 @@
     flex-direction: column;
     gap: 10px;
     flex: 1;
+    /* Allow this flex child to shrink and become scrollable inside the info panel. */
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 8px; /* space for scrollbar */
+    max-height: 100%;
 }
 
 .info-item {
@@ -449,6 +545,18 @@
     color: #ffffff;
     font-weight: 600;
     font-family: 'JetBrains Mono', monospace;
+}
+
+/* Molecular formula styling: convert digits to subscript cleanly */
+.chem-formula {
+    font-variant-numeric: lining-nums;
+}
+
+.chem-formula sub {
+    font-size: 0.7em;
+    line-height: 0;
+    position: relative;
+    bottom: -0.2em;
 }
 
 /* Examples */
@@ -510,9 +618,10 @@
     background: transparent;
     border: none;
     border-radius: 0;
+    /* remove extra internal padding so border-to-border spacing stays uniform */
     padding: 0;
     flex-shrink: 0;
-    margin-top: auto;
+    margin-top: calc(var(--molecule-gap) / 2);
 }
 
 .input-header {

@@ -25,6 +25,8 @@ class ChatApp {
         this.userScrolledUp = false;
         this.currentStreamController = null;
         this.activeTool = null; // Aktif tool (null, 'admet', vs.)
+        // Keep track of last PubChem-loaded SMILES to avoid redundant fetches
+        this._lastPubChemSmiles = null;
         
         this.init();
     }
@@ -155,42 +157,48 @@ class ChatApp {
                 const q = moleculeQueryInput.value.trim();
                 if (!q) return;
 
-                // We'll send q to backend chat endpoint (same as normal chat) but force extraction of chemical entity
+                // Yeni SMILES çıkarma endpoint'ini kullan - ADMET analizi yapmaz
                 try {
-                    // Use ApiService.sendMessage to reuse backend's LLM extraction + pubchem/translation flow
                     const model = this.ui.elements.modelSelectChat ? this.ui.elements.modelSelectChat.value : null;
-                    const data = await this.api.sendMessage(q, model, [], null, 'admet');
+                    const response = await fetch('/api/chat/extract-smiles', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            message: q,
+                            model: model
+                        })
+                    });
 
-                    // If backend returned rawAdmetData and a smiles value, use it; otherwise try to extract SMILES from response text
-                    let resolvedSmiles = null;
-                    if (data.rawAdmetData && data.rawAdmetData.smiles) {
-                        resolvedSmiles = data.rawAdmetData.smiles;
-                    }
+                    const data = await response.json();
 
-                    // Fallback: try to parse SMILES-like token from the textual output
-                    if (!resolvedSmiles && typeof data.output === 'string') {
-                        const maybe = data.output.match(/([A-Za-z0-9@+\-\[\]()=#\\\/%.]{3,200})/);
-                        if (maybe) resolvedSmiles = maybe[1];
-                    }
-
-                    if (resolvedSmiles) {
-                        if (this.ui.elements.smilesInput) this.ui.elements.smilesInput.value = resolvedSmiles;
+                    if (data.success && data.smiles) {
+                        // Update the SMILES display
+                        if (this.ui.elements.smilesInput) this.ui.elements.smilesInput.value = data.smiles;
                         const smilesDisplay = document.getElementById('smiles-display');
-                        if (smilesDisplay) smilesDisplay.textContent = resolvedSmiles;
+                        if (smilesDisplay) smilesDisplay.textContent = data.smiles;
+                        
+                        // Update the molecule visualization
                         this.updateMoleculeDisplay();
 
-                        // Also insert the resolved SMILES into chat input for user's convenience
-                        if (this.ui.elements.input) {
-                            this.ui.elements.input.value = (this.ui.elements.input.value || '') + '\nMolekül: ' + resolvedSmiles;
-                        }
-                        // Close molecule modal for smoother UX
-                        this.closeMoleculeModal();
+                        // Clear the input
+                        moleculeQueryInput.value = '';
+                        DOMUtils.autoResizeTextarea(moleculeQueryInput);
                     } else {
-                        alert('Molekül SMILES formatı çözümlenemedi. Lütfen ismi net yazın.');
+                        alert(data.message || 'Molekül bulunamadı. Lütfen geçerli bir molekül ismi veya SMILES formatı girin.');
                     }
-                } catch (err) {
-                    console.error('Molecule query failed', err);
-                    alert('Sorgu sırasında hata oluştu. Konsolu kontrol edin.');
+                } catch (error) {
+                    console.error('Molecule resolution failed:', error);
+                    alert('Molekül çözümleme hatası: ' + error.message);
+                }
+            });
+
+            // Submit on Enter (without Shift)
+            DOMUtils.on(moleculeQueryInput, 'keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    moleculeQuerySend.click();
                 }
             });
         }
@@ -1984,162 +1992,64 @@ class ChatApp {
 
         // Sol paneldeki SMILES display'i güncelle
         const smilesDisplay = document.getElementById('smiles-display');
-        if (smilesDisplay) {
+        // Eğer kullanıcı şu anda inline olarak düzenliyorsa, overlay içeriğini değiştirme
+        if (smilesDisplay && !smilesDisplay.isContentEditable) {
             smilesDisplay.textContent = smiles;
         }
 
         // Basit molekül analizi
         this.analyzeMolecule(smiles);
+
+        // Eğer kullanıcı inline olarak düzenlemiyorsa ve SMILES değiştiyse, otomatik PubChem ara
+        try {
+            const smilesDisplay = document.getElementById('smiles-display');
+            if (smiles && smilesDisplay && !smilesDisplay.isContentEditable) {
+                if (this._lastPubChemSmiles !== smiles) {
+                    this._lastPubChemSmiles = smiles;
+                    this.loadPubChemPanel(smiles);
+                }
+            }
+        } catch (err) {
+            // ignore any auto-load error
+        }
     }
 
     /**
      * Molekül analizi yap
      */
     analyzeMolecule(smiles) {
+        // Disabled local/hardcoded molecule analysis. We prefer PubChem data.
+        // Clear local-derived fields so only PubChem-provided values are shown.
         try {
-            // Basit atom sayısı hesaplama
-            const atomCount = this.countAtoms(smiles);
-            const molecularWeight = this.calculateMolecularWeight(smiles);
-            const formula = this.generateMolecularFormula(smiles);
-
-            // Atom sayısını güncelle
             const atomCountElement = document.getElementById('info-atom-count');
-            if (atomCountElement) {
-                atomCountElement.textContent = atomCount.toString();
-            }
-
-            // Molekül ağırlığını güncelle
+            if (atomCountElement) atomCountElement.textContent = '-';
             const weightElement = document.getElementById('info-molecular-weight');
-            if (weightElement) {
-                weightElement.textContent = molecularWeight > 0 ? `${molecularWeight.toFixed(2)} g/mol` : '-';
-            }
-
-            // Formülü güncelle
+            if (weightElement) weightElement.textContent = '-';
             const formulaElement = document.getElementById('info-formula');
-            if (formulaElement) {
-                formulaElement.textContent = formula || '-';
-            }
+            if (formulaElement) formulaElement.textContent = '-';
+            const bondCountElement = document.getElementById('info-bond-count');
+            if (bondCountElement) bondCountElement.textContent = '-';
+            const ringCountElement = document.getElementById('info-ring-count');
+            if (ringCountElement) ringCountElement.textContent = '-';
         } catch (error) {
-            console.error('Molekül analizi hatası:', error);
+            // non-fatal
         }
     }
 
-    /**
-     * Atom sayısını hesapla
-     */
-    countAtoms(smiles) {
-        // Basit atom sayısı hesaplama (sadece C, H, N, O, S, P, F, Cl, Br, I)
-        const atomPatterns = {
-            'C': /C(?!l|a)/g,
-            'H': /H/g,
-            'N': /N/g,
-            'O': /O/g,
-            'S': /S/g,
-            'P': /P/g,
-            'F': /F/g,
-            'Cl': /Cl/g,
-            'Br': /Br/g,
-            'I': /I/g
-        };
-
-        let totalAtoms = 0;
-        Object.values(atomPatterns).forEach(pattern => {
-            const matches = smiles.match(pattern);
-            if (matches) {
-                totalAtoms += matches.length;
-            }
-        });
-
-        return totalAtoms;
-    }
+    // Local molecule analysis helpers removed — PubChem is used as the source of truth.
 
     /**
-     * Molekül ağırlığını hesapla
+     * Kimyasal formülü subscript ile biçimlendirir. Örn: C6H6 => C<sub>6</sub>H<sub>6</sub>
+     * Orijinal metni XSS'e karşı escape edip sadece kendi eklediğimiz <sub> etiketlerini bırakırız.
+     * @param {string} formula
+     * @returns {string} HTML string
      */
-    calculateMolecularWeight(smiles) {
-        const atomicWeights = {
-            'C': 12.01,
-            'H': 1.008,
-            'N': 14.01,
-            'O': 16.00,
-            'S': 32.07,
-            'P': 30.97,
-            'F': 19.00,
-            'Cl': 35.45,
-            'Br': 79.90,
-            'I': 126.90
-        };
-
-        const atomPatterns = {
-            'C': /C(?!l|a)/g,
-            'H': /H/g,
-            'N': /N/g,
-            'O': /O/g,
-            'S': /S/g,
-            'P': /P/g,
-            'F': /F/g,
-            'Cl': /Cl/g,
-            'Br': /Br/g,
-            'I': /I/g
-        };
-
-        let totalWeight = 0;
-        Object.entries(atomPatterns).forEach(([atom, pattern]) => {
-            const matches = smiles.match(pattern);
-            if (matches) {
-                totalWeight += matches.length * atomicWeights[atom];
-            }
-        });
-
-        return totalWeight;
-    }
-
-    /**
-     * Moleküler formül oluştur
-     */
-    generateMolecularFormula(smiles) {
-        const atomCounts = {
-            'C': 0,
-            'H': 0,
-            'N': 0,
-            'O': 0,
-            'S': 0,
-            'P': 0,
-            'F': 0,
-            'Cl': 0,
-            'Br': 0,
-            'I': 0
-        };
-
-        const atomPatterns = {
-            'C': /C(?!l|a)/g,
-            'H': /H/g,
-            'N': /N/g,
-            'O': /O/g,
-            'S': /S/g,
-            'P': /P/g,
-            'F': /F/g,
-            'Cl': /Cl/g,
-            'Br': /Br/g,
-            'I': /I/g
-        };
-
-        Object.entries(atomPatterns).forEach(([atom, pattern]) => {
-            const matches = smiles.match(pattern);
-            if (matches) {
-                atomCounts[atom] = matches.length;
-            }
-        });
-
-        // Formülü oluştur (sadece sıfır olmayan atomları dahil et)
-        const formulaParts = [];
-        Object.entries(atomCounts).forEach(([atom, count]) => {
-            if (count > 0) {
-                formulaParts.push(`${atom}${count > 1 ? count : ''}`);
-            }
-        });
-
-        return formulaParts.join('');
+    formatMolecularFormula(formula) {
+        if (!formula) return '-';
+        const escaped = DOMUtils.escapeHtml(String(formula));
+        // Harf veya kapanış parantezinden sonra gelen sayıları alt indis yap
+        const withSubs = escaped.replace(/([A-Za-z\)\]])(\d+)/g, (m, symbol, digits) => `${symbol}<sub>${digits}</sub>`);
+        return `<span class="chem-formula">${withSubs}</span>`;
     }
 
     /**
@@ -2248,26 +2158,149 @@ class ChatApp {
                 }
             });
         }
+
+        // Make the SMILES display editable inline when clicked
+        try {
+            const smilesDisplay = document.getElementById('smiles-display');
+            if (smilesDisplay) {
+                smilesDisplay.style.cursor = 'text';
+
+                // Click to enter edit mode
+                DOMUtils.on(smilesDisplay, 'click', (e) => {
+                    e.stopPropagation();
+                    if (smilesDisplay.isContentEditable) return;
+                    smilesDisplay.contentEditable = true;
+                    smilesDisplay.classList.add('editing');
+
+                    // select all text for convenience
+                    const range = document.createRange();
+                    range.selectNodeContents(smilesDisplay);
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                });
+
+                // Commit current edit: update hidden smiles input and redraw
+                const commitEdit = () => {
+                    smilesDisplay.contentEditable = false;
+                    smilesDisplay.classList.remove('editing');
+                    let newVal = smilesDisplay.textContent.trim();
+                    if (!newVal) newVal = '-';
+                    smilesDisplay.textContent = newVal;
+
+                    const hidden = this.ui.elements.smilesInput;
+                    if (hidden) {
+                        hidden.value = newVal === '-' ? '' : newVal;
+                        this.updateMoleculeDisplay();
+                    }
+                };
+
+                // Live update while typing (instant) and preserve caret position
+                function getCaretCharacterOffsetWithin(element) {
+                    const selection = window.getSelection();
+                    if (!selection || selection.rangeCount === 0) return 0;
+                    const range = selection.getRangeAt(0);
+                    const preRange = range.cloneRange();
+                    preRange.selectNodeContents(element);
+                    preRange.setEnd(range.endContainer, range.endOffset);
+                    return preRange.toString().length;
+                }
+
+                function setCaretPosition(element, chars) {
+                    if (chars <= 0) {
+                        element.focus();
+                        const sel = window.getSelection();
+                        sel.removeAllRanges();
+                        const r = document.createRange();
+                        r.setStart(element, 0);
+                        r.collapse(true);
+                        sel.addRange(r);
+                        return;
+                    }
+                    const nodeStack = [element];
+                    let node, found = null;
+                    let charCount = 0;
+                    while ((node = nodeStack.shift())) {
+                        if (node.nodeType === 3) { // text node
+                            const nextCharCount = charCount + node.textContent.length;
+                            if (chars <= nextCharCount) {
+                                found = { node, offset: chars - charCount };
+                                break;
+                            }
+                            charCount = nextCharCount;
+                        } else {
+                            let i = 0;
+                            while (i < node.childNodes.length) {
+                                nodeStack.push(node.childNodes[i]);
+                                i++;
+                            }
+                        }
+                    }
+
+                    if (found) {
+                        element.focus();
+                        const sel = window.getSelection();
+                        sel.removeAllRanges();
+                        const r = document.createRange();
+                        r.setStart(found.node, Math.min(found.offset, found.node.textContent.length));
+                        r.collapse(true);
+                        sel.addRange(r);
+                    }
+                }
+
+                DOMUtils.on(smilesDisplay, 'input', (e) => {
+                    // Save caret offset
+                    const caret = getCaretCharacterOffsetWithin(smilesDisplay);
+                    const text = smilesDisplay.textContent;
+                    const hidden = this.ui.elements.smilesInput;
+                    if (hidden) hidden.value = text;
+
+                    // Update visualization immediately
+                    try {
+                        this.updateMoleculeDisplay();
+                    } catch (err) {
+                        console.error('Immediate molecule update failed', err);
+                    }
+
+                    // Restore caret position (try/catch to avoid breaking on edge cases)
+                    try {
+                        setCaretPosition(smilesDisplay, caret);
+                    } catch (err) {
+                        // ignore
+                    }
+                });
+
+                // Keyboard handling: Enter commits, Escape cancels
+                DOMUtils.on(smilesDisplay, 'keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        commitEdit();
+                        smilesDisplay.blur();
+                    } else if (e.key === 'Escape') {
+                        const hidden = this.ui.elements.smilesInput;
+                        smilesDisplay.textContent = hidden ? (hidden.value || '-') : '-';
+                        smilesDisplay.contentEditable = false;
+                        smilesDisplay.classList.remove('editing');
+                        smilesDisplay.blur();
+                    }
+                });
+
+                // On blur commit
+                DOMUtils.on(smilesDisplay, 'blur', () => {
+                    if (smilesDisplay.isContentEditable) commitEdit();
+                });
+            }
+        } catch (e) {
+            // non-fatal
+            console.error('Could not initialize editable SMILES display', e);
+        }
     }
 
     /**
      * Molekül aksiyonları için event listener'ları kur
      */
     setupMoleculeActions() {
-        const searchBtn = document.getElementById('search-molecule');
-        const exportBtn = document.getElementById('export-molecule');
-
-        if (searchBtn) {
-            DOMUtils.on(searchBtn, 'click', () => {
-                this.searchMoleculeInPubChem();
-            });
-        }
-
-        if (exportBtn) {
-            DOMUtils.on(exportBtn, 'click', () => {
-                this.exportMolecule();
-            });
-        }
+        // Search and export removed from molecule input area. No handlers attached.
     }
 
     /**
@@ -2282,9 +2315,90 @@ class ChatApp {
             return;
         }
 
-        // PubChem arama URL'si oluştur
-        const searchUrl = `https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(smiles)}`;
-        window.open(searchUrl, '_blank');
+        // Eğer kullanıcı Ctrl/Meta ile tıkladıysa yeni sekmede aç (progressive enhancement)
+        // Aksi halde inline paneli doldur
+        try {
+            // Inline PubChem panelini doldur
+            this.loadPubChemPanel(smiles);
+        } catch (err) {
+            console.error('Inline PubChem panel load failed', err);
+            const searchUrl = `https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(smiles)}`;
+            const infoPanel = document.getElementById('molecule-info-panel');
+            const content = infoPanel ? infoPanel.querySelector('.info-content') : null;
+            if (content) {
+                const note = document.createElement('div');
+                note.className = 'info-item';
+                note.innerHTML = `<span class="info-label">PubChem:</span><span class="info-value"><a href="${searchUrl}" target="_blank" rel="noopener">PubChem'de aç</a></span>`;
+                content.appendChild(note);
+            } else {
+                alert('PubChem bilgileri yüklenemedi. Bağlantı: ' + searchUrl);
+            }
+        }
+    }
+
+    /**
+     * Molekül bilgi panelinde PubChem verilerini render et
+     */
+    async loadPubChemPanel(smiles) {
+        const infoPanel = document.getElementById('molecule-info-panel');
+        if (!infoPanel) return;
+
+        // Show a lightweight loading state
+        const content = infoPanel.querySelector('.info-content');
+        if (!content) return;
+        const prevHTML = content.innerHTML;
+        content.innerHTML = `<div class="info-item"><span class="info-label">PubChem:</span><span class="info-value">Yükleniyor...</span></div>`;
+
+        try {
+            const res = await fetch('/api/chat/pubchem-info', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ smiles })
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error || 'No data');
+
+            // Render compact PubChem card
+            const p = data.properties || {};
+            const rows = [
+                ['CID', data.cid || '-'],
+                ['IUPAC', p.iupacName || '-'],
+                ['Formül', p.molecularFormula || '-'],
+                ['Ağırlık', p.molecularWeight ? `${Number(p.molecularWeight).toFixed(2)} g/mol` : '-'],
+                ['XLogP', p.xlogP ?? '-'],
+                ['H-Donör', p.hBondDonorCount ?? '-'],
+                ['H-Akseptör', p.hBondAcceptorCount ?? '-'],
+                ['Döndürülebilir Bağ', p.rotatableBondCount ?? '-'],
+                ['Ağır Atom', p.heavyAtomCount ?? '-'],
+                ['InChIKey', p.inchiKey || '-']
+            ];
+
+            // update existing top fields too if empty
+            const formulaElement = document.getElementById('info-formula');
+            if (formulaElement && p.molecularFormula) formulaElement.innerHTML = this.formatMolecularFormula(p.molecularFormula);
+            const weightElement = document.getElementById('info-molecular-weight');
+            if (weightElement && p.molecularWeight) weightElement.textContent = `${Number(p.molecularWeight).toFixed(2)} g/mol`;
+            const atomCountElement = document.getElementById('info-atom-count');
+            if (atomCountElement && typeof p.heavyAtomCount !== 'undefined') atomCountElement.textContent = String(p.heavyAtomCount);
+
+            const desc = data.description ? `<div class="info-item"><span class="info-label">Açıklama:</span><span class="info-value">${DOMUtils.escapeHtml(data.description)}</span></div>` : '';
+
+            content.innerHTML = `
+                <div class="info-item"><span class="info-label">PubChem</span><span class="info-value">CID ${rows[0][1]}</span></div>
+                ${desc}
+                ${rows.slice(1).map(([k,v]) => {
+                    const value = k === 'Formül' ? this.formatMolecularFormula(v) : DOMUtils.escapeHtml(String(v));
+                    return `<div class="info-item"><span class="info-label">${k}:</span><span class="info-value">${value}</span></div>`;
+                }).join('')}
+                <div class="info-item"><span class="info-label">Bağlantı:</span><span class="info-value"><a href="https://pubchem.ncbi.nlm.nih.gov/compound/${rows[0][1]}" target="_blank" rel="noopener">PubChem'de aç</a></span></div>
+            `;
+        } catch (err) {
+            console.error('PubChem inline render error', err);
+            // Restore previous content on failure and show link instead of forcing new tab
+            content.innerHTML = prevHTML + `
+                <div class="info-item"><span class="info-label">PubChem:</span><span class="info-value"><a href="https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(smiles)}" target="_blank" rel="noopener">PubChem'de aç</a></span></div>
+            `;
+        }
     }
 
     /**
