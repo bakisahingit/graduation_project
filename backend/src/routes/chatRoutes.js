@@ -1,7 +1,8 @@
 // src/routes/chatRoutes.js
 
 import { Router } from 'express';
-import { handleChatMessage, handleComparisonRequest } from '../handlers/chatHandler.js';
+import { handleChatMessage, handleComparisonRequest, extractSmilesOnly } from '../handlers/chatHandler.js';
+import { getPubChemInfoBySmiles } from '../services/pubchemService.js';
 import { getChatCompletion } from '../services/llmService.js';
 import { openai } from '../config/index.js';
 import TitleGeneratorService from '../../title_generator/service.js';
@@ -99,6 +100,56 @@ router.post('/compare', async (req, res) => {
     } catch (err) {
         console.error('Comparison request failed', err);
         return res.status(500).json({ error: String(err) });
+    }
+});
+
+// SMILES çıkarma endpoint'i - sadece molekül isminden SMILES formatını bulur
+router.post('/extract-smiles', async (req, res) => {
+    const { message, model } = req.body;
+
+    if (!message) {
+        return res.status(400).json({ error: 'Missing `message` in request body' });
+    }
+
+    try {
+        const result = await extractSmilesOnly(message, model);
+        
+        if (result.success) {
+            return res.json({
+                success: true,
+                smiles: result.smiles,
+                chemicalName: result.chemicalName,
+                message: result.message
+            });
+        } else {
+            return res.json({
+                success: false,
+                message: result.message
+            });
+        }
+
+    } catch (err) {
+        console.error('SMILES extraction failed', err);
+        return res.status(500).json({ 
+            success: false,
+            error: String(err) 
+        });
+    }
+});
+
+// PubChem özelliklerini SMILES ile getir
+router.post('/pubchem-info', async (req, res) => {
+    const { smiles } = req.body;
+    if (!smiles) {
+        return res.status(400).json({ success: false, error: 'Missing `smiles` in request body' });
+    }
+    try {
+        const info = await getPubChemInfoBySmiles(smiles);
+        if (!info) return res.json({ success: false, error: 'No record found in PubChem' });
+        return res.json({ success: true, ...info });
+    } catch (err) {
+        console.error('PubChem info failed', err);
+        return res.status(500).json({ success: false, error: String(err) });
     }
 });
 

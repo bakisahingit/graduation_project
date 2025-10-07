@@ -25,8 +25,27 @@ class ChatApp {
         this.userScrolledUp = false;
         this.currentStreamController = null;
         this.activeTool = null; // Aktif tool (null, 'admet', vs.)
+        // Keep track of last PubChem-loaded SMILES to avoid redundant fetches
+        this._lastPubChemSmiles = null;
         
         this.init();
+    }
+
+    /**
+     * Başlangıçta tüm chip konteynerlerini ve ilgili divider'ları gizle
+     */
+    initializeFileChipsUI() {
+        const welcomeContainer = this.ui.elements.welcomeFileChips;
+        const chatContainer = this.ui.elements.chatFileChips;
+
+        [welcomeContainer, chatContainer].forEach(container => {
+            if (!container) return;
+            container.style.display = 'none';
+            const divider = container.nextElementSibling;
+            if (divider && divider.classList && divider.classList.contains('chips-divider')) {
+                divider.style.display = 'none';
+            }
+        });
     }
 
     /**
@@ -41,12 +60,18 @@ class ChatApp {
         
         // UI event listener'ları kur
         this.ui.setupEventListeners();
+
+        // File chips UI başlangıçta gizli olsun
+        this.initializeFileChipsUI();
         
         // Modelleri yükle
         await this.populateModels();
         
         // Konuşma geçmişini yükle
         this.renderConversationHistory();
+
+        // Onboarding içeriklerini doldur
+        this.renderOnboarding();
         
         // Molekül çizim sistemini başlat
         this.initializeMoleculeDrawing();
@@ -125,6 +150,238 @@ class ChatApp {
             });
         }
 
+        // Settings modal: tab switching (models / shortcuts)
+        const settingsModal = this.ui.elements.settingsModal;
+        if (settingsModal) {
+            DOMUtils.on(settingsModal, 'click', (e) => {
+                const navBtn = e.target.closest('.settings-nav-btn');
+                if (navBtn && navBtn.dataset && navBtn.dataset.tab) {
+                    const tab = navBtn.dataset.tab;
+                    // remove active class from nav buttons
+                    const navBtns = settingsModal.querySelectorAll('.settings-nav-btn');
+                    navBtns.forEach(b => DOMUtils.removeClass(b, 'active'));
+                    DOMUtils.addClass(navBtn, 'active');
+
+                    // hide all tabs, show selected
+                    const tabs = settingsModal.querySelectorAll('.settings-tab');
+                    tabs.forEach(t => t.style.display = 'none');
+                    const activeTab = settingsModal.querySelector(`#${tab}-tab`);
+                    if (activeTab) activeTab.style.display = 'block';
+                }
+            });
+
+            // Wire change/reset buttons for shortcuts
+            const changeMoleculeBtn = settingsModal.querySelector('#change-shortcut-molecule');
+            const resetMoleculeBtn = settingsModal.querySelector('#reset-shortcut-molecule');
+            const changeAdmetBtn = settingsModal.querySelector('#change-shortcut-admet');
+            const resetAdmetBtn = settingsModal.querySelector('#reset-shortcut-admet');
+
+            // Defaults stored in localStorage keys
+            const SHORTCUT_KEYS = {
+                molecule: 'shortcut_molecule',
+                admet: 'shortcut_admet'
+            };
+
+            const loadShortcutsToUI = () => {
+                const m = DOMUtils.select('#shortcut-molecule-display');
+                const a = DOMUtils.select('#shortcut-admet-display');
+                const mv = window.localStorage.getItem(SHORTCUT_KEYS.molecule) || 'Alt+M';
+                const av = window.localStorage.getItem(SHORTCUT_KEYS.admet) || 'Alt+N';
+                if (m) m.textContent = mv;
+                if (a) a.textContent = av;
+                // Also update the floating shortcuts mini UI (new structure: kbd[data-action])
+                try {
+                    const miniM = document.querySelector('kbd[data-action="molecule"]');
+                    const miniA = document.querySelector('kbd[data-action="admet"]');
+                    if (miniM) miniM.textContent = mv;
+                    if (miniA) miniA.textContent = av;
+                } catch (e) {
+                    // ignore
+                }
+            };
+
+            const listenForNewShortcut = (targetKey, displayEl) => {
+                // Create a small capture panel to prompt the user
+                const existing = document.getElementById('shortcut-capture-panel');
+                if (existing) existing.remove();
+
+                const panel = document.createElement('div');
+                panel.id = 'shortcut-capture-panel';
+                panel.style.position = 'fixed';
+                panel.style.top = '50%';
+                panel.style.left = '50%';
+                panel.style.transform = 'translate(-50%, -50%)';
+                panel.style.background = 'rgba(10,11,12,0.95)';
+                panel.style.color = 'var(--gray-100)';
+                panel.style.border = '1px solid var(--border-secondary)';
+                panel.style.padding = '14px 18px';
+                panel.style.borderRadius = '10px';
+                panel.style.boxShadow = '0 8px 24px rgba(0,0,0,0.6)';
+                panel.style.zIndex = 20000;
+                panel.innerHTML = `
+                    <div style="font-weight:600;margin-bottom:8px;">Yeni kısayolu girin</div>
+                    <div style="font-size:13px;color:var(--gray-400);margin-bottom:10px;">Yeni kombinasyonu klavyeden basınız. İptal için <kbd>Esc</kbd>.</div>
+                    <div style="text-align:center;margin-top:6px;color:var(--gray-300);font-size:14px" id="shortcut-preview">Bekleniyor...</div>
+                    <div style="text-align:right;margin-top:10px"><button id="cancel-shortcut-capture" style="padding:6px 10px;border-radius:8px;background:transparent;border:1px solid var(--border-secondary);color:var(--gray-200);cursor:pointer">İptal</button></div>
+                `;
+
+                document.body.appendChild(panel);
+
+                const cleanup = () => {
+                    if (panel && panel.parentNode) panel.parentNode.removeChild(panel);
+                    document.removeEventListener('keydown', keyHandler, true);
+                    cancelBtn.removeEventListener('click', onCancel);
+                };
+
+                const modKeys = new Set(['Shift', 'Control', 'Alt', 'Meta']);
+
+                const updatePreview = (ev) => {
+                    const preview = document.getElementById('shortcut-preview');
+                    if (!preview) return;
+                    let parts = [];
+                    if (ev.ctrlKey) parts.push('Ctrl');
+                    if (ev.altKey) parts.push('Alt');
+                    if (ev.shiftKey) parts.push('Shift');
+                    const k = ev.key.length === 1 ? ev.key.toUpperCase() : ev.key;
+                    // if only modifier pressed, show modifier + ...
+                    if (modKeys.has(k)) {
+                        preview.textContent = parts.join('+') + (parts.length ? '+' : '') + '...';
+                    } else {
+                        preview.textContent = parts.concat([k.length === 1 ? k.toUpperCase() : k]).join('+');
+                    }
+                };
+
+                const keyHandler = (ev) => {
+                    // ESC -> cancel
+                    if (ev.key === 'Escape') {
+                        ev.preventDefault();
+                        cleanup();
+                        return;
+                    }
+
+                    // Update preview always
+                    updatePreview(ev);
+
+                    // If the pressed key is only a modifier, wait for the next key
+                    if (modKeys.has(ev.key)) {
+                        // do not finalize yet
+                        ev.preventDefault();
+                        return;
+                    }
+
+                    // Finalize on non-modifier key
+                    ev.preventDefault();
+                    let parts = [];
+                    if (ev.ctrlKey) parts.push('Ctrl');
+                    if (ev.altKey) parts.push('Alt');
+                    if (ev.shiftKey) parts.push('Shift');
+                    const k = ev.key.length === 1 ? ev.key.toUpperCase() : ev.key;
+                    parts.push(k);
+                    const combo = parts.join('+');
+                    window.localStorage.setItem(targetKey, combo);
+                    loadShortcutsToUI();
+                    cleanup();
+                };
+
+                const cancelBtn = panel.querySelector('#cancel-shortcut-capture');
+                const onCancel = (e) => { e.preventDefault(); cleanup(); };
+
+                // Capture at document level (use capture true to get it first)
+                document.addEventListener('keydown', keyHandler, true);
+                cancelBtn.addEventListener('click', onCancel);
+            };
+
+            if (changeMoleculeBtn) {
+                changeMoleculeBtn.addEventListener('click', () => listenForNewShortcut(SHORTCUT_KEYS.molecule));
+            }
+            if (resetMoleculeBtn) {
+                resetMoleculeBtn.addEventListener('click', () => { window.localStorage.removeItem(SHORTCUT_KEYS.molecule); loadShortcutsToUI(); });
+            }
+            if (changeAdmetBtn) {
+                changeAdmetBtn.addEventListener('click', () => listenForNewShortcut(SHORTCUT_KEYS.admet));
+            }
+            if (resetAdmetBtn) {
+                resetAdmetBtn.addEventListener('click', () => { window.localStorage.removeItem(SHORTCUT_KEYS.admet); loadShortcutsToUI(); });
+            }
+
+            loadShortcutsToUI();
+        }
+
+        // Global kısayollar: dynamic from localStorage (defaults Alt+M / Alt+N)
+        DOMUtils.on(document, 'keydown', (e) => {
+            try {
+                const mv = window.localStorage.getItem('shortcut_molecule') || 'Alt+M';
+                const av = window.localStorage.getItem('shortcut_admet') || 'Alt+N';
+
+                const normalizeKey = (k) => {
+                    if (!k) return k;
+                    return k.length === 1 ? k.toUpperCase() : k;
+                };
+
+                const matchCombo = (ev, combo) => {
+                    if (!combo) return false;
+                    const parts = combo.split('+').map(p => p.trim()).filter(Boolean);
+                    let need = { ctrl: false, alt: false, shift: false, meta: false };
+                    let keyPart = null;
+                    parts.forEach(p => {
+                        const low = p.toLowerCase();
+                        if (low === 'ctrl' || low === 'control') need.ctrl = true;
+                        else if (low === 'alt') need.alt = true;
+                        else if (low === 'shift') need.shift = true;
+                        else if (low === 'meta' || low === 'cmd' || low === 'command') need.meta = true;
+                        else keyPart = p;
+                    });
+
+                    if (need.ctrl !== !!ev.ctrlKey) return false;
+                    if (need.alt !== !!ev.altKey) return false;
+                    if (need.shift !== !!ev.shiftKey) return false;
+                    if (need.meta !== !!ev.metaKey) return false;
+
+                    if (!keyPart) return false; // require a non-modifier key to trigger
+                    const evKey = normalizeKey(ev.key.length === 1 ? ev.key : ev.key);
+                    const wantKey = normalizeKey(keyPart.length === 1 ? keyPart : keyPart);
+                    return String(evKey).toLowerCase() === String(wantKey).toLowerCase();
+                };
+
+                if (matchCombo(e, mv)) {
+                    e.preventDefault();
+                    this.openMoleculeModal();
+                    return;
+                }
+
+                if (matchCombo(e, av)) {
+                    e.preventDefault();
+                    this.handleAdmetTool();
+                    return;
+                }
+            } catch (err) {
+                // fallback to defaults on error
+                if (e.altKey && (e.key === 'm' || e.key === 'M')) {
+                    e.preventDefault();
+                    this.openMoleculeModal();
+                }
+                if (e.altKey && (e.key === 'n' || e.key === 'N')) {
+                    e.preventDefault();
+                    this.handleAdmetTool();
+                }
+            }
+        });
+
+        // Click handlers for shortcuts in the UI (shortcuts-mini-list)
+        const shortcutsContainer = DOMUtils.select('#shortcuts-floating');
+        if (shortcutsContainer) {
+            DOMUtils.on(shortcutsContainer, 'click', (e) => {
+                const target = e.target.closest('[data-action]');
+                if (!target) return;
+                const action = target.dataset.action;
+                if (action === 'molecule') {
+                    this.openMoleculeModal();
+                } else if (action === 'admet') {
+                    this.handleAdmetTool();
+                }
+            });
+        }
+
         // Molecule modal - Sidebar butonu kaldırıldı (artık input wrapper'da)
 
         if (this.ui.elements.moleculeClose) {
@@ -155,42 +412,48 @@ class ChatApp {
                 const q = moleculeQueryInput.value.trim();
                 if (!q) return;
 
-                // We'll send q to backend chat endpoint (same as normal chat) but force extraction of chemical entity
+                // Yeni SMILES çıkarma endpoint'ini kullan - ADMET analizi yapmaz
                 try {
-                    // Use ApiService.sendMessage to reuse backend's LLM extraction + pubchem/translation flow
                     const model = this.ui.elements.modelSelectChat ? this.ui.elements.modelSelectChat.value : null;
-                    const data = await this.api.sendMessage(q, model, [], null, 'admet');
+                    const response = await fetch('/api/chat/extract-smiles', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            message: q,
+                            model: model
+                        })
+                    });
 
-                    // If backend returned rawAdmetData and a smiles value, use it; otherwise try to extract SMILES from response text
-                    let resolvedSmiles = null;
-                    if (data.rawAdmetData && data.rawAdmetData.smiles) {
-                        resolvedSmiles = data.rawAdmetData.smiles;
-                    }
+                    const data = await response.json();
 
-                    // Fallback: try to parse SMILES-like token from the textual output
-                    if (!resolvedSmiles && typeof data.output === 'string') {
-                        const maybe = data.output.match(/([A-Za-z0-9@+\-\[\]()=#\\\/%.]{3,200})/);
-                        if (maybe) resolvedSmiles = maybe[1];
-                    }
-
-                    if (resolvedSmiles) {
-                        if (this.ui.elements.smilesInput) this.ui.elements.smilesInput.value = resolvedSmiles;
+                    if (data.success && data.smiles) {
+                        // Update the SMILES display
+                        if (this.ui.elements.smilesInput) this.ui.elements.smilesInput.value = data.smiles;
                         const smilesDisplay = document.getElementById('smiles-display');
-                        if (smilesDisplay) smilesDisplay.textContent = resolvedSmiles;
+                        if (smilesDisplay) smilesDisplay.textContent = data.smiles;
+                        
+                        // Update the molecule visualization
                         this.updateMoleculeDisplay();
 
-                        // Also insert the resolved SMILES into chat input for user's convenience
-                        if (this.ui.elements.input) {
-                            this.ui.elements.input.value = (this.ui.elements.input.value || '') + '\nMolekül: ' + resolvedSmiles;
-                        }
-                        // Close molecule modal for smoother UX
-                        this.closeMoleculeModal();
+                        // Clear the input
+                        moleculeQueryInput.value = '';
+                        DOMUtils.autoResizeTextarea(moleculeQueryInput);
                     } else {
-                        alert('Molekül SMILES formatı çözümlenemedi. Lütfen ismi net yazın.');
+                        alert(data.message || 'Molekül bulunamadı. Lütfen geçerli bir molekül ismi veya SMILES formatı girin.');
                     }
-                } catch (err) {
-                    console.error('Molecule query failed', err);
-                    alert('Sorgu sırasında hata oluştu. Konsolu kontrol edin.');
+                } catch (error) {
+                    console.error('Molecule resolution failed:', error);
+                    alert('Molekül çözümleme hatası: ' + error.message);
+                }
+            });
+
+            // Submit on Enter (without Shift)
+            DOMUtils.on(moleculeQueryInput, 'keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    moleculeQuerySend.click();
                 }
             });
         }
@@ -523,6 +786,58 @@ class ChatApp {
         const model = this.ui.elements.modelSelectSidebar.value;
         this.ui.switchToChatMode(model);
         await this.processComparison(molecules, model);
+    }
+
+    /**
+     * Welcome onboarding alanlarını doldur
+     */
+    renderOnboarding() {
+        const quickGrid = document.getElementById('quick-start-grid');
+        const emptyState = document.getElementById('empty-state');
+        if (!quickGrid) return;
+
+        // Hızlı başlat kartları (eczacı/molekül toksisite odaklı)
+        const quickCards = [
+            {
+                title: 'Kafein toksisite profili',
+                desc: 'ADMET parametreleri ve risk değerlendirmesi',
+                prompt: 'Kafein için ADMET ve toksisite risk profilini çıkar. Özellikle hepatotoksisite ve kardiyotoksisite risklerini değerlendir.'
+            },
+            {
+                title: 'Eşdeğer molekül öner',
+                desc: 'Benzer etki, daha düşük risk',
+                prompt: 'Parasetamol için terapötik açıdan benzer ama daha düşük toksisite riski taşıyan alternatif molekülleri öner ve kıyasla.'
+            },
+            {
+                title: 'SMILES çöz ve çiz',
+                desc: 'İsimden yapıyı çöz, görselleştir',
+                prompt: 'Ibuprofen için SMILES’ı çöz, yapıyı çiz ve temel ADMET özetini ver.'
+            },
+            {
+                title: 'Formülasyonda etkileşim',
+                desc: 'Yardımcı madde-molekül riski',
+                prompt: 'Lidokain ile etanol ve propilen glikol varlığında stabilite ve potansiyel toksisite etkileşim risklerini değerlendir.'
+            },
+        ];
+
+        quickGrid.innerHTML = '';
+        quickCards.forEach(c => {
+            const el = DOMUtils.create('div', { className: 'card' });
+            el.innerHTML = `<div class="card-title">${DOMUtils.escapeHtml(c.title)}</div><div class="card-desc">${DOMUtils.escapeHtml(c.desc)}</div>`;
+            DOMUtils.on(el, 'click', () => {
+                const ta = this.ui.elements.welcomeInput;
+                if (!ta) return;
+                const val = c.prompt;
+                ta.value = val;
+                DOMUtils.autoResizeTextarea(ta);
+                ta.focus();
+            });
+            quickGrid.appendChild(el);
+        });
+
+        // Son konuşmalar (3-5 örnek mesaj kartı)
+        // hide empty state when no recent panel (we still show it if quick-cards empty)
+        if (emptyState) emptyState.style.display = 'block';
     }
 
     /**
@@ -1984,162 +2299,64 @@ class ChatApp {
 
         // Sol paneldeki SMILES display'i güncelle
         const smilesDisplay = document.getElementById('smiles-display');
-        if (smilesDisplay) {
+        // Eğer kullanıcı şu anda inline olarak düzenliyorsa, overlay içeriğini değiştirme
+        if (smilesDisplay && !smilesDisplay.isContentEditable) {
             smilesDisplay.textContent = smiles;
         }
 
         // Basit molekül analizi
         this.analyzeMolecule(smiles);
+
+        // Eğer kullanıcı inline olarak düzenlemiyorsa ve SMILES değiştiyse, otomatik PubChem ara
+        try {
+            const smilesDisplay = document.getElementById('smiles-display');
+            if (smiles && smilesDisplay && !smilesDisplay.isContentEditable) {
+                if (this._lastPubChemSmiles !== smiles) {
+                    this._lastPubChemSmiles = smiles;
+                    this.loadPubChemPanel(smiles);
+                }
+            }
+        } catch (err) {
+            // ignore any auto-load error
+        }
     }
 
     /**
      * Molekül analizi yap
      */
     analyzeMolecule(smiles) {
+        // Disabled local/hardcoded molecule analysis. We prefer PubChem data.
+        // Clear local-derived fields so only PubChem-provided values are shown.
         try {
-            // Basit atom sayısı hesaplama
-            const atomCount = this.countAtoms(smiles);
-            const molecularWeight = this.calculateMolecularWeight(smiles);
-            const formula = this.generateMolecularFormula(smiles);
-
-            // Atom sayısını güncelle
             const atomCountElement = document.getElementById('info-atom-count');
-            if (atomCountElement) {
-                atomCountElement.textContent = atomCount.toString();
-            }
-
-            // Molekül ağırlığını güncelle
+            if (atomCountElement) atomCountElement.textContent = '-';
             const weightElement = document.getElementById('info-molecular-weight');
-            if (weightElement) {
-                weightElement.textContent = molecularWeight > 0 ? `${molecularWeight.toFixed(2)} g/mol` : '-';
-            }
-
-            // Formülü güncelle
+            if (weightElement) weightElement.textContent = '-';
             const formulaElement = document.getElementById('info-formula');
-            if (formulaElement) {
-                formulaElement.textContent = formula || '-';
-            }
+            if (formulaElement) formulaElement.textContent = '-';
+            const bondCountElement = document.getElementById('info-bond-count');
+            if (bondCountElement) bondCountElement.textContent = '-';
+            const ringCountElement = document.getElementById('info-ring-count');
+            if (ringCountElement) ringCountElement.textContent = '-';
         } catch (error) {
-            console.error('Molekül analizi hatası:', error);
+            // non-fatal
         }
     }
 
-    /**
-     * Atom sayısını hesapla
-     */
-    countAtoms(smiles) {
-        // Basit atom sayısı hesaplama (sadece C, H, N, O, S, P, F, Cl, Br, I)
-        const atomPatterns = {
-            'C': /C(?!l|a)/g,
-            'H': /H/g,
-            'N': /N/g,
-            'O': /O/g,
-            'S': /S/g,
-            'P': /P/g,
-            'F': /F/g,
-            'Cl': /Cl/g,
-            'Br': /Br/g,
-            'I': /I/g
-        };
-
-        let totalAtoms = 0;
-        Object.values(atomPatterns).forEach(pattern => {
-            const matches = smiles.match(pattern);
-            if (matches) {
-                totalAtoms += matches.length;
-            }
-        });
-
-        return totalAtoms;
-    }
+    // Local molecule analysis helpers removed — PubChem is used as the source of truth.
 
     /**
-     * Molekül ağırlığını hesapla
+     * Kimyasal formülü subscript ile biçimlendirir. Örn: C6H6 => C<sub>6</sub>H<sub>6</sub>
+     * Orijinal metni XSS'e karşı escape edip sadece kendi eklediğimiz <sub> etiketlerini bırakırız.
+     * @param {string} formula
+     * @returns {string} HTML string
      */
-    calculateMolecularWeight(smiles) {
-        const atomicWeights = {
-            'C': 12.01,
-            'H': 1.008,
-            'N': 14.01,
-            'O': 16.00,
-            'S': 32.07,
-            'P': 30.97,
-            'F': 19.00,
-            'Cl': 35.45,
-            'Br': 79.90,
-            'I': 126.90
-        };
-
-        const atomPatterns = {
-            'C': /C(?!l|a)/g,
-            'H': /H/g,
-            'N': /N/g,
-            'O': /O/g,
-            'S': /S/g,
-            'P': /P/g,
-            'F': /F/g,
-            'Cl': /Cl/g,
-            'Br': /Br/g,
-            'I': /I/g
-        };
-
-        let totalWeight = 0;
-        Object.entries(atomPatterns).forEach(([atom, pattern]) => {
-            const matches = smiles.match(pattern);
-            if (matches) {
-                totalWeight += matches.length * atomicWeights[atom];
-            }
-        });
-
-        return totalWeight;
-    }
-
-    /**
-     * Moleküler formül oluştur
-     */
-    generateMolecularFormula(smiles) {
-        const atomCounts = {
-            'C': 0,
-            'H': 0,
-            'N': 0,
-            'O': 0,
-            'S': 0,
-            'P': 0,
-            'F': 0,
-            'Cl': 0,
-            'Br': 0,
-            'I': 0
-        };
-
-        const atomPatterns = {
-            'C': /C(?!l|a)/g,
-            'H': /H/g,
-            'N': /N/g,
-            'O': /O/g,
-            'S': /S/g,
-            'P': /P/g,
-            'F': /F/g,
-            'Cl': /Cl/g,
-            'Br': /Br/g,
-            'I': /I/g
-        };
-
-        Object.entries(atomPatterns).forEach(([atom, pattern]) => {
-            const matches = smiles.match(pattern);
-            if (matches) {
-                atomCounts[atom] = matches.length;
-            }
-        });
-
-        // Formülü oluştur (sadece sıfır olmayan atomları dahil et)
-        const formulaParts = [];
-        Object.entries(atomCounts).forEach(([atom, count]) => {
-            if (count > 0) {
-                formulaParts.push(`${atom}${count > 1 ? count : ''}`);
-            }
-        });
-
-        return formulaParts.join('');
+    formatMolecularFormula(formula) {
+        if (!formula) return '-';
+        const escaped = DOMUtils.escapeHtml(String(formula));
+        // Harf veya kapanış parantezinden sonra gelen sayıları alt indis yap
+        const withSubs = escaped.replace(/([A-Za-z\)\]])(\d+)/g, (m, symbol, digits) => `${symbol}<sub>${digits}</sub>`);
+        return `<span class="chem-formula">${withSubs}</span>`;
     }
 
     /**
@@ -2248,26 +2465,149 @@ class ChatApp {
                 }
             });
         }
+
+        // Make the SMILES display editable inline when clicked
+        try {
+            const smilesDisplay = document.getElementById('smiles-display');
+            if (smilesDisplay) {
+                smilesDisplay.style.cursor = 'text';
+
+                // Click to enter edit mode
+                DOMUtils.on(smilesDisplay, 'click', (e) => {
+                    e.stopPropagation();
+                    if (smilesDisplay.isContentEditable) return;
+                    smilesDisplay.contentEditable = true;
+                    smilesDisplay.classList.add('editing');
+
+                    // select all text for convenience
+                    const range = document.createRange();
+                    range.selectNodeContents(smilesDisplay);
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                });
+
+                // Commit current edit: update hidden smiles input and redraw
+                const commitEdit = () => {
+                    smilesDisplay.contentEditable = false;
+                    smilesDisplay.classList.remove('editing');
+                    let newVal = smilesDisplay.textContent.trim();
+                    if (!newVal) newVal = '-';
+                    smilesDisplay.textContent = newVal;
+
+                    const hidden = this.ui.elements.smilesInput;
+                    if (hidden) {
+                        hidden.value = newVal === '-' ? '' : newVal;
+                        this.updateMoleculeDisplay();
+                    }
+                };
+
+                // Live update while typing (instant) and preserve caret position
+                function getCaretCharacterOffsetWithin(element) {
+                    const selection = window.getSelection();
+                    if (!selection || selection.rangeCount === 0) return 0;
+                    const range = selection.getRangeAt(0);
+                    const preRange = range.cloneRange();
+                    preRange.selectNodeContents(element);
+                    preRange.setEnd(range.endContainer, range.endOffset);
+                    return preRange.toString().length;
+                }
+
+                function setCaretPosition(element, chars) {
+                    if (chars <= 0) {
+                        element.focus();
+                        const sel = window.getSelection();
+                        sel.removeAllRanges();
+                        const r = document.createRange();
+                        r.setStart(element, 0);
+                        r.collapse(true);
+                        sel.addRange(r);
+                        return;
+                    }
+                    const nodeStack = [element];
+                    let node, found = null;
+                    let charCount = 0;
+                    while ((node = nodeStack.shift())) {
+                        if (node.nodeType === 3) { // text node
+                            const nextCharCount = charCount + node.textContent.length;
+                            if (chars <= nextCharCount) {
+                                found = { node, offset: chars - charCount };
+                                break;
+                            }
+                            charCount = nextCharCount;
+                        } else {
+                            let i = 0;
+                            while (i < node.childNodes.length) {
+                                nodeStack.push(node.childNodes[i]);
+                                i++;
+                            }
+                        }
+                    }
+
+                    if (found) {
+                        element.focus();
+                        const sel = window.getSelection();
+                        sel.removeAllRanges();
+                        const r = document.createRange();
+                        r.setStart(found.node, Math.min(found.offset, found.node.textContent.length));
+                        r.collapse(true);
+                        sel.addRange(r);
+                    }
+                }
+
+                DOMUtils.on(smilesDisplay, 'input', (e) => {
+                    // Save caret offset
+                    const caret = getCaretCharacterOffsetWithin(smilesDisplay);
+                    const text = smilesDisplay.textContent;
+                    const hidden = this.ui.elements.smilesInput;
+                    if (hidden) hidden.value = text;
+
+                    // Update visualization immediately
+                    try {
+                        this.updateMoleculeDisplay();
+                    } catch (err) {
+                        console.error('Immediate molecule update failed', err);
+                    }
+
+                    // Restore caret position (try/catch to avoid breaking on edge cases)
+                    try {
+                        setCaretPosition(smilesDisplay, caret);
+                    } catch (err) {
+                        // ignore
+                    }
+                });
+
+                // Keyboard handling: Enter commits, Escape cancels
+                DOMUtils.on(smilesDisplay, 'keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        commitEdit();
+                        smilesDisplay.blur();
+                    } else if (e.key === 'Escape') {
+                        const hidden = this.ui.elements.smilesInput;
+                        smilesDisplay.textContent = hidden ? (hidden.value || '-') : '-';
+                        smilesDisplay.contentEditable = false;
+                        smilesDisplay.classList.remove('editing');
+                        smilesDisplay.blur();
+                    }
+                });
+
+                // On blur commit
+                DOMUtils.on(smilesDisplay, 'blur', () => {
+                    if (smilesDisplay.isContentEditable) commitEdit();
+                });
+            }
+        } catch (e) {
+            // non-fatal
+            console.error('Could not initialize editable SMILES display', e);
+        }
     }
 
     /**
      * Molekül aksiyonları için event listener'ları kur
      */
     setupMoleculeActions() {
-        const searchBtn = document.getElementById('search-molecule');
-        const exportBtn = document.getElementById('export-molecule');
-
-        if (searchBtn) {
-            DOMUtils.on(searchBtn, 'click', () => {
-                this.searchMoleculeInPubChem();
-            });
-        }
-
-        if (exportBtn) {
-            DOMUtils.on(exportBtn, 'click', () => {
-                this.exportMolecule();
-            });
-        }
+        // Search and export removed from molecule input area. No handlers attached.
     }
 
     /**
@@ -2282,9 +2622,90 @@ class ChatApp {
             return;
         }
 
-        // PubChem arama URL'si oluştur
-        const searchUrl = `https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(smiles)}`;
-        window.open(searchUrl, '_blank');
+        // Eğer kullanıcı Ctrl/Meta ile tıkladıysa yeni sekmede aç (progressive enhancement)
+        // Aksi halde inline paneli doldur
+        try {
+            // Inline PubChem panelini doldur
+            this.loadPubChemPanel(smiles);
+        } catch (err) {
+            console.error('Inline PubChem panel load failed', err);
+            const searchUrl = `https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(smiles)}`;
+            const infoPanel = document.getElementById('molecule-info-panel');
+            const content = infoPanel ? infoPanel.querySelector('.info-content') : null;
+            if (content) {
+                const note = document.createElement('div');
+                note.className = 'info-item';
+                note.innerHTML = `<span class="info-label">PubChem:</span><span class="info-value"><a href="${searchUrl}" target="_blank" rel="noopener">PubChem'de aç</a></span>`;
+                content.appendChild(note);
+            } else {
+                alert('PubChem bilgileri yüklenemedi. Bağlantı: ' + searchUrl);
+            }
+        }
+    }
+
+    /**
+     * Molekül bilgi panelinde PubChem verilerini render et
+     */
+    async loadPubChemPanel(smiles) {
+        const infoPanel = document.getElementById('molecule-info-panel');
+        if (!infoPanel) return;
+
+        // Show a lightweight loading state
+        const content = infoPanel.querySelector('.info-content');
+        if (!content) return;
+        const prevHTML = content.innerHTML;
+        content.innerHTML = `<div class="info-item"><span class="info-label">PubChem:</span><span class="info-value">Yükleniyor...</span></div>`;
+
+        try {
+            const res = await fetch('/api/chat/pubchem-info', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ smiles })
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error || 'No data');
+
+            // Render compact PubChem card
+            const p = data.properties || {};
+            const rows = [
+                ['CID', data.cid || '-'],
+                ['IUPAC', p.iupacName || '-'],
+                ['Formül', p.molecularFormula || '-'],
+                ['Ağırlık', p.molecularWeight ? `${Number(p.molecularWeight).toFixed(2)} g/mol` : '-'],
+                ['XLogP', p.xlogP ?? '-'],
+                ['H-Donör', p.hBondDonorCount ?? '-'],
+                ['H-Akseptör', p.hBondAcceptorCount ?? '-'],
+                ['Döndürülebilir Bağ', p.rotatableBondCount ?? '-'],
+                ['Ağır Atom', p.heavyAtomCount ?? '-'],
+                ['InChIKey', p.inchiKey || '-']
+            ];
+
+            // update existing top fields too if empty
+            const formulaElement = document.getElementById('info-formula');
+            if (formulaElement && p.molecularFormula) formulaElement.innerHTML = this.formatMolecularFormula(p.molecularFormula);
+            const weightElement = document.getElementById('info-molecular-weight');
+            if (weightElement && p.molecularWeight) weightElement.textContent = `${Number(p.molecularWeight).toFixed(2)} g/mol`;
+            const atomCountElement = document.getElementById('info-atom-count');
+            if (atomCountElement && typeof p.heavyAtomCount !== 'undefined') atomCountElement.textContent = String(p.heavyAtomCount);
+
+            const desc = data.description ? `<div class="info-item"><span class="info-label">Açıklama:</span><span class="info-value">${DOMUtils.escapeHtml(data.description)}</span></div>` : '';
+
+            content.innerHTML = `
+                <div class="info-item"><span class="info-label">PubChem</span><span class="info-value">CID ${rows[0][1]}</span></div>
+                ${desc}
+                ${rows.slice(1).map(([k,v]) => {
+                    const value = k === 'Formül' ? this.formatMolecularFormula(v) : DOMUtils.escapeHtml(String(v));
+                    return `<div class="info-item"><span class="info-label">${k}:</span><span class="info-value">${value}</span></div>`;
+                }).join('')}
+                <div class="info-item"><span class="info-label">Bağlantı:</span><span class="info-value"><a href="https://pubchem.ncbi.nlm.nih.gov/compound/${rows[0][1]}" target="_blank" rel="noopener">PubChem'de aç</a></span></div>
+            `;
+        } catch (err) {
+            console.error('PubChem inline render error', err);
+            // Restore previous content on failure and show link instead of forcing new tab
+            content.innerHTML = prevHTML + `
+                <div class="info-item"><span class="info-label">PubChem:</span><span class="info-value"><a href="https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(smiles)}" target="_blank" rel="noopener">PubChem'de aç</a></span></div>
+            `;
+        }
     }
 
     /**
@@ -2464,13 +2885,17 @@ class ChatApp {
      * @param {string} type - 'welcome' veya 'chat'
      */
     processUploadedFiles(files, type) {
+        // Chips UI'ı güncelle
+        this.renderFileChips(files, type);
+
+        // İçeriği input'a ekleme davranışını koru (yalnızca text tabanlılarda okunur)
         files.forEach(file => {
+            const isTextLike = /\.(txt|md)$/i.test(file.name);
+            if (!isTextLike) return;
             const reader = new FileReader();
             reader.onload = (e) => {
                 const content = e.target.result;
                 const fileName = file.name;
-                
-                // Dosya içeriğini chat'e ekle
                 this.addFileToChat(fileName, content, type);
             };
             reader.readAsText(file);
@@ -2490,6 +2915,71 @@ class ChatApp {
             input.value += fileInfo;
             input.focus();
         }
+    }
+
+    /**
+     * Yüklenen dosyaları input alanının altında chip olarak göster
+     * @param {File[]} files
+     * @param {'welcome'|'chat'} type
+     */
+    renderFileChips(files, type) {
+        const container = type === 'welcome' ? this.ui.elements.welcomeFileChips : this.ui.elements.chatFileChips;
+        if (!container) return;
+
+        // Göster ve üst divider'ı görünür yap
+        container.style.display = 'flex';
+        const topDivider = container.nextElementSibling;
+        if (topDivider && topDivider.classList && topDivider.classList.contains('chips-divider')) {
+            topDivider.style.display = 'block';
+        }
+
+        // Var olanlara ekle: her çağrıda yeni batch'i ekle
+        files.forEach((file) => {
+            const chip = document.createElement('div');
+            chip.className = 'file-chip';
+
+            const extMatch = file.name.match(/\.([^.]+)$/);
+            const ext = extMatch ? extMatch[1].toUpperCase() : '';
+
+            const nameEl = document.createElement('span');
+            nameEl.className = 'file-name';
+            nameEl.textContent = file.name;
+
+            if (ext) {
+                const extEl = document.createElement('span');
+                extEl.className = 'file-ext';
+                extEl.textContent = ext;
+                chip.appendChild(extEl);
+            }
+
+            chip.appendChild(nameEl);
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'remove-chip';
+            removeBtn.setAttribute('aria-label', 'Dosyayı kaldır');
+            // Use an SVG 'X' icon so it looks crisp and can inherit color
+            removeBtn.innerHTML = `
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M6 6L18 18M6 18L18 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            `;
+
+            removeBtn.addEventListener('click', () => {
+                chip.remove();
+
+                // Eğer artık chip kalmadıysa container ve top divider'ı gizle
+                if (container.children.length === 0) {
+                    container.style.display = 'none';
+                    if (topDivider && topDivider.classList && topDivider.classList.contains('chips-divider')) {
+                        topDivider.style.display = 'none';
+                    }
+                }
+            });
+
+            chip.appendChild(removeBtn);
+            container.appendChild(chip);
+        });
     }
 
     /**

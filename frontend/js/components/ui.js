@@ -36,6 +36,8 @@ export class UIComponent {
             // Input wrapper elementleri
             inputWrapper: DOMUtils.select('.input-wrapper'),
             welcomeInputWrapper: DOMUtils.select('.welcome-input-wrapper'),
+            welcomeFileChips: DOMUtils.select('#welcome-file-chips'),
+            chatFileChips: DOMUtils.select('#chat-file-chips'),
             
             // Sidebar elementleri
             sidebar: DOMUtils.select('#sidebar'),
