@@ -32,6 +32,23 @@ class ChatApp {
     }
 
     /**
+     * Başlangıçta tüm chip konteynerlerini ve ilgili divider'ları gizle
+     */
+    initializeFileChipsUI() {
+        const welcomeContainer = this.ui.elements.welcomeFileChips;
+        const chatContainer = this.ui.elements.chatFileChips;
+
+        [welcomeContainer, chatContainer].forEach(container => {
+            if (!container) return;
+            container.style.display = 'none';
+            const divider = container.nextElementSibling;
+            if (divider && divider.classList && divider.classList.contains('chips-divider')) {
+                divider.style.display = 'none';
+            }
+        });
+    }
+
+    /**
      * Uygulamayı başlat
      */
     async init() {
@@ -43,12 +60,18 @@ class ChatApp {
         
         // UI event listener'ları kur
         this.ui.setupEventListeners();
+
+        // File chips UI başlangıçta gizli olsun
+        this.initializeFileChipsUI();
         
         // Modelleri yükle
         await this.populateModels();
         
         // Konuşma geçmişini yükle
         this.renderConversationHistory();
+
+        // Onboarding içeriklerini doldur
+        this.renderOnboarding();
         
         // Molekül çizim sistemini başlat
         this.initializeMoleculeDrawing();
@@ -124,6 +147,238 @@ class ChatApp {
         if (this.ui.elements.settingsOverlay) {
             DOMUtils.on(this.ui.elements.settingsOverlay, 'click', () => {
                 this.closeSettingsModal();
+            });
+        }
+
+        // Settings modal: tab switching (models / shortcuts)
+        const settingsModal = this.ui.elements.settingsModal;
+        if (settingsModal) {
+            DOMUtils.on(settingsModal, 'click', (e) => {
+                const navBtn = e.target.closest('.settings-nav-btn');
+                if (navBtn && navBtn.dataset && navBtn.dataset.tab) {
+                    const tab = navBtn.dataset.tab;
+                    // remove active class from nav buttons
+                    const navBtns = settingsModal.querySelectorAll('.settings-nav-btn');
+                    navBtns.forEach(b => DOMUtils.removeClass(b, 'active'));
+                    DOMUtils.addClass(navBtn, 'active');
+
+                    // hide all tabs, show selected
+                    const tabs = settingsModal.querySelectorAll('.settings-tab');
+                    tabs.forEach(t => t.style.display = 'none');
+                    const activeTab = settingsModal.querySelector(`#${tab}-tab`);
+                    if (activeTab) activeTab.style.display = 'block';
+                }
+            });
+
+            // Wire change/reset buttons for shortcuts
+            const changeMoleculeBtn = settingsModal.querySelector('#change-shortcut-molecule');
+            const resetMoleculeBtn = settingsModal.querySelector('#reset-shortcut-molecule');
+            const changeAdmetBtn = settingsModal.querySelector('#change-shortcut-admet');
+            const resetAdmetBtn = settingsModal.querySelector('#reset-shortcut-admet');
+
+            // Defaults stored in localStorage keys
+            const SHORTCUT_KEYS = {
+                molecule: 'shortcut_molecule',
+                admet: 'shortcut_admet'
+            };
+
+            const loadShortcutsToUI = () => {
+                const m = DOMUtils.select('#shortcut-molecule-display');
+                const a = DOMUtils.select('#shortcut-admet-display');
+                const mv = window.localStorage.getItem(SHORTCUT_KEYS.molecule) || 'Alt+M';
+                const av = window.localStorage.getItem(SHORTCUT_KEYS.admet) || 'Alt+N';
+                if (m) m.textContent = mv;
+                if (a) a.textContent = av;
+                // Also update the floating shortcuts mini UI (new structure: kbd[data-action])
+                try {
+                    const miniM = document.querySelector('kbd[data-action="molecule"]');
+                    const miniA = document.querySelector('kbd[data-action="admet"]');
+                    if (miniM) miniM.textContent = mv;
+                    if (miniA) miniA.textContent = av;
+                } catch (e) {
+                    // ignore
+                }
+            };
+
+            const listenForNewShortcut = (targetKey, displayEl) => {
+                // Create a small capture panel to prompt the user
+                const existing = document.getElementById('shortcut-capture-panel');
+                if (existing) existing.remove();
+
+                const panel = document.createElement('div');
+                panel.id = 'shortcut-capture-panel';
+                panel.style.position = 'fixed';
+                panel.style.top = '50%';
+                panel.style.left = '50%';
+                panel.style.transform = 'translate(-50%, -50%)';
+                panel.style.background = 'rgba(10,11,12,0.95)';
+                panel.style.color = 'var(--gray-100)';
+                panel.style.border = '1px solid var(--border-secondary)';
+                panel.style.padding = '14px 18px';
+                panel.style.borderRadius = '10px';
+                panel.style.boxShadow = '0 8px 24px rgba(0,0,0,0.6)';
+                panel.style.zIndex = 20000;
+                panel.innerHTML = `
+                    <div style="font-weight:600;margin-bottom:8px;">Yeni kısayolu girin</div>
+                    <div style="font-size:13px;color:var(--gray-400);margin-bottom:10px;">Yeni kombinasyonu klavyeden basınız. İptal için <kbd>Esc</kbd>.</div>
+                    <div style="text-align:center;margin-top:6px;color:var(--gray-300);font-size:14px" id="shortcut-preview">Bekleniyor...</div>
+                    <div style="text-align:right;margin-top:10px"><button id="cancel-shortcut-capture" style="padding:6px 10px;border-radius:8px;background:transparent;border:1px solid var(--border-secondary);color:var(--gray-200);cursor:pointer">İptal</button></div>
+                `;
+
+                document.body.appendChild(panel);
+
+                const cleanup = () => {
+                    if (panel && panel.parentNode) panel.parentNode.removeChild(panel);
+                    document.removeEventListener('keydown', keyHandler, true);
+                    cancelBtn.removeEventListener('click', onCancel);
+                };
+
+                const modKeys = new Set(['Shift', 'Control', 'Alt', 'Meta']);
+
+                const updatePreview = (ev) => {
+                    const preview = document.getElementById('shortcut-preview');
+                    if (!preview) return;
+                    let parts = [];
+                    if (ev.ctrlKey) parts.push('Ctrl');
+                    if (ev.altKey) parts.push('Alt');
+                    if (ev.shiftKey) parts.push('Shift');
+                    const k = ev.key.length === 1 ? ev.key.toUpperCase() : ev.key;
+                    // if only modifier pressed, show modifier + ...
+                    if (modKeys.has(k)) {
+                        preview.textContent = parts.join('+') + (parts.length ? '+' : '') + '...';
+                    } else {
+                        preview.textContent = parts.concat([k.length === 1 ? k.toUpperCase() : k]).join('+');
+                    }
+                };
+
+                const keyHandler = (ev) => {
+                    // ESC -> cancel
+                    if (ev.key === 'Escape') {
+                        ev.preventDefault();
+                        cleanup();
+                        return;
+                    }
+
+                    // Update preview always
+                    updatePreview(ev);
+
+                    // If the pressed key is only a modifier, wait for the next key
+                    if (modKeys.has(ev.key)) {
+                        // do not finalize yet
+                        ev.preventDefault();
+                        return;
+                    }
+
+                    // Finalize on non-modifier key
+                    ev.preventDefault();
+                    let parts = [];
+                    if (ev.ctrlKey) parts.push('Ctrl');
+                    if (ev.altKey) parts.push('Alt');
+                    if (ev.shiftKey) parts.push('Shift');
+                    const k = ev.key.length === 1 ? ev.key.toUpperCase() : ev.key;
+                    parts.push(k);
+                    const combo = parts.join('+');
+                    window.localStorage.setItem(targetKey, combo);
+                    loadShortcutsToUI();
+                    cleanup();
+                };
+
+                const cancelBtn = panel.querySelector('#cancel-shortcut-capture');
+                const onCancel = (e) => { e.preventDefault(); cleanup(); };
+
+                // Capture at document level (use capture true to get it first)
+                document.addEventListener('keydown', keyHandler, true);
+                cancelBtn.addEventListener('click', onCancel);
+            };
+
+            if (changeMoleculeBtn) {
+                changeMoleculeBtn.addEventListener('click', () => listenForNewShortcut(SHORTCUT_KEYS.molecule));
+            }
+            if (resetMoleculeBtn) {
+                resetMoleculeBtn.addEventListener('click', () => { window.localStorage.removeItem(SHORTCUT_KEYS.molecule); loadShortcutsToUI(); });
+            }
+            if (changeAdmetBtn) {
+                changeAdmetBtn.addEventListener('click', () => listenForNewShortcut(SHORTCUT_KEYS.admet));
+            }
+            if (resetAdmetBtn) {
+                resetAdmetBtn.addEventListener('click', () => { window.localStorage.removeItem(SHORTCUT_KEYS.admet); loadShortcutsToUI(); });
+            }
+
+            loadShortcutsToUI();
+        }
+
+        // Global kısayollar: dynamic from localStorage (defaults Alt+M / Alt+N)
+        DOMUtils.on(document, 'keydown', (e) => {
+            try {
+                const mv = window.localStorage.getItem('shortcut_molecule') || 'Alt+M';
+                const av = window.localStorage.getItem('shortcut_admet') || 'Alt+N';
+
+                const normalizeKey = (k) => {
+                    if (!k) return k;
+                    return k.length === 1 ? k.toUpperCase() : k;
+                };
+
+                const matchCombo = (ev, combo) => {
+                    if (!combo) return false;
+                    const parts = combo.split('+').map(p => p.trim()).filter(Boolean);
+                    let need = { ctrl: false, alt: false, shift: false, meta: false };
+                    let keyPart = null;
+                    parts.forEach(p => {
+                        const low = p.toLowerCase();
+                        if (low === 'ctrl' || low === 'control') need.ctrl = true;
+                        else if (low === 'alt') need.alt = true;
+                        else if (low === 'shift') need.shift = true;
+                        else if (low === 'meta' || low === 'cmd' || low === 'command') need.meta = true;
+                        else keyPart = p;
+                    });
+
+                    if (need.ctrl !== !!ev.ctrlKey) return false;
+                    if (need.alt !== !!ev.altKey) return false;
+                    if (need.shift !== !!ev.shiftKey) return false;
+                    if (need.meta !== !!ev.metaKey) return false;
+
+                    if (!keyPart) return false; // require a non-modifier key to trigger
+                    const evKey = normalizeKey(ev.key.length === 1 ? ev.key : ev.key);
+                    const wantKey = normalizeKey(keyPart.length === 1 ? keyPart : keyPart);
+                    return String(evKey).toLowerCase() === String(wantKey).toLowerCase();
+                };
+
+                if (matchCombo(e, mv)) {
+                    e.preventDefault();
+                    this.openMoleculeModal();
+                    return;
+                }
+
+                if (matchCombo(e, av)) {
+                    e.preventDefault();
+                    this.handleAdmetTool();
+                    return;
+                }
+            } catch (err) {
+                // fallback to defaults on error
+                if (e.altKey && (e.key === 'm' || e.key === 'M')) {
+                    e.preventDefault();
+                    this.openMoleculeModal();
+                }
+                if (e.altKey && (e.key === 'n' || e.key === 'N')) {
+                    e.preventDefault();
+                    this.handleAdmetTool();
+                }
+            }
+        });
+
+        // Click handlers for shortcuts in the UI (shortcuts-mini-list)
+        const shortcutsContainer = DOMUtils.select('#shortcuts-floating');
+        if (shortcutsContainer) {
+            DOMUtils.on(shortcutsContainer, 'click', (e) => {
+                const target = e.target.closest('[data-action]');
+                if (!target) return;
+                const action = target.dataset.action;
+                if (action === 'molecule') {
+                    this.openMoleculeModal();
+                } else if (action === 'admet') {
+                    this.handleAdmetTool();
+                }
             });
         }
 
@@ -531,6 +786,58 @@ class ChatApp {
         const model = this.ui.elements.modelSelectSidebar.value;
         this.ui.switchToChatMode(model);
         await this.processComparison(molecules, model);
+    }
+
+    /**
+     * Welcome onboarding alanlarını doldur
+     */
+    renderOnboarding() {
+        const quickGrid = document.getElementById('quick-start-grid');
+        const emptyState = document.getElementById('empty-state');
+        if (!quickGrid) return;
+
+        // Hızlı başlat kartları (eczacı/molekül toksisite odaklı)
+        const quickCards = [
+            {
+                title: 'Kafein toksisite profili',
+                desc: 'ADMET parametreleri ve risk değerlendirmesi',
+                prompt: 'Kafein için ADMET ve toksisite risk profilini çıkar. Özellikle hepatotoksisite ve kardiyotoksisite risklerini değerlendir.'
+            },
+            {
+                title: 'Eşdeğer molekül öner',
+                desc: 'Benzer etki, daha düşük risk',
+                prompt: 'Parasetamol için terapötik açıdan benzer ama daha düşük toksisite riski taşıyan alternatif molekülleri öner ve kıyasla.'
+            },
+            {
+                title: 'SMILES çöz ve çiz',
+                desc: 'İsimden yapıyı çöz, görselleştir',
+                prompt: 'Ibuprofen için SMILES’ı çöz, yapıyı çiz ve temel ADMET özetini ver.'
+            },
+            {
+                title: 'Formülasyonda etkileşim',
+                desc: 'Yardımcı madde-molekül riski',
+                prompt: 'Lidokain ile etanol ve propilen glikol varlığında stabilite ve potansiyel toksisite etkileşim risklerini değerlendir.'
+            },
+        ];
+
+        quickGrid.innerHTML = '';
+        quickCards.forEach(c => {
+            const el = DOMUtils.create('div', { className: 'card' });
+            el.innerHTML = `<div class="card-title">${DOMUtils.escapeHtml(c.title)}</div><div class="card-desc">${DOMUtils.escapeHtml(c.desc)}</div>`;
+            DOMUtils.on(el, 'click', () => {
+                const ta = this.ui.elements.welcomeInput;
+                if (!ta) return;
+                const val = c.prompt;
+                ta.value = val;
+                DOMUtils.autoResizeTextarea(ta);
+                ta.focus();
+            });
+            quickGrid.appendChild(el);
+        });
+
+        // Son konuşmalar (3-5 örnek mesaj kartı)
+        // hide empty state when no recent panel (we still show it if quick-cards empty)
+        if (emptyState) emptyState.style.display = 'block';
     }
 
     /**
@@ -2578,13 +2885,17 @@ class ChatApp {
      * @param {string} type - 'welcome' veya 'chat'
      */
     processUploadedFiles(files, type) {
+        // Chips UI'ı güncelle
+        this.renderFileChips(files, type);
+
+        // İçeriği input'a ekleme davranışını koru (yalnızca text tabanlılarda okunur)
         files.forEach(file => {
+            const isTextLike = /\.(txt|md)$/i.test(file.name);
+            if (!isTextLike) return;
             const reader = new FileReader();
             reader.onload = (e) => {
                 const content = e.target.result;
                 const fileName = file.name;
-                
-                // Dosya içeriğini chat'e ekle
                 this.addFileToChat(fileName, content, type);
             };
             reader.readAsText(file);
@@ -2604,6 +2915,71 @@ class ChatApp {
             input.value += fileInfo;
             input.focus();
         }
+    }
+
+    /**
+     * Yüklenen dosyaları input alanının altında chip olarak göster
+     * @param {File[]} files
+     * @param {'welcome'|'chat'} type
+     */
+    renderFileChips(files, type) {
+        const container = type === 'welcome' ? this.ui.elements.welcomeFileChips : this.ui.elements.chatFileChips;
+        if (!container) return;
+
+        // Göster ve üst divider'ı görünür yap
+        container.style.display = 'flex';
+        const topDivider = container.nextElementSibling;
+        if (topDivider && topDivider.classList && topDivider.classList.contains('chips-divider')) {
+            topDivider.style.display = 'block';
+        }
+
+        // Var olanlara ekle: her çağrıda yeni batch'i ekle
+        files.forEach((file) => {
+            const chip = document.createElement('div');
+            chip.className = 'file-chip';
+
+            const extMatch = file.name.match(/\.([^.]+)$/);
+            const ext = extMatch ? extMatch[1].toUpperCase() : '';
+
+            const nameEl = document.createElement('span');
+            nameEl.className = 'file-name';
+            nameEl.textContent = file.name;
+
+            if (ext) {
+                const extEl = document.createElement('span');
+                extEl.className = 'file-ext';
+                extEl.textContent = ext;
+                chip.appendChild(extEl);
+            }
+
+            chip.appendChild(nameEl);
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'remove-chip';
+            removeBtn.setAttribute('aria-label', 'Dosyayı kaldır');
+            // Use an SVG 'X' icon so it looks crisp and can inherit color
+            removeBtn.innerHTML = `
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M6 6L18 18M6 18L18 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            `;
+
+            removeBtn.addEventListener('click', () => {
+                chip.remove();
+
+                // Eğer artık chip kalmadıysa container ve top divider'ı gizle
+                if (container.children.length === 0) {
+                    container.style.display = 'none';
+                    if (topDivider && topDivider.classList && topDivider.classList.contains('chips-divider')) {
+                        topDivider.style.display = 'none';
+                    }
+                }
+            });
+
+            chip.appendChild(removeBtn);
+            container.appendChild(chip);
+        });
     }
 
     /**

@@ -49,6 +49,200 @@
     text-shadow: var(--shadow-glow);
 }
 
+.welcome-subtitle {
+    color: var(--gray-300);
+    font-size: var(--text-lg);
+    margin-top: -8px;
+}
+
+.welcome-sections {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.quick-start-plain {
+    background: transparent;
+    border: none;
+    padding: 0;
+    position: relative;
+}
+
+/* vertical center line between the two columns */
+.quick-start-plain::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    transform: translateX(-50%);
+    background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,0.18) 50%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+}
+
+/* horizontal center line between the two rows */
+.quick-start-plain::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 2px;
+    transform: translateY(-50%);
+    background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.18) 50%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+}
+
+.quick-start-plain .card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    max-width: 720px;
+}
+
+.quick-start-plain .card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: transparent;
+    border: none;
+    padding: 12px 10px;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.quick-start-plain .card .card-title {
+    font-size: 1rem;
+    color: var(--gray-100);
+    font-weight: var(--font-semibold);
+}
+
+.quick-start-plain .card .card-desc {
+    color: var(--gray-400);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+}
+
+.card {
+    background: var(--bg-glass);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-xl);
+    padding: var(--space-3);
+    text-align: left;
+    cursor: pointer;
+    transition: var(--transition-normal);
+}
+
+.card:hover {
+    background: var(--bg-glass-hover);
+    border-color: var(--border-accent);
+    transform: translateY(-1px);
+}
+
+.card .card-title {
+    color: var(--gray-100);
+    font-weight: var(--font-semibold);
+    margin-bottom: 4px;
+}
+
+.card .card-desc {
+    color: var(--gray-400);
+    font-size: var(--text-sm);
+}
+
+.shortcuts {
+    position: sticky;
+    top: 24px;
+}
+
+.shortcuts-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.shortcuts-list kbd {
+    background: var(--gray-900);
+    border: 1px solid var(--border-secondary);
+    border-bottom-width: 2px;
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-family: var(--font-family-mono);
+    font-size: 12px;
+    color: var(--gray-200);
+}
+
+.empty-state {
+    color: var(--gray-400);
+    font-size: var(--text-sm);
+}
+
+/* Floating compact shortcuts (top-right) */
+.shortcuts-floating {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    z-index: 1200;
+}
+
+.shortcuts-mini {
+    background: rgba(15,17,19,0.9);
+    color: var(--gray-200);
+    border: 1px solid var(--border-secondary);
+    border-radius: 12px;
+    padding: 8px 10px;
+    min-width: 140px;
+    box-shadow: var(--shadow-lg);
+}
+
+.shortcuts-mini-title {
+    font-size: 12px;
+    color: var(--gray-300);
+    font-weight: var(--font-semibold);
+    margin-bottom: 6px;
+}
+
+.shortcuts-mini-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.shortcut-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.shortcut-desc {
+    color: var(--gray-500);
+    font-size: 12px;
+    font-weight: 400; /* less prominent */
+    opacity: 0.7;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px; /* limit title width */
+}
+
+.shortcut-key kbd {
+    font-size: 12px;
+    padding: 4px 6px;
+    border-radius: 6px;
+}
+
 /* Chat Interface */
 .chat-interface {
     width: 100%;
@@ -122,6 +316,12 @@
     .messages {
         width: 95%;
         padding: var(--space-4);
+    }
+    
+    /* hide diagonal and plus on small screens */
+    .quick-start-plain::before,
+    .quick-start-plain::after {
+        display: none;
     }
 }
 

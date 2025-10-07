@@ -266,6 +266,52 @@
     box-shadow: 0 4px 12px rgba(79,195,247,0.15);
 }
 
+/* When input wrapper has admet-active, make send button match AdMet color */
+.input-wrapper.admet-active .send-btn,
+.welcome-input-wrapper.admet-active .send-btn {
+    background: rgba(227, 130, 248, 0.08);
+    border-color: rgba(227, 130, 248, 0.2);
+    color: rgb(227, 130, 248);
+    box-shadow: 0 4px 12px rgba(227, 130, 248, 0.08);
+}
+
+.input-wrapper.admet-active .send-btn:hover:not(:disabled),
+.welcome-input-wrapper.admet-active .send-btn:hover:not(:disabled) {
+    background: rgba(227, 130, 248, 0.12);
+    border-color: rgba(227, 130, 248, 0.3);
+    color: rgba(227, 130, 248, 0.95);
+    box-shadow: 0 4px 12px rgba(227, 130, 248, 0.15);
+}
+
+/* Match molecule modal input send icon tint behavior for AdMet */
+.input-wrapper.admet-active .send-btn .btn-icon,
+.welcome-input-wrapper.admet-active .send-btn .btn-icon {
+    /* tint send icon toward AdMet purple */
+    filter: brightness(0) saturate(100%) invert(86%) sepia(34%) saturate(360%) hue-rotate(278deg) brightness(98%) contrast(94%);
+}
+
+/* When not hovered, keep border/outline minimal like molecule modal */
+.input-wrapper.admet-active .send-btn:not(:hover):not(:focus),
+.welcome-input-wrapper.admet-active .send-btn:not(:hover):not(:focus) {
+    border-color: transparent !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+
+/* Focus/active outlines matching AdMet */
+.input-wrapper.admet-active .send-btn:focus-visible,
+.welcome-input-wrapper.admet-active .send-btn:focus-visible {
+    outline: 2px solid rgba(227, 130, 248, 0.5);
+    outline-offset: 2px;
+}
+
+/* Active press state */
+.input-wrapper.admet-active .send-btn:active:not(:disabled),
+.welcome-input-wrapper.admet-active .send-btn:active:not(:disabled) {
+    background: var(--bg-glass-hover);
+    border-color: rgba(227, 130, 248, 0.45);
+}
+
 .send-btn.stop-stream-btn:hover:not(:disabled) {
     background: var(--bg-glass) !important;
     border-color: rgba(239, 68, 68, 0.3) !important;

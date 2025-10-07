@@ -159,6 +159,48 @@
     flex-direction: column;
 }
 
+/* Shortcuts tab: list layout with compact controls on the right */
+#shortcuts-tab {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow: auto;
+}
+
+#shortcuts-tab .shortcut-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 20px;
+    border-bottom: 1px solid var(--border-secondary);
+}
+
+#shortcuts-tab .shortcut-row .shortcut-display {
+    color: var(--gray-200);
+    font-size: 0.95rem;
+    margin-right: 12px;
+}
+
+#shortcuts-tab .shortcut-row .btn {
+    padding: 6px 8px;
+    font-size: 0.85rem;
+    border-radius: 8px;
+}
+
+#shortcuts-tab .shortcut-row .btn.btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border-secondary);
+    color: var(--gray-200);
+}
+
+#shortcuts-tab .shortcut-row .btn + .btn {
+    margin-left: 8px;
+}
+
+#shortcuts-tab .shortcut-row:last-child {
+    border-bottom: none;
+}
+
 .models-list {
     flex: 1;
     overflow-y: auto;
