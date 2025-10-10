@@ -1,588 +1,473 @@
 /**
- * Modal Components
- * Modal bileşenleri
+ * Modern, Responsive ve Kullanıcı Dostu Modal Bileşenleri
+ * Versiyon 2.0 - ADMETGPT
  */
 
-/* Base modal styles */
-.settings-modal, .molecule-modal, .tools-modal, .modal {
+/* ============================================= */
+/* === TEMEL DEĞİŞKENLER (VARIABLES) === */
+/* ============================================= */
+/* Not: Bu değişkenler ana CSS dosyanızdan geliyor olmalı. */
+:root {
+    --z-modal: 1000;
+    --border-secondary: rgba(255, 255, 255, 0.1);
+    --border-accent: rgba(255, 255, 255, 0.2);
+    --radius-2xl: 16px;
+    --radius-lg: 8px;
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --space-2: 0.5rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --text-2xl: 1.5rem;
+    --font-semibold: 600;
+    --accent: #e5e7eb;
+    /* Açık gri tonu */
+    --gray-950: #030712;
+    --gray-900: #111827;
+    --gray-300: #d1d5db;
+    --gray-100: #f3f4f6;
+    --primary-blue: #007bff;
+    /* Yeni ana mavi rengimiz */
+    --primary-blue-dark: #0056b3;
+    --transition-normal: all 0.2s ease-in-out;
+    --transition-slow: all 0.3s ease-in-out;
+}
+
+
+/* ============================================= */
+/* === TEMEL MODAL YAPISI (BASE STRUCTURE) === */
+/* ============================================= */
+
+/* Tüm modalların ana kapsayıcısı */
+.modal {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
+    /* top, right, bottom, left: 0 */
     z-index: var(--z-modal);
-    display: none;
+    display: flex;
     align-items: center;
     justify-content: center;
+    padding: 1rem;
+
+    /* Açılış/Kapanış Animasyonu için */
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0.2s, opacity 0.2s;
 }
 
-.settings-modal.open, .molecule-modal.open, .tools-modal.open, .modal.open {
-    display: flex;
+/* Modal açıldığında görünür yap */
+.modal.open {
+    visibility: visible;
+    opacity: 1;
 }
 
-.settings-overlay, .molecule-overlay, .tools-overlay, .modal-overlay {
+/* Arkaplan karartma efekti */
+.modal-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    /* backdrop-filter: blur(8px); - PERFORMANS İÇİN KALDIRILDI */
+    inset: 0;
+    background: rgba(10, 10, 10, 0.7);
+    backdrop-filter: blur(8px);
+    /* Performans sorunu yoksa modern bir görünüm katar */
+    cursor: pointer;
 }
 
-/* Molekül modal özel overlay efekti - performans için basitleştirildi */
-.molecule-modal .molecule-overlay {
-    background: transparent;
-}
-
-.settings-content, .tools-content {
+/* Modal penceresinin kendisi */
+.modal-content {
     position: relative;
-    width: 90%;
-    max-width: 600px;
-    max-height: 80vh;
-    background: rgba(20, 20, 20, 0.98);
-    /* backdrop-filter: blur(20px); - PERFORMANS İÇİN KALDIRILDI */
+    width: 100%;
+    max-width: 550px;
+    /* Genişliği biraz daha kompakt tuttuk */
+    max-height: 90vh;
+    background: #18181B;
+    /* Hafif aydınlık bir siyah */
     border: 1px solid var(--border-secondary);
     border-radius: var(--radius-2xl);
-    box-shadow: var(--shadow-xl);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     display: flex;
     flex-direction: column;
     overflow: hidden;
+
+    /* Açılış animasyonu */
+    transform: scale(0.95);
+    transition: var(--transition-slow);
+}
+
+.modal.open .modal-content {
+    transform: scale(1);
+}
+
+/* Diğer modalların da bu yapıyı kullanmasını sağlıyoruz */
+.settings-content,
+.molecule-content,
+.tools-content {
+    /* Ortak stilleri devralır, sadece farklılıkları yazarız */
+    max-width: 600px;
 }
 
 .molecule-content {
-    position: relative;
-    width: 90%;
     max-width: 700px;
-    max-height: 80vh;
-    background: rgba(26, 26, 26, 0.98);
-    border: 1px solid rgba(76, 175, 80, 0.3);
-    border-radius: var(--radius-2xl);
-    box-shadow: var(--shadow-xl);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
 }
 
-.modal-content {
-    position: relative;
-    width: 90%;
-    max-width: 600px; /* Using max-width from settings-content */
-    max-height: 80vh;
-    background: linear-gradient(180deg, rgba(26,26,26,0.95), rgba(20,20,20,0.98));
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--border-secondary);
-    border-radius: var(--radius-2xl);
-    box-shadow: var(--shadow-xl);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
 
-.settings-header, .molecule-header, .tools-header, .modal-header {
+/* ============================================= */
+/* === MODAL İÇERİK ELEMENTLERİ (CONTENT) === */
+/* ============================================= */
+
+.modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: var(--space-5) var(--space-6);
     border-bottom: 1px solid var(--border-secondary);
+    flex-shrink: 0;
 }
 
-.settings-title, .molecule-title, .tools-title, .modal-title {
+.modal-title {
     margin: 0;
-    font-size: var(--text-2xl);
+    font-size: 1.25rem;
+    /* Başlığı biraz küçülttük */
     font-weight: var(--font-semibold);
     color: var(--accent);
 }
 
-.settings-close, .molecule-close, .tools-close, .modal-close {
-    background: var(--gray-950);
-    border: 1px solid var(--border-secondary);
+.modal-close {
+    background: transparent;
+    border: none;
     color: var(--gray-300);
     padding: var(--space-2);
     border-radius: var(--radius-lg);
     cursor: pointer;
     transition: var(--transition-normal);
     display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
-.settings-close:hover, .molecule-close:hover, .tools-close:hover {
-    background: var(--gray-900);
-    border-color: var(--border-accent);
-    color: var(--gray-100);
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
 }
 
-.settings-body, .molecule-body, .tools-body, .modal-body {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-/* Settings modal specific */
-.settings-navigation {
-    display: flex;
-    padding: 0 var(--space-6);
-    border-bottom: 1px solid var(--border-secondary);
-}
-
-.settings-nav-btn {
-    background: transparent;
-    border: none;
-    color: var(--gray-400);
-    padding: var(--space-4) var(--space-5);
-    cursor: pointer;
-    transition: var(--transition-normal);
-    font-size: var(--text-md);
-    font-weight: var(--font-medium);
-    border-bottom: 2px solid transparent;
-}
-
-.settings-nav-btn:hover {
-    color: var(--gray-200);
-}
-
-.settings-nav-btn.active {
-    color: var(--primary);
-    border-bottom-color: var(--primary);
-}
-
-.settings-tab {
-    display: none;
-    flex: 1;
-    overflow: hidden;
-}
-
-.settings-tab.active {
-    display: flex;
-    flex-direction: column;
-}
-
-/* Shortcuts tab: list layout with compact controls on the right */
-#shortcuts-tab {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    overflow: auto;
-}
-
-#shortcuts-tab .shortcut-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 20px;
-    border-bottom: 1px solid var(--border-secondary);
-}
-
-#shortcuts-tab .shortcut-row .shortcut-display {
-    color: var(--gray-200);
-    font-size: 0.95rem;
-    margin-right: 12px;
-}
-
-#shortcuts-tab .shortcut-row .btn {
-    padding: 6px 8px;
-    font-size: 0.85rem;
-    border-radius: 8px;
-}
-
-#shortcuts-tab .shortcut-row .btn.btn-secondary {
-    background: transparent;
-    border: 1px solid var(--border-secondary);
-    color: var(--gray-200);
-}
-
-#shortcuts-tab .shortcut-row .btn + .btn {
-    margin-left: 8px;
-}
-
-#shortcuts-tab .shortcut-row:last-child {
-    border-bottom: none;
-}
-
-.models-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: var(--space-5) var(--space-6);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-}
-
-/* Models list artık ortak panel sistemi kullanıyor */
-.models-list .panel-item {
-    margin: 0;
-}
-
-/* Model item artık ortak panel sistemi kullanıyor - panels.css'de tanımlı */
-
-.model-item.loading {
-    opacity: 0.7;
-    pointer-events: none;
-    animation: pulse 1.5s ease-in-out infinite;
-}
-
-.model-item.error {
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--error);
-}
-
-@keyframes pulse {
-    0%, 100% {
-        opacity: 0.7;
-    }
-    50% {
-        opacity: 1;
-    }
-}
-
-.model-item.selected {
-    background: rgba(79,195,247,0.1);
-}
-
-.model-item.selected .model-name {
-    color: var(--primary);
-}
-
-.model-name {
-    color: var(--accent);
-    font-size: var(--text-base);
-    font-weight: var(--font-medium);
-    flex: 1;
-}
-
-.model-controls {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-}
-
-.model-status {
-    color: var(--gray-500);
-    font-size: var(--text-xs);
-    background: var(--gray-950);
-    padding: 2px 6px;
-    border-radius: var(--radius-sm);
-}
-
-.model-switch {
-    position: relative;
-    width: 44px;
-    height: 24px;
-    background: var(--gray-900);
-    border: 1px solid var(--border-accent);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: var(--transition-slow);
-    flex-shrink: 0;
-}
-
-.model-switch.active {
-    background: linear-gradient(135deg, var(--primary), var(--primary-light));
-    border-color: var(--primary);
-}
-
-.model-switch::before {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 18px;
-    height: 18px;
-    background: var(--gray-100);
-    border-radius: 50%;
-    transition: var(--transition-slow);
-    box-shadow: var(--shadow-sm);
-}
-
-.model-switch.active::before {
-    transform: translateX(20px);
-    background: white;
-}
-
-.model-switch:hover {
-    transform: scale(1.05);
-}
-
-/* Models search */
-.models-search-container {
-    padding: var(--space-4);
-    border-bottom: 1px solid var(--border-accent);
-}
-
-.models-search {
-    width: 100%;
-    padding: var(--space-3) var(--space-4);
-    background: var(--gray-950);
-    border: 1px solid var(--border-accent);
-    border-radius: var(--radius-md);
-    color: var(--accent);
-    font-size: var(--text-sm);
-    transition: var(--transition-fast);
-}
-
-.models-search:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.1);
-}
-
-.models-search::placeholder {
-    color: var(--gray-500);
-}
-
-/* No results message */
-.no-results {
+.modal-body {
+    flex-grow: 1;
     padding: var(--space-6);
-    text-align: center;
-    color: var(--gray-500);
-}
-
-.no-results-text {
-    font-size: var(--text-sm);
-    font-style: italic;
-}
-
-/* Models list scrollbar */
-.models-list::-webkit-scrollbar {
-    width: 6px;
-}
-
-.models-list::-webkit-scrollbar-track {
-    background: var(--gray-950);
-    border-radius: 3px;
-}
-
-.models-list::-webkit-scrollbar-thumb {
-    background: var(--gray-800);
-    border-radius: 3px;
-}
-
-.models-list::-webkit-scrollbar-thumb:hover {
-    background: var(--gray-700);
-}
-
-/* Molecule modal specific */
-.molecule-content {
-    max-width: 700px;
-}
-
-.molecule-panel {
-    flex: 1;
-    padding: var(--space-5) var(--space-6);
-    border-bottom: 1px solid var(--border-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 200px;
-}
-
-.molecule-display {
-    width: 100%;
-    height: 100%;
-    background: var(--bg-secondary);
-    border: 1px solid rgba(76, 175, 80, 0.2);
-    border-radius: var(--radius-xl);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-}
-
-.molecule-placeholder {
+    overflow-y: auto;
+    /* İçerik taşarsa scroll çıksın */
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: var(--space-3);
-    color: var(--gray-500);
-    text-align: center;
+    gap: 1rem;
+    /* Elementler arası boşluk için modern yöntem */
 }
 
-.molecule-placeholder svg {
-    color: var(--gray-700);
-}
-
-.molecule-placeholder p {
-    margin: 0;
-    font-size: var(--text-md);
-}
-
-.molecule-placeholder .placeholder-hint {
-    font-size: var(--text-sm);
-    color: var(--gray-600);
-    margin-top: var(--space-2);
-}
-
-.molecule-error {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-3);
-    color: var(--error);
-    text-align: center;
-}
-
-.molecule-error svg {
-    color: var(--error);
-}
-
-.molecule-error p {
-    margin: 0;
-    font-size: var(--text-md);
-    font-weight: var(--font-medium);
-}
-
-.smiles-input-section {
-    padding: var(--space-5) var(--space-6);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-}
-
-.smiles-label {
-    color: var(--gray-200);
-    font-size: var(--text-md);
-    font-weight: var(--font-medium);
-}
-
-.molecule-actions {
-    display: flex;
-    gap: var(--space-3);
-    justify-content: flex-end;
+.modal-description {
+    color: #a1a1aa;
+    /* Açıklama metni daha az dikkat çekici */
+    font-size: 0.9rem;
+    line-height: 1.5;
 }
 
 .modal-actions {
     display: flex;
-    gap: var(--space-3);
     justify-content: flex-end;
+    /* Butonu sağa yasla */
+    padding-top: 0.5rem;
 }
 
-.molecule-action-btn {
-    background: var(--gray-950);
-    border: 1px solid var(--border-secondary);
-    color: var(--gray-200);
-    padding: 10px var(--space-5);
+
+/* ============================================= */
+/* === KARŞILAŞTIRMA MODALI ÖZEL STİLLERİ === */
+/* ============================================= */
+
+#run-comparison {
+    background: var(--primary-blue);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: 500;
     border-radius: var(--radius-lg);
-    font-size: var(--text-md);
-    font-weight: var(--font-medium);
     cursor: pointer;
     transition: var(--transition-normal);
 }
 
-.modal-action-btn {
-    background: var(--gray-950);
-    border: 1px solid var(--border-secondary);
-    color: var(--gray-200);
-    padding: 10px var(--space-5);
+#run-comparison:hover {
+    background: var(--primary-blue-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+}
+
+.compare-textarea {
+    background-color: #27272a;
+    border: 1px solid #3f3f46;
+    color: #f4f4f5;
     border-radius: var(--radius-lg);
-    font-size: var(--text-md);
-    font-weight: var(--font-medium);
-    cursor: pointer;
-    transition: var(--transition-normal);
+    padding: 12px;
+    font-family: inherit;
+    font-size: 1rem;
+    resize: vertical;
+    min-height: 150px;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.molecule-action-btn:hover {
-    background: var(--gray-900);
-    border-color: var(--border-accent);
-    color: var(--gray-100);
-    transform: translateY(-1px);
-}
-
-.molecule-action-btn.primary {
-    background: rgba(76,175,80,0.2);
-    border-color: rgba(76,175,80,0.4);
-    color: var(--secondary);
-}
-
-.molecule-action-btn.primary:hover {
-    background: rgba(76,175,80,0.3);
-    border-color: rgba(76,175,80,0.6);
-    color: var(--secondary-light);
+.compare-textarea:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
 }
 
 
+/* ============================================= */
+/* === MOBİL UYUMLULUK (RESPONSIVE) === */
+/* ============================================= */
 
-/* Responsive modal adjustments */
 @media (max-width: 768px) {
-    .settings-content, .tools-content {
-        width: 95%;
-        max-height: 90vh;
+
+    /* Mobilde modal alttan gelsin ve tam ekran olsun */
+    .modal {
+        align-items: flex-end;
+        /* Pencereyi alta yasla */
+        padding: 0;
     }
-    
-    .settings-header, .molecule-header, .tools-header {
-        padding: var(--space-4) var(--space-5);
-    }
-    
-    .settings-title, .molecule-title, .tools-title {
-        font-size: 1.3rem;
-    }
-    
-    .settings-navigation {
-        padding: 0 var(--space-5);
-    }
-    
-    .settings-nav-btn {
-        padding: var(--space-3) var(--space-4);
-        font-size: var(--text-base);
-    }
-    
-    .models-list {
-        padding: var(--space-4) var(--space-5);
-    }
-    
-    .model-item {
-        padding: 10px var(--space-3);
-    }
-    
-    .model-name {
-        font-size: var(--text-sm);
-    }
-    
-    .molecule-content {
-        width: 95%;
-        max-height: 90vh;
-    }
-    
-    .molecule-header {
-        padding: var(--space-4) var(--space-5);
-    }
-    
-    .molecule-title {
-        font-size: 1.3rem;
-    }
-    
-    .molecule-panel {
-        padding: var(--space-4) var(--space-5);
-        min-height: 150px;
-    }
-    
-    .smiles-input-section {
-        padding: var(--space-4) var(--space-5);
-    }
-    
-    .molecule-actions {
-        flex-direction: column;
-    }
-    
-    .molecule-action-btn {
+
+    .modal-content {
         width: 100%;
-        justify-content: center;
+        max-height: 85vh;
+        margin: 0;
+        border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+        /* Sadece üst köşeleri yuvarlat */
+
+        /* Mobilde alttan kayma animasyonu */
+        transform: translateY(100%);
     }
-    
-    .tools-list {
-        padding: var(--space-4) var(--space-5);
+
+    .modal.open .modal-content {
+        transform: translateY(0);
     }
-    
-    .tool-item {
-        padding: var(--space-3);
+
+    .modal-title {
+        font-size: 1.1rem;
     }
-    
-    .tool-name {
-        font-size: var(--text-base);
+
+    .modal-body {
+        padding: var(--space-5);
     }
-    
-    .tool-description {
-        font-size: var(--text-xs);
+
+    #run-comparison {
+        width: 100%;
+        /* Buton tam genişlik olsun */
+        padding: 14px;
     }
+}
+
+/* ============================================= */
+/* === YENİ MOLEKÜL EKLEME ARAYÜZÜ STİLLERİ === */
+/* ============================================= */
+
+/* Giriş alanı ve Ekle butonunu yan yana getiren kapsayıcı */
+.molecule-input-group {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* Yeni molekül giriş alanı */
+#molecule-add-input {
+    flex-grow: 1;
+    /* Alanın tamamını kaplasın */
+    background-color: #27272a;
+    border: 1px solid #3f3f46;
+    color: #f4f4f5;
+    border-radius: var(--radius-lg);
+    padding: 10px 14px;
+    font-size: 0.95rem;
+    transition: var(--transition-normal);
+}
+
+#molecule-add-input:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+/* Ekle Butonu */
+#add-molecule-btn {
+    background-color: #3f3f46;
+    color: #f4f4f5;
+    border: none;
+    padding: 0 1.25rem;
+    font-weight: 500;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: var(--transition-normal);
+}
+
+#add-molecule-btn:hover {
+    background-color: #52525b;
+}
+
+/* Eklenen molekül etiketlerinin kapsayıcısı */
+#molecule-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    /* Etiketler sığmazsa alt satıra geçsin */
+    gap: 0.75rem;
+    /* Etiketler arası boşluk */
+    padding: 0.5rem 0;
+    min-height: 50px;
+    /* Boşken bile bir yüksekliği olsun */
+    border-top: 1px solid var(--border-secondary);
+    border-bottom: 1px solid var(--border-secondary);
+    margin-top: 1rem;
+    padding-top: 1rem;
+}
+
+/* Her bir molekül etiketi */
+.molecule-tag {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: var(--primary-blue);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 9999px;
+    /* Tam yuvarlak kenarlar */
+    font-size: 0.9rem;
+    font-weight: 500;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Etiketin içindeki silme butonu */
+.tag-remove-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    transition: var(--transition-normal);
+}
+
+.tag-remove-btn:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+    transform: scale(1.1);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.modal-subtitle {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--gray-300);
+}
+
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.checkbox-grid label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--gray-300);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: var(--radius-lg);
+    transition: background-color 0.2s;
+}
+
+.checkbox-grid label:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.checkbox-grid input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--primary-blue);
+}
+
+/* ============================================= */
+/* === ADMET AYARLARI MODALI ÖZEL STİLLERİ === */
+/* ============================================= */
+
+.admet-settings-content .modal-header {
+    align-items: flex-start;
+}
+
+.modal-header-content {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.modal-header-icon {
+    width: 24px;
+    height: 24px;
+    color: #e382f8; /* ADMET purple */
+    flex-shrink: 0;
+}
+
+.admet-settings-content .modal-title {
+    margin-bottom: var(--space-1);
+}
+
+.admet-settings-content .modal-description {
+    font-size: var(--text-sm);
+    color: var(--gray-400);
+    margin: 0;
+}
+
+.admet-settings-content .modal-body {
+    padding-top: var(--space-4);
+    padding-bottom: var(--space-4);
+}
+
+.admet-settings-content .modal-subtitle {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--gray-300);
+    margin-top: var(--space-5);
+    margin-bottom: var(--space-3);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--border-secondary);
+}
+
+.admet-settings-content .checkbox-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--space-2) var(--space-4);
+}
+
+.admet-settings-content .checkbox-grid label {
+    padding: var(--space-2);
+    font-size: var(--text-sm);
+}
+
+.admet-settings-content .checkbox-grid input[type="checkbox"] {
+    width: 1.125rem;
+    height: 1.125rem;
+    accent-color: #d946ef; /* fuchsia-500 */
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-6);
+    border-top: 1px solid var(--border-secondary);
+    background: rgba(24, 24, 27, 0.5); /* zinc-900 with opacity */
 }

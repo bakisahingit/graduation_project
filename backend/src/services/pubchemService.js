@@ -1,20 +1,58 @@
 // src/services/pubchemService.js
 
+// YENİLİKLER:
+// - Redis client import edildi.
+// - Fonksiyonun en başına Redis'ten önbellek kontrolü eklendi.
+// - API'den başarılı sonuç alındığında Redis'e kayıt yapılıyor (24 saat geçerli).
+
 import { httpClient } from '../config/index.js';
+import redisClient from './redisService.js'; // Redis client'ı import et
+
+const CACHE_TTL_SECONDS = 3600 * 24; // PubChem sonuçlarını 24 saat cache'le
 
 export async function getSmilesFromName(name) {
-    const pubchemUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(name)}/property/CanonicalSMILES/JSON`;
+    const normalizedName = name.trim().toLowerCase();
+    const cacheKey = `pubchem:${normalizedName}`;
+
+    // 1. Önce Redis'i kontrol et
     try {
-        console.log(`Querying PubChem at: ${pubchemUrl}`);
+        const cachedSmiles = await redisClient.get(cacheKey);
+        if (cachedSmiles) {
+            console.log(`✅ Cache hit for PubChem name: "${normalizedName}"`);
+            return cachedSmiles;
+        }
+    } catch (e) {
+        console.error("PubChem Redis cache check failed:", e);
+    }
+
+    // 2. Cache'te yoksa PubChem API'sine git
+    const pubchemUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(name)}/property/CanonicalSMILES/JSON`;
+    
+    try {
+        console.log(`Querying PubChem for "${name}"`);
         const response = await httpClient.get(pubchemUrl);
         
         if (response.data?.PropertyTable?.Properties?.[0]) {
             const properties = response.data.PropertyTable.Properties[0];
-            return properties.CanonicalSMILES || properties.ConnectivitySMILES || null;
+            const smiles = properties.CanonicalSMILES || properties.ConnectivitySMILES || null;
+            
+            // 3. Geçerli bir sonuç varsa Redis'e kaydet
+            if (smiles) {
+                try {
+                    await redisClient.set(cacheKey, smiles, { EX: CACHE_TTL_SECONDS });
+                    console.log(`Cached PubChem result for "${normalizedName}"`);
+                } catch(e) {
+                    console.error("PubChem Redis cache set failed:", e);
+                }
+            }
+            return smiles;
         }
         return null;
     } catch (error) {
-        console.error(`!!! PubChem API request failed for "${name}" !!!`, error.response ? `Request failed with status code ${error.response.status}` : error.message);
+        // PubChem'de bulunamayan isimler için 404 hatası normaldir, bunu error olarak loglamaya gerek yok.
+        if (error.response && error.response.status !== 404) {
+             console.error(`!!! PubChem API request failed for "${name}" !!!`, error.response ? `Status: ${error.response.status}` : error.message);
+        }
         return null;
     }
 }

@@ -17,7 +17,7 @@ export class ApiService {
      * @param {string} activeTool - Aktif tool (null, 'ADMET', vs.)
      * @returns {Promise<any>}
      */
-    async sendMessage(message, model, conversationHistory = [], signal = null, activeTool = null) {
+    async sendMessage(message, model, conversationHistory = [], signal = null, activeTool = null, admetProperties = null) {
         const requestBody = { 
             message, 
             model, 
@@ -27,7 +27,8 @@ export class ApiService {
         // Tools bilgisi varsa ekle
         if (activeTool) {
             requestBody.tools = {
-                active: activeTool
+                active: activeTool,
+                properties: admetProperties || [] // Ensure properties is always an array
             };
         }
 
@@ -109,10 +110,11 @@ export class ApiService {
      * @param {AbortSignal} signal - Abort signal.
      * @returns {Promise<any>}
      */
-    async sendComparisonRequest(molecules, model, signal = null) {
+    async sendComparisonRequest(molecules, model, properties, signal = null) {
         const requestBody = {
             molecules,
             model,
+            properties
         };
 
         const requestOptions = {

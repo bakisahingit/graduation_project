@@ -36,8 +36,6 @@ export class UIComponent {
             // Input wrapper elementleri
             inputWrapper: DOMUtils.select('.input-wrapper'),
             welcomeInputWrapper: DOMUtils.select('.welcome-input-wrapper'),
-            welcomeFileChips: DOMUtils.select('#welcome-file-chips'),
-            chatFileChips: DOMUtils.select('#chat-file-chips'),
             
             // Sidebar elementleri
             sidebar: DOMUtils.select('#sidebar'),
@@ -110,7 +108,17 @@ export class UIComponent {
             compareOverlay: DOMUtils.select('#compare-overlay'),
             compareClose: DOMUtils.select('#compare-close'),
             compareInput: DOMUtils.select('#compare-input'),
-            runComparisonBtn: DOMUtils.select('#run-comparison')
+            runComparisonBtn: DOMUtils.select('#run-comparison'),
+
+            // ADMET Settings Modal
+            admetSettingsModal: DOMUtils.select('#admet-settings-modal'),
+            admetSettingsOverlay: DOMUtils.select('#admet-settings-overlay'),
+            admetSettingsClose: DOMUtils.select('#admet-settings-close'),
+            admetSettingsCancelBtn: DOMUtils.select('#admet-settings-cancel'),
+            saveAdmetSettingsBtn: DOMUtils.select('#save-admet-settings'),
+            admetSettingsCheckboxes: DOMUtils.selectAll('input[name="admet_param"]'),
+            welcomeAdmetSettingsBtn: DOMUtils.select('#welcome-admet-settings-btn'),
+            chatAdmetSettingsBtn: DOMUtils.select('#chat-admet-settings-btn'),
         };
     }
 

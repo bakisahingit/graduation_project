@@ -9,6 +9,15 @@ def name_to_smiles(name: str) -> str | None:
     """Converts a molecule name to a SMILES string using PubChem."""
     if not name:
         return None
+
+    translation_map = {
+        "kafein": "caffeine",
+        "aspirin": "aspirin",
+    }
+    normalized_name = name.lower()
+    if normalized_name in translation_map:
+        name = translation_map[normalized_name]
+
     try:
         compounds = pcp.get_compounds(name, "name")
         if compounds:
