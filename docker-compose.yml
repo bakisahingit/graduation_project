@@ -1,0 +1,56 @@
+services:
+  redis:
+    image: "redis:alpine"
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    container_name: rabbitmq
+    ports:
+      - "5672:5672" # AMQP port
+      - "15672:15672" # Management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=password
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: toxicity-backend:latest
+    container_name: toxicity-backend
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    environment:
+      # Ortam değişkenleri .env dosyasından okunacak
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
+      # Python worker'ı backend'e bu servis adıyla ulaşacak
+      - ADMET_BACKEND_URL=http://backend:3000
+    depends_on:
+      - rabbitmq
+      - redis
+
+  # ADMET worker servisi: Ağır hesaplamaları yapar.
+  admet:
+    build:
+      context: .
+      dockerfile: admet/Dockerfile
+    image: toxicity-admet:latest
+    # container_name: toxicity-admet # Replicas kullanırken container_name olmamalıdır.
+    # YENİ EKLENEN KISIM: Worker sayısını buradan ayarlayabilirsin.
+    deploy:
+      replicas: 4 # CPU çekirdek sayına göre bu sayıyı artırabilirsin (örn: 4)
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CELERY_BROKER_URL=amqp://user:password@rabbitmq:5672/
+      # Backend'e ulaşmak için ortam değişkeni
+      - ADMET_BACKEND_URL=http://backend:3000
+    depends_on:
+      - rabbitmq
+      - redis
+      - backend

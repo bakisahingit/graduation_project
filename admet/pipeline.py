@@ -1,6 +1,9 @@
 # admet/pipeline.py
 
-from fastapi import HTTPException
+import os
+import requests
+import traceback
+from concurrent.futures import ThreadPoolExecutor
 
 from .analysis import (
     aggregate_risk,
@@ -8,81 +11,177 @@ from .analysis import (
     simplified_pk_profile,
     uncertainty_notes,
 )
-from .config import rule_based_catalog
 from admet_ai import ADMETModel
 from .queries import query_chembl, query_pubchem, name_to_smiles
-from .utils import mol_to_base64_image, rdkit_descriptors, smiles_to_mol
+from .utils import mol_to_base64_image, rdkit_descriptors, smiles_to_mol, find_keys
 
-def run_analysis_pipeline(name: str | None, smiles: str | None):
-    """Orchestrates the full analysis including ML models and external database queries."""
+# --- Model Pre-loading ---
+print("Loading ADMET-AI model...")
+admet_model = ADMETModel()
+print("ADMET-AI model loaded successfully.")
+# -------------------------
 
-    user_input = (smiles or name or "").strip()
-    if not user_input:
-        raise HTTPException(status_code=400, detail="Molecule name or SMILES string cannot be empty.")
+BACKEND_URL = os.environ.get("ADMET_BACKEND_URL", "http://backend:3000")
+BACKEND_TIMEOUT_SECONDS = 30
 
-    # 1. Try to interpret the input as a SMILES string
-    mol = smiles_to_mol(user_input)
+def notify_backend(payload):
+    """Notifies the backend that the task is complete."""
+    try:
+        url = f"{BACKEND_URL}/api/task-complete"
+        print(f"Notifying backend at {url} for session {payload['sessionId']}")
+        requests.post(url, json=payload, timeout=BACKEND_TIMEOUT_SECONDS)
+    except requests.exceptions.RequestException as e:
+        print(f"COULD NOT NOTIFY BACKEND for session {payload['sessionId']}: {e}")
+
+def run_analysis_pipeline(
+    name: str | None,
+    smiles: str | None,
+    session_id: str,
+    identifier: str,
+    type: str,
+    selected_parameters: list[str] | None = None,
+):
+    """Manages the entire analysis process and notifies the backend upon completion."""
+    print(f"Starting analysis for identifier: '{identifier}', session: {session_id}")
+    if selected_parameters:
+        print(f"Running with selected parameters: {selected_parameters}")
     
-    if mol:
-        # Input is a valid SMILES
-        final_smiles = user_input
-        molecule_name = name # Keep original name if provided
-        # If name is missing or same as SMILES, try to find a proper name
-        if not molecule_name or molecule_name == final_smiles:
-            try:
-                pubchem_data_for_name = query_pubchem(final_smiles)
-                if pubchem_data_for_name and pubchem_data_for_name.get("synonyms"):                        
-                    molecule_name = pubchem_data_for_name["synonyms"][0].capitalize()
-                else:
-                    molecule_name = "Unnamed Molecule"
-            except Exception:
-                molecule_name = "Unnamed Molecule"
-    else:
-        # Input is not a valid SMILES, so treat it as a name
-        molecule_name = user_input
-        final_smiles = name_to_smiles(molecule_name)
-        if not final_smiles:
-            raise HTTPException(
-                status_code=404,
-                detail=f'Could not find a valid molecule named "{molecule_name}". Please check the name or provide a SMILES string.'
-            )
+    task_result = {}
+    status = "success"
     
-    # At this point, we must have a valid SMILES string. Re-create mol object for safety.
-    mol = smiles_to_mol(final_smiles)
-    if mol is None:
-        raise HTTPException(status_code=500, detail="An unexpected error occurred while processing the molecule structure.")
+    # Define parameter groups
+    PARAM_PHYSCHEM = "Physico-Chemical Properties"
+    PARAM_ALERTS = "Structural Alerts"
+    PARAM_PK_PROFILE = "Pharmacokinetic Profile"
+    PARAM_UNCERTAINTY = "Uncertainty Notes"
+    PARAM_EXPERIMENTAL = "Experimental Data"
+    PK_PROPS = ["Clearance", "VDss"]
 
-    # 2. Internal models and calculations
-    admet_model = ADMETModel()
-    descriptors = rdkit_descriptors(mol)
-    predictions = admet_model.predict(smiles=final_smiles)
-    alerts = run_rule_based_alerts(mol)
-    risk_score, keymap = aggregate_risk(predictions, descriptors)
-    pk_profile = simplified_pk_profile(predictions, keymap)
-    notes = uncertainty_notes(mol, predictions, keymap)
+    # Determine which modules to run
+    run_all = not selected_parameters
+    
+    try:
+        # 1. Input Resolution and Molecule Preparation
+        final_smiles = None
+        molecule_name = name
 
-    # 3. External database queries
-    pubchem_data = query_pubchem(final_smiles)
-    chembl_data = query_chembl(final_smiles)
+        if smiles:
+            mol = smiles_to_mol(smiles)
+            if mol:
+                final_smiles = smiles
+                if not molecule_name or molecule_name == final_smiles:
+                    try:
+                        pubchem_data = query_pubchem(final_smiles)
+                        if pubchem_data and pubchem_data.get("synonyms"):
+                            molecule_name = pubchem_data["synonyms"][0].capitalize()
+                        else:
+                            molecule_name = "Unnamed Molecule"
+                    except Exception:
+                        molecule_name = "Unnamed Molecule"
+            else:
+                raise ValueError(f"Provided SMILES string is invalid: '{smiles}'")
+        elif name:
+            molecule_name = name
+            final_smiles = name_to_smiles(molecule_name)
+            if not final_smiles:
+                raise ValueError(f'Could not find a valid molecule named "{molecule_name}".')
+        else:
+            raise ValueError("Molecule name or SMILES string must be provided.")
 
-    # 4. Format predictions for easier frontend consumption
-    admet_predictions_list = [
-        {"property": prop, "prediction": str(val)} for prop, val in predictions.items()
-    ]
+        mol = smiles_to_mol(final_smiles)
+        if mol is None:
+            raise ValueError("Failed to process the final molecule structure from SMILES.")
 
-    # 5. Assemble the final rich JSON payload
-    return {
-        "smiles": final_smiles,
-        "image_base64": mol_to_base64_image(mol),
-        "moleculeName": molecule_name,
-        "riskScore": risk_score,
-        "physChem": descriptors,
-        "admetPredictions": admet_predictions_list,
-        "structuralAlerts": alerts,
-        "pkProfile": pk_profile,
-        "uncertaintyNotes": notes,
-        "experimentalData": {
-            "pubchem": pubchem_data,
-            "chembl": chembl_data,
-        },
+        # 2. Parallel Heavy Lifting
+        results = {}
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            pred_future = executor.submit(admet_model.predict, smiles=final_smiles)
+            
+            # Conditionally run experimental data queries
+            if run_all or PARAM_EXPERIMENTAL in selected_parameters:
+                pubchem_future = executor.submit(query_pubchem, final_smiles)
+                chembl_future = executor.submit(query_chembl, final_smiles)
+                results["pubchem_data"] = pubchem_future.result()
+                results["chembl_data"] = chembl_future.result()
+
+            results["predictions"] = pred_future.result()
+
+        predictions = results.get("predictions", {})
+        pubchem_data = results.get("pubchem_data", {})
+        chembl_data = results.get("chembl_data", {})
+        
+        keymap = find_keys(predictions)
+
+        # 3. Conditional Remaining Calculations
+        descriptors = {}
+        if run_all or PARAM_PHYSCHEM in selected_parameters:
+            descriptors = rdkit_descriptors(mol)
+
+        alerts = "Not calculated."
+        if run_all or PARAM_ALERTS in selected_parameters:
+            alerts = run_rule_based_alerts(mol)
+
+        # Pass selected_parameters to aggregate_risk
+        risk_score, _ = aggregate_risk(predictions, descriptors, selected_parameters=selected_parameters)
+
+        pk_profile = "Not calculated."
+        # Check if any PK properties are selected, or if the general PK profile is selected
+        run_pk = any(p in selected_parameters for p in PK_PROPS) if not run_all else True
+        if run_all or run_pk or PARAM_PK_PROFILE in selected_parameters:
+            pk_profile = simplified_pk_profile(predictions, keymap)
+
+        notes = "Not calculated."
+        if run_all or PARAM_UNCERTAINTY in selected_parameters:
+            notes = uncertainty_notes(mol, predictions, keymap)
+
+        # 4. Format Results
+        # Filter predictions based on keymap and selected_parameters
+        mapped_predictions = {tag: predictions.get(prop_name) for tag, prop_name in keymap.items()}
+        
+        if not run_all:
+            # Filter mapped_predictions to only include selected parameters
+            filtered_mapped_predictions = {}
+            for p in selected_parameters:
+                if p in mapped_predictions:
+                    filtered_mapped_predictions[p] = mapped_predictions[p]
+            mapped_predictions = filtered_mapped_predictions
+
+        # Also add descriptors if they were calculated
+        if descriptors:
+            mapped_predictions.update(descriptors)
+
+        task_result = {
+            "smiles": final_smiles,
+            "image_base64": mol_to_base64_image(mol),
+            "moleculeName": molecule_name,
+            "riskScore": risk_score,
+            "physChem": descriptors,
+            "admetPredictions": [
+                {"property": prop, "prediction": str(val)}
+                for prop, val in mapped_predictions.items()
+            ],
+            "structuralAlerts": alerts,
+            "pkProfile": pk_profile,
+            "uncertaintyNotes": notes,
+            "experimentalData": {"pubchem": pubchem_data, "chembl": chembl_data},
+        }
+
+    except Exception as e:
+        print(f"---! ADMET ANALYSIS FAILED for identifier: '{identifier}' !---")
+        traceback.print_exc()
+        print("---! End of Error Report !---")
+        status = "error"
+        task_result = {"error": f"Analysis failed: {e}"}
+
+    # 5. Notify Backend
+    notification_payload = {
+        "sessionId": session_id,
+        "status": status,
+        "data": task_result,
+        "type": type,
+        "identifier": identifier,
     }
+    notify_backend(notification_payload)
+
+    print(f"Finished analysis for identifier: '{identifier}', session: {session_id}")
+    return notification_payload

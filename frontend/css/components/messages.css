@@ -245,7 +245,6 @@
         padding: 3px 6px; 
     }
 }
-
 /* Message Actions (for export buttons etc.) */
 .message-actions {
     display: flex;
@@ -271,5 +270,3 @@
     border-color: var(--border-accent);
     color: var(--white);
 }
-
-

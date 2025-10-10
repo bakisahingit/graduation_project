@@ -108,7 +108,30 @@ class ChatApp {
             this.molecule.initialize();
         }
     }
+    addMoleculeTag() {
+        const input = document.getElementById('molecule-add-input');
+        const container = document.getElementById('molecule-tags-container');
+        const moleculeName = input.value.trim();
 
+        if (moleculeName) {
+            const tag = document.createElement('div');
+            tag.className = 'molecule-tag';
+            
+            const text = document.createElement('span');
+            text.textContent = moleculeName;
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'tag-remove-btn';
+            removeBtn.innerHTML = '&times;';
+            
+            tag.appendChild(text);
+            tag.appendChild(removeBtn);
+            container.appendChild(tag);
+            
+            input.value = ''; // Giriş alanını temizle
+            input.focus(); // Tekrar giriş yapmak için focusla
+        }
+    }
     /**
      * Event listener'ları kur
      */
@@ -181,7 +204,31 @@ class ChatApp {
                 molecule: 'shortcut_molecule',
                 admet: 'shortcut_admet'
             };
+// Karşılaştırma modali için etiket ekleme/silme event'leri
+        const addMoleculeBtn = document.getElementById('add-molecule-btn');
+        const moleculeAddInput = document.getElementById('molecule-add-input');
+        const tagsContainer = document.getElementById('molecule-tags-container');
 
+        if (addMoleculeBtn) {
+            DOMUtils.on(addMoleculeBtn, 'click', () => this.addMoleculeTag());
+        }
+
+        if (moleculeAddInput) {
+            DOMUtils.on(moleculeAddInput, 'keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault(); // Formun submit olmasını engelle
+                    this.addMoleculeTag();
+                }
+            });
+        }
+
+        if (tagsContainer) {
+            DOMUtils.on(tagsContainer, 'click', (e) => {
+                if (e.target.classList.contains('tag-remove-btn')) {
+                    e.target.parentElement.remove();
+                }
+            });
+        }
             const loadShortcutsToUI = () => {
                 const m = DOMUtils.select('#shortcut-molecule-display');
                 const a = DOMUtils.select('#shortcut-admet-display');
@@ -531,6 +578,23 @@ class ChatApp {
             DOMUtils.on(this.ui.elements.runComparisonBtn, 'click', () => this.handleComparisonSubmit());
         }
 
+
+        if (this.ui.elements.admetSettingsClose) {
+            DOMUtils.on(this.ui.elements.admetSettingsClose, 'click', () => this.closeAdmetSettingsModal());
+        }
+        if (this.ui.elements.admetSettingsOverlay) {
+            DOMUtils.on(this.ui.elements.admetSettingsOverlay, 'click', () => this.closeAdmetSettingsModal());
+        }
+        if (this.ui.elements.admetSettingsCancelBtn) {
+            DOMUtils.on(this.ui.elements.admetSettingsCancelBtn, 'click', () => this.closeAdmetSettingsModal());
+        }
+        if (this.ui.elements.saveAdmetSettingsBtn) {
+            DOMUtils.on(this.ui.elements.saveAdmetSettingsBtn, 'click', () => { 
+                this.activateAdmetTool();
+                this.closeAdmetSettingsModal(); 
+            });
+        }
+
         // New chat button
         if (this.ui.elements.newChatBtn) {
             DOMUtils.on(this.ui.elements.newChatBtn, 'click', () => {
@@ -628,13 +692,13 @@ class ChatApp {
 
         if (this.ui.elements.welcomeAdmetTool) {
             DOMUtils.on(this.ui.elements.welcomeAdmetTool, 'click', () => {
-                this.handleAdmetTool();
+                this.openAdmetSettingsModal();
             });
         }
 
         if (this.ui.elements.chatAdmetTool) {
             DOMUtils.on(this.ui.elements.chatAdmetTool, 'click', () => {
-                this.handleAdmetTool();
+                this.openAdmetSettingsModal();
             });
         }
 
@@ -772,20 +836,31 @@ class ChatApp {
     /**
      * Comparison form submit handler
      */
-    async handleComparisonSubmit() {
-        const text = this.ui.elements.compareInput.value.trim();
-        if (!text) return;
+async handleComparisonSubmit() {
+        const tags = document.querySelectorAll('#molecule-tags-container .molecule-tag');
+        const molecules = Array.from(tags).map(tag => tag.querySelector('span').textContent);
 
-        const molecules = text.split('\n').map(m => m.trim()).filter(m => m);
         if (molecules.length < 2) {
-            alert('Lütfen karşılaştırmak için en az 2 molekül girin.');
+            alert('Lütfen karşılaştırmak için en az 2 molekül ekleyin.');
+            return;
+        }
+
+        const properties = Array.from(document.querySelectorAll('input[name="admet_property"]:checked')).map(cb => cb.value);
+        if (properties.length === 0) {
+            alert('Lütfen karşılaştırmak için en az 1 özellik seçin.');
             return;
         }
 
         this.closeCompareModal();
-        const model = this.ui.elements.modelSelectSidebar.value;
-        this.ui.switchToChatMode(model);
-        await this.processComparison(molecules, model);
+
+        const model = this.ui.elements.modelSelectChat ? this.ui.elements.modelSelectChat.value : null;
+
+        const isInChatMode = this.ui.elements.chatInterface.style.display !== 'none';
+        if (!isInChatMode) {
+             this.ui.switchToChatMode(model);
+        }
+        
+        await this.processComparison(molecules, model, properties);
     }
 
     /**
@@ -845,7 +920,7 @@ class ChatApp {
      * @param {string} text - Mesaj metni
      * @param {string} model - Model
      */
-    async processMessage(text, model) {
+async processMessage(text, model) {
         // Yeni konuşma oluştur (geçici başlık ile)
         if (!this.conversation.currentConversationId) {
             const conversation = this.conversation.createConversationWithTempTitle(text, model);
@@ -864,106 +939,157 @@ class ChatApp {
         // Kullanıcı mesajını ekle
         this.ui.appendMessage(text, 'user');
 
-        // Kullanıcı mesajını konuşmaya kaydet (sadece mevcut konuşmaya ekleniyorsa)
-        const currentConversation = this.conversation.getCurrentConversation();
-        if (currentConversation && currentConversation.messages.length > 0) {
-            this.conversation.updateConversation(this.conversation.currentConversationId, { 
-                role: 'user', 
-                content: text 
-            });
-        }
+        // Kullanıcı mesajını konuşmaya kaydet
+        this.conversation.updateConversation(this.conversation.currentConversationId, { role: 'user', content: text });
 
-        // Input'u temizle ve devre dışı bırak
-        const isInChatMode = this.ui.elements.chatInterface.style.display !== 'none';
-        if (isInChatMode) {
-            this.ui.elements.input.value = '';
-            this.ui.elements.input.disabled = true;
-        } else {
-            this.ui.elements.welcomeInput.value = '';
-            this.ui.elements.welcomeInput.disabled = true;
-        }
+        // Input'ları deaktif et
+        this.ui.setInputsEnabled(false, true); 
 
-        // Thinking indicator göster
+        // "Thinking" animasyonunu göster
         const typingEl = this.ui.showThinkingIndicator();
+        await new Promise(resolve => setTimeout(resolve, 50));
 
-        // Streaming durumunu set et
         this.isStreaming = true;
         this.ui.setStreamingState(true);
 
         try {
-            // AbortController oluştur
             const controller = new AbortController();
             this.ui.setAbortController(controller);
 
-            // Mevcut konuşma geçmişini al
             const currentConversation = this.conversation.getCurrentConversation();
             const conversationHistoryForAPI = currentConversation ? currentConversation.messages : [];
 
-            // API'ye istek gönder (tools bilgisi ile)
-            const data = await this.api.sendMessage(text, model, conversationHistoryForAPI, controller.signal, this.activeTool);
-            
-            this.ui.removeThinkingIndicator(typingEl);
+            // Get selected ADMET parameters if the tool is active
+            let admetProperties = null;
+            if (this.activeTool === 'admet') {
+                admetProperties = this.getSelectedAdmetParameters();
+            }
 
-            // Stream durduruldu mu kontrol et
-            if (this.isStreaming) {
-                const reply = HelperUtils.extractTextFromResponse(data) || 'Boş yanıt';
+            const data = await this.api.sendMessage(text, model, conversationHistoryForAPI, controller.signal, this.activeTool, admetProperties);
 
-                // Bot mesajını konuşmaya kaydet
-                this.conversation.updateConversation(this.conversation.currentConversationId, { 
-                    role: 'bot', 
-                    content: reply 
-                });
-
-                // Bot mesajını oluştur ve typewriter efekti ile render et
-                const botMessageContainer = this.ui.createBotMessage();
-                const contentEl = botMessageContainer.querySelector('.message-content');
-                await this.markdown.typeWriteMarkdown(contentEl, reply, 0.1, () => {
-                    this.ui.smartScroll();
-                });
-
-                // Embed raw ADMET data for export
-                if (data.rawAdmetData) {
-                    const scriptEl = DOMUtils.create('script', {
-                        type: 'application/json',
-                        id: 'admet-raw-data',
-                        textContent: JSON.stringify(data.rawAdmetData)
-                    });
-                    botMessageContainer.appendChild(scriptEl);
-                }
-
-                // Final enhancements
-                this.markdown.applySyntaxHighlighting(contentEl);
-                this.markdown.addCopyButtons(contentEl);
-                this.renderAdmetChart(contentEl);
-                this.addExportButtons(botMessageContainer);
+            if (data.type === 'async') {
+                // ASENKRON GÖREV BAŞLADI
+                this.setupWebSocket(data.sessionId, typingEl);
             } else {
-                // Stream durduruldu, sadece thinking indicator'ı kaldır
-                console.log('Stream durduruldu, response işlenmedi');
+                // SENKRON (NORMAL) CEVAP
+                this.ui.removeThinkingIndicator(typingEl);
+
+                if (this.isStreaming) {
+                    const reply = HelperUtils.extractTextFromResponse(data) || 'Boş yanıt';
+                    this.conversation.updateConversation(this.conversation.currentConversationId, { role: 'bot', content: reply });
+
+                    const botMessageContainer = this.ui.createBotMessage();
+                    const contentEl = botMessageContainer.querySelector('.message-content');
+                    await this.markdown.typeWriteMarkdown(contentEl, reply, 0.1, () => this.ui.smartScroll());
+
+                    if (data.rawAdmetData) {
+                        const scriptEl = DOMUtils.create('script', { type: 'application/json', id: 'admet-raw-data', textContent: JSON.stringify(data.rawAdmetData) });
+                        botMessageContainer.appendChild(scriptEl);
+                    }
+
+                    this.markdown.applySyntaxHighlighting(contentEl);
+                    this.markdown.addCopyButtons(contentEl);
+                    this.renderAdmetChart(contentEl);
+                    this.addExportButtons(botMessageContainer);
+                }
+                // Senkron akış için durumu sıfırla
+                this.isStreaming = false;
+                this.ui.setStreamingState(false);
+                this.ui.setAbortController(null);
+                this.ui.setInputsEnabled(true);
             }
         } catch (err) {
             if (err.name !== 'AbortError') {
                 this.ui.removeThinkingIndicator(typingEl);
                 this.ui.appendMessage('Sunucu hatası: ' + String(err), 'bot');
             }
-        } finally {
-            // Streaming durumunu sıfırla
+            // Hata durumunda durumu sıfırla
             this.isStreaming = false;
             this.ui.setStreamingState(false);
             this.ui.setAbortController(null);
-
-            // Input'u tekrar etkinleştir
             this.ui.setInputsEnabled(true);
         }
     }
+setupWebSocket(sessionId, placeholderEl) {
+        const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${proto}//${window.location.host}?sessionId=${sessionId}`;
+        const ws = new WebSocket(wsUrl);
 
+        ws.onopen = () => {
+            console.log(`WebSocket connection opened for session: ${sessionId}`);
+        };
+
+        ws.onmessage = async (event) => {
+            console.log(`WebSocket message received for session: ${sessionId}`, event.data);
+            const result = JSON.parse(event.data);
+
+            const botMessageContainer = this.ui.createBotMessage();
+            placeholderEl.replaceWith(botMessageContainer);
+            const contentEl = botMessageContainer.querySelector('.message-content');
+
+            if (result.status === 'success') {
+                const reply = result.output || 'Analiz tamamlandı ancak sonuç boş.';
+                this.conversation.updateConversation(this.conversation.currentConversationId, { role: 'bot', content: reply });
+
+                await this.markdown.typeWriteMarkdown(contentEl, reply, 0.1, () => this.ui.smartScroll());
+                
+                // Hem tekli analiz hem de karşılaştırma sonuçlarını kontrol et
+                const rawData = result.rawAdmetData || result.rawComparisonData;
+                if (rawData) {
+                    const scriptEl = DOMUtils.create('script', { 
+                        type: 'application/json', 
+                        id: 'admet-raw-data', // ID hep aynı kalmalı
+                        textContent: JSON.stringify(rawData) 
+                    });
+                    botMessageContainer.appendChild(scriptEl);
+                }
+
+                this.markdown.applySyntaxHighlighting(contentEl);
+                this.markdown.addCopyButtons(contentEl);
+                this.renderAdmetChart(contentEl);
+                this.addExportButtons(botMessageContainer);
+
+            } else {
+                const errorMessage = result.output || 'Analiz sırasında bilinmeyen bir hata oluştu.';
+                this.conversation.updateConversation(this.conversation.currentConversationId, { role: 'bot', content: errorMessage });
+                contentEl.innerHTML = this.markdown.renderToHtml(`**Hata:** ${errorMessage}`);
+            }
+
+            ws.close();
+        };
+
+        ws.onerror = (error) => {
+            console.error(`WebSocket error for session: ${sessionId}`, error);
+            this.ui.removeThinkingIndicator(placeholderEl);
+            this.ui.appendMessage('Sonuçlar alınırken bir bağlantı hatası oluştu.', 'bot');
+            this.isStreaming = false;
+            this.ui.setStreamingState(false);
+            this.ui.setAbortController(null);
+            this.ui.setInputsEnabled(true);
+        };
+
+        ws.onclose = () => {
+            console.log(`WebSocket connection closed for session: ${sessionId}`);
+            this.isStreaming = false;
+            this.ui.setStreamingState(false);
+            this.ui.setAbortController(null);
+            this.ui.setInputsEnabled(true);
+        };
+
+        if (this.ui.abortController) {
+            this.ui.abortController.signal.addEventListener('abort', () => {
+                console.log('User aborted, closing WebSocket.');
+                ws.close();
+            });
+        }
+    }
     /**
      * Karşılaştırma işleme
      * @param {string[]} molecules - Molekül listesi
      * @param {string} model - Model
      */
-    async processComparison(molecules, model) {
-        const userMessage = `Bu molekülleri karşılaştır: ${molecules.join(', ')}`;
-        // Yeni konuşma oluştur
+    async processComparison(molecules, model, properties) {
+        const userMessage = `Bu molekülleri şu özelliklere göre karşılaştır: ${properties.join(', ')} - ${molecules.join(', ')}`;
         if (!this.conversation.currentConversationId) {
             const conversation = this.conversation.createConversation(userMessage, model);
             this.conversation.setCurrentConversation(conversation.id);
@@ -972,8 +1098,10 @@ class ChatApp {
         this.ui.appendMessage(userMessage, 'user');
         this.conversation.updateConversation(this.conversation.currentConversationId, { role: 'user', content: userMessage });
 
+        this.ui.setInputsEnabled(false, true);
         const typingEl = this.ui.showThinkingIndicator();
         await new Promise(resolve => setTimeout(resolve, 50));
+
         this.isStreaming = true;
         this.ui.setStreamingState(true);
 
@@ -981,39 +1109,27 @@ class ChatApp {
             const controller = new AbortController();
             this.ui.setAbortController(controller);
 
-            const data = await this.api.sendComparisonRequest(molecules, model, controller.signal);
+            const data = await this.api.sendComparisonRequest(molecules, model, properties, controller.signal);
 
-            this.ui.removeThinkingIndicator(typingEl);
-
-            if (this.isStreaming) {
-                const reply = HelperUtils.extractTextFromResponse(data) || 'Boş yanıt';
-                this.conversation.updateConversation(this.conversation.currentConversationId, { role: 'bot', content: reply });
-
-                const botMessageContainer = this.ui.createBotMessage();
-                const contentEl = botMessageContainer.querySelector('.message-content');
-                await this.markdown.typeWriteMarkdown(contentEl, reply, 0.1, () => this.ui.smartScroll());
-
-                // Embed raw comparison data for export
-                if (data.rawComparisonData) {
-                    const scriptEl = DOMUtils.create('script', {
-                        type: 'application/json',
-                        id: 'admet-raw-data', // Reuse the same ID as single ADMET reports
-                        textContent: JSON.stringify(data.rawComparisonData)
-                    });
-                    botMessageContainer.appendChild(scriptEl);
-                }
-
-                this.markdown.applySyntaxHighlighting(contentEl);
-                this.markdown.addCopyButtons(contentEl);
-                // Call addExportButtons for comparison reports as well
-                this.addExportButtons(botMessageContainer);
+            if (data.type === 'async') {
+                // Karşılaştırma için asenkron görev başladı
+                this.setupWebSocket(data.sessionId, typingEl);
+            } else {
+                // Hata veya beklenmedik senkron cevap
+                this.ui.removeThinkingIndicator(typingEl);
+                const errorMessage = data.output || data.message || 'Karşılaştırma başlatılırken bir hata oluştu.';
+                this.ui.appendMessage(errorMessage, 'bot');
+                this.isStreaming = false;
+                this.ui.setStreamingState(false);
+                this.ui.setAbortController(null);
+                this.ui.setInputsEnabled(true);
             }
         } catch (err) {
             if (err.name !== 'AbortError') {
                 this.ui.removeThinkingIndicator(typingEl);
                 this.ui.appendMessage('Sunucu hatası: ' + String(err), 'bot');
             }
-        } finally {
+            // Hata durumunda temizlik
             this.isStreaming = false;
             this.ui.setStreamingState(false);
             this.ui.setAbortController(null);
@@ -1141,43 +1257,67 @@ class ChatApp {
         }
     }
 
+    
     /**
      * Exports ADMET prediction data to a CSV file.
      * @param {object} rawData The full raw data from the analysis.
+     * @param {boolean} isComparison Whether this is a comparison report.
      */
     exportToCsv(rawData, isComparison = false) {
         let csvContent = "data:text/csv;charset=utf-8,";
-        let fileName = "report.csv";
+        let fileName = "admet_report.csv";
 
-        if (isComparison) {
-            fileName = "comparison_report.csv";
-            csvContent += "Molecule,Property,Prediction,Error\r\n"; // Header for comparison
-
+        if (isComparison && rawData.successfulResults?.length > 0) {
+            // --- YENİ KARŞILAŞTIRMA FORMATI (GENİŞ FORMAT) ---
+            fileName = "admet_comparison.csv";
+            
+            // 1. ADIM: Tüm molekül ve özellik isimlerini topla
+            const moleculeNames = rawData.successfulResults.map(mol => mol.data.moleculeName || mol.identifier);
+            const allProperties = new Set();
             rawData.successfulResults.forEach(mol => {
-                mol.data.admetPredictions.forEach(p => {
-                    csvContent += `${mol.data.moleculeName || mol.identifier},${p.property},${p.prediction},\r\n`;
-                });
+                mol.data.admetPredictions.forEach(p => allProperties.add(p.property));
             });
-            rawData.failedResults.forEach(mol => {
-                csvContent += `${mol.identifier},,,${mol.error}\r\n`;
+            const sortedProperties = Array.from(allProperties).sort();
+
+            // 2. ADIM: Veriyi kolayca erişilebilir bir formata dönüştür (pivot)
+            const dataMap = new Map();
+            rawData.successfulResults.forEach(mol => {
+                const name = mol.data.moleculeName || mol.identifier;
+                const propMap = new Map();
+                mol.data.admetPredictions.forEach(p => propMap.set(p.property, p.prediction));
+                dataMap.set(name, propMap);
             });
 
-        } else {
+            // 3. ADIM: CSV içeriğini oluştur
+            // Başlık satırı
+            csvContent += `"Property",${moleculeNames.map(name => `"${name}"`).join(',')}\r\n`;
+
+            // Veri satırları
+            sortedProperties.forEach(prop => {
+                const row = [prop];
+                moleculeNames.forEach(name => {
+                    const prediction = dataMap.get(name)?.get(prop) || 'N/A';
+                    row.push(`"${prediction}"`);
+                });
+                csvContent += row.join(',') + '\r\n';
+            });
+
+        } else if (!isComparison) {
+            // --- ESKİ TEKLİ ANALİZ FORMATI (DEĞİŞİKLİK YOK) ---
             if (!rawData || !rawData.admetPredictions) return;
             fileName = `${rawData.moleculeName || rawData.smiles}_admet_report.csv`;
-            csvContent += "Property,Prediction\r\n"; // Header for single ADMET
-
+            csvContent += "Property,Prediction\r\n";
             rawData.admetPredictions.forEach(p => {
-                const row = `${p.property},${p.prediction}`;
-                csvContent += row + "\r\n";
+                csvContent += `"${p.property}","${p.prediction}"\r\n`;
             });
         }
-
+        
+        // İndirme linkini oluştur ve tıkla
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
         link.setAttribute("download", fileName);
-        document.body.appendChild(link); 
+        document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     }
@@ -1185,69 +1325,82 @@ class ChatApp {
     /**
      * Exports the full ADMET report to a PDF file.
      * @param {object} rawData The full raw data from the analysis.
+     * @param {boolean} isComparison Whether this is a comparison report.
      */
     exportToPdf(rawData, isComparison = false) {
         if (!rawData || !window.jspdf) return;
 
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
+        const doc = new jsPDF({ orientation: 'landscape' }); // Yatay mod daha iyi olur
         let yPos = 22;
 
-        if (isComparison) {
+        if (isComparison && rawData.successfulResults?.length > 0) {
+            // --- YENİ KARŞILAŞTIRMA FORMATI (TEK BÜYÜK TABLO) ---
             const title = `Molecule Comparison Report`;
             doc.setFontSize(18);
             doc.text(title, 14, yPos);
-            yPos += 10;
+            yPos += 15;
 
+            // 1. ADIM: Tablo için başlık ve gövde verisini hazırla
+            const moleculeNames = rawData.successfulResults.map(mol => mol.data.moleculeName || mol.identifier);
+            const allProperties = new Set();
             rawData.successfulResults.forEach(mol => {
-                doc.setFontSize(14);
-                doc.text(`Molecule: ${mol.data.moleculeName || mol.identifier}`, 14, yPos);
-                yPos += 7;
-                doc.setFontSize(10);
-                doc.text(`SMILES: ${mol.data.smiles}`, 14, yPos);
-                yPos += 5;
-                doc.text(`Overall Risk Score: ${mol.data.riskScore.toFixed(1)}/100`, 14, yPos);
-                yPos += 10;
+                mol.data.admetPredictions.forEach(p => allProperties.add(p.property));
+            });
+            const sortedProperties = Array.from(allProperties).sort();
 
-                const tableData = mol.data.admetPredictions.map(p => [p.property, p.prediction]);
-                doc.autoTable({
-                    startY: yPos,
-                    head: [['Property', 'Prediction']],
-                    body: tableData,
-                    theme: 'grid',
-                    headStyles: { fillColor: [22, 160, 133] },
-                });
-                yPos = doc.lastAutoTable.finalY + 10;
+            const dataMap = new Map();
+            rawData.successfulResults.forEach(mol => {
+                const name = mol.data.moleculeName || mol.identifier;
+                const propMap = new Map();
+                mol.data.admetPredictions.forEach(p => propMap.set(p.property, p.prediction));
+                dataMap.set(name, propMap);
             });
 
-            if (rawData.failedResults.length > 0) {
+            const tableHead = [['Property', ...moleculeNames]];
+            const tableBody = [];
+            sortedProperties.forEach(prop => {
+                const row = [prop];
+                moleculeNames.forEach(name => {
+                    row.push(dataMap.get(name)?.get(prop) || 'N/A');
+                });
+                tableBody.push(row);
+            });
+
+            // 2. ADIM: autoTable ile tek bir tablo oluştur
+            doc.autoTable({
+                startY: yPos,
+                head: tableHead,
+                body: tableBody,
+                theme: 'grid',
+                headStyles: { fillColor: [22, 160, 133], halign: 'center' },
+                alternateRowStyles: { fillColor: [245, 245, 245] },
+            });
+
+            yPos = doc.lastAutoTable.finalY + 15;
+
+            // Başarısız analizleri sona ekle
+            if (rawData.failedResults && rawData.failedResults.length > 0) {
                 doc.setFontSize(14);
                 doc.text('Failed Analyses:', 14, yPos);
                 yPos += 7;
                 rawData.failedResults.forEach(mol => {
                     doc.setFontSize(10);
-                    doc.text(`- ${mol.identifier}: ${mol.error}`, 14, yPos);
+                    doc.text(`- ${mol.identifier}: ${mol.error || 'Unknown error'}`, 14, yPos);
                     yPos += 5;
                 });
             }
 
-            doc.save(`comparison_report.pdf`);
+            doc.save(`admet_comparison_report.pdf`);
 
-        } else {
+        } else if (!isComparison) {
+            // --- ESKİ TEKLİ ANALİZ FORMATI (DEĞİŞİKLİK YOK) ---
             const title = `ADMET Analysis Report: ${rawData.moleculeName || rawData.smiles}`;
             doc.setFontSize(18);
             doc.text(title, 14, yPos);
             yPos += 10;
-
-            doc.setFontSize(11);
-            doc.setTextColor(100);
-            doc.text(`SMILES: ${rawData.smiles}`, 14, yPos);
-            yPos += 6;
-            doc.text(`Overall Risk Score: ${rawData.riskScore.toFixed(1)}/100`, 14, yPos);
-            yPos += 12;
-
+            // ... (geri kalan tekli PDF oluşturma kodu aynı)
             const tableData = rawData.admetPredictions.map(p => [p.property, p.prediction]);
-
             doc.autoTable({
                 startY: yPos,
                 head: [['Property', 'Prediction']],
@@ -1255,16 +1408,10 @@ class ChatApp {
                 theme: 'grid',
                 headStyles: { fillColor: [22, 160, 133] },
             });
-
-            const finalY = doc.lastAutoTable.finalY || 100;
-            doc.setFontSize(12);
-            doc.text("Pharmacokinetic Profile", 14, finalY + 15);
-            doc.setFontSize(10);
-            doc.text(rawData.pkProfile.replace(/\*\*/g, ''), 14, finalY + 22, { maxWidth: 180 });
-
             doc.save(`${rawData.moleculeName || rawData.smiles}_admet_report.pdf`);
         }
     }
+    
 
 
     /**
@@ -1713,9 +1860,17 @@ class ChatApp {
     /**
      * Compare modal kapat
      */
-    closeCompareModal() {
+closeCompareModal() {
         if (!this.ui.elements.compareModal) return;
-        DOMUtils.removeClass(this.ui.elements.compareModal, 'open');
+        
+        // Kapanış animasyonunu tetikle
+        DOMUtils.addClass(this.ui.elements.compareModal, 'closing');
+        
+        // Animasyon bittikten sonra modal'ı kaldır
+        setTimeout(() => {
+            DOMUtils.removeClass(this.ui.elements.compareModal, 'open');
+            DOMUtils.removeClass(this.ui.elements.compareModal, 'closing');
+        }, 300); // CSS'teki animasyon süresiyle aynı olmalı
     }
 
     /**
@@ -2264,7 +2419,52 @@ class ChatApp {
      */
     closeCompareModal() {
         if (!this.ui.elements.compareModal) return;
-        DOMUtils.removeClass(this.ui.elements.compareModal, 'open');
+        
+        // Kapanış animasyonunu tetikle
+        DOMUtils.addClass(this.ui.elements.compareModal, 'closing');
+        
+        // Animasyon bittikten sonra modal'ı kaldır
+        setTimeout(() => {
+            DOMUtils.removeClass(this.ui.elements.compareModal, 'open');
+            DOMUtils.removeClass(this.ui.elements.compareModal, 'closing');
+        }, 300); // CSS'teki animasyon süresiyle aynı olmalı
+    }
+
+    /**
+     * ADMET settings modal aç
+     */
+    openAdmetSettingsModal() {
+        if (!this.ui.elements.admetSettingsModal) return;
+        DOMUtils.addClass(this.ui.elements.admetSettingsModal, 'open');
+    }
+
+    /**
+     * ADMET settings modal kapat
+     */
+    closeAdmetSettingsModal() {
+        if (!this.ui.elements.admetSettingsModal) return;
+        
+        DOMUtils.addClass(this.ui.elements.admetSettingsModal, 'closing');
+        
+        setTimeout(() => {
+            DOMUtils.removeClass(this.ui.elements.admetSettingsModal, 'open');
+            DOMUtils.removeClass(this.ui.elements.admetSettingsModal, 'closing');
+        }, 300);
+    }
+
+    /**
+     * Seçili ADMET parametrelerini al
+     * @returns {string[]|null}
+     */
+    getSelectedAdmetParameters() {
+        if (!this.ui.elements.admetSettingsCheckboxes) {
+            return []; // Return empty array instead of null
+        }
+        const selected = Array.from(this.ui.elements.admetSettingsCheckboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+        
+        return selected; // Always return an array
     }
 
     /**
@@ -2989,6 +3189,19 @@ class ChatApp {
     handleMoleculeDraw(type) {
         this.closeAllAddDropdowns();
         this.openMoleculeModal();
+    }
+
+    /**
+     * AdMet tool'u sadece aktif et
+     */
+    activateAdmetTool() {
+        if (this.activeTool !== 'admet') {
+            this.activeTool = 'admet';
+            this.updateToolButtonState();
+        }
+
+        // Dropdown'ları kapat
+        this.closeAllToolsDropdowns();
     }
 
     /**

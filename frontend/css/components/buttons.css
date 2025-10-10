@@ -894,3 +894,66 @@
     width: 300px;
     height: 300px;
 }
+
+.tool-option-group {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.tool-option-group .tool-option {
+    flex-grow: 1;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right-width: 0.5px;
+}
+
+.tool-settings-btn {
+    background: transparent;
+    border: 1px solid var(--border-accent);
+    color: var(--accent);
+    padding: var(--space-1);
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    flex-shrink: 0;
+}
+
+.tool-settings-btn:hover:not(:disabled) {
+    background: var(--bg-glass);
+    border-color: var(--border-accent);
+    color: var(--gray-100);
+    z-index: 1;
+}
+
+.tool-settings-btn:active:not(:disabled) {
+    background: var(--bg-glass-hover);
+    transform: scale(0.95);
+}
+
+.tool-settings-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* ADMET settings button specific styles */
+.tool-settings-btn.admet-settings-opener {
+    border-color: rgba(227, 130, 248, 0.3);
+    color: rgb(227, 130, 248);
+}
+
+.tool-settings-btn.admet-settings-opener:hover:not(:disabled) {
+    background: rgba(227, 130, 248, 0.1);
+    border-color: rgba(227, 130, 248, 0.4);
+}
+
+.tool-settings-btn.admet-settings-opener.active {
+    background: rgba(227, 130, 248, 0.15);
+    border-color: rgba(227, 130, 248, 0.5);
+}

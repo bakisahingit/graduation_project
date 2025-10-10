@@ -1,8 +1,16 @@
 // src/handlers/chatHandler.js
 
-import { getAdmetPredictions } from '../services/admetApiService.js';
-import { extractChemicalWithLLM, translateWithLLM } from '../services/llmService.js';
-import { getSmilesFromName } from '../services/pubchemService.js';
+// YENİLİKLER:
+// - Redis ve LLM servisleri ADMET ön kontrolü için import edildi.
+// - `handleAdmetTool` fonksiyonuna, görevi kuyruğa atmadan önce Redis'i kontrol eden bir bölüm eklendi.
+//   Eğer sonuç cache'te varsa, kuyruk ve worker adımları atlanarak direkt senkron cevap dönülüyor.
+// - `handleComparisonRequest` fonksiyonu, molekül çözümlemelerini paralel yapmak için `Promise.all` kullanacak şekilde yeniden yazıldı.
+
+import { randomUUID } from 'crypto';
+import { sendTaskToQueue } from '../services/queueService.js';
+import redisClient from '../services/redisService.js';
+import { extractChemicalWithLLM, translateWithLLM, getChatCompletion } from '../services/llmService.js';
+import { getSmilesFromName   } from '../services/pubchemService.js';
 import { admetContextPrompt } from '../utils/constants.js';
 import { formatAdmetReport } from '../utils/formatters.js';
 import { extractChemicalNameByRegex } from '../utils/nameResolvers.js';
@@ -48,60 +56,6 @@ export async function extractSmilesOnly(message, model = null) {
     };
 }
 
-async function handleAdmetTool(message, model = null) {
-    let smiles = null;
-    let chemicalName = null;
-
-    const extractedEntity = await extractChemicalWithLLM(message, model);
-
-    if (extractedEntity.type === 'smiles') {
-        smiles = extractedEntity.value;
-    } else if (extractedEntity.type === 'name') {
-        chemicalName = extractedEntity.value;
-    } else {
-        chemicalName = extractChemicalNameByRegex(message);
-    }
-
-    if (chemicalName && !smiles) {
-        // Önce direkt olarak kimyasal ismi dene
-        smiles = await getSmilesFromName(chemicalName);
-        
-        // Eğer başarısız olursa, çeviri yap
-        if (!smiles) {
-            const englishName = await translateWithLLM(chemicalName, model);
-            if (englishName !== chemicalName) {
-                console.log(`Translated "${chemicalName}" to "${englishName}"`);
-                smiles = await getSmilesFromName(englishName);
-            }
-        }
-    }
-
-    if (!smiles) {
-        return {
-            systemPrompt: "You are a helpful assistant.",
-            finalMessage: `I could not identify a valid molecule from your message. Please clarify. Original message was: "${message}"`
-        };
-    }
-
-    console.log(`Attempting ADMET analysis for SMILES: ${smiles}`);
-    const admetData = await getAdmetPredictions(smiles, chemicalName);
-
-    if (!admetData) {
-        return {
-            error: `The ADMET analysis for molecule "${chemicalName || smiles}" failed. The service may be temporarily unavailable or the request may have timed out. Please try again later.`
-        };
-    }
-
-    console.log(`ADMET analysis completed successfully for ${chemicalName || smiles}`);
-
-    const admetReport = formatAdmetReport(admetData);
-    return {
-        systemPrompt: admetContextPrompt,
-        finalMessage: `The user requested an ADMET analysis and the results are below. Please summarize these findings and present them to the user.\n\nADMET ANALYSIS REPORT:\n---\n${admetReport}`,
-        rawAdmetData: admetData // Add raw ADMET data
-    };
-}
-
 async function getAdmetDataForIdentifier(identifier) {
     let smiles = null;
     let name = identifier; // Keep original identifier as name for now
@@ -135,55 +89,128 @@ async function getAdmetDataForIdentifier(identifier) {
     return { identifier, data: admetData };
 }
 
-async function handleComparisonRequest(molecules, model) {
-    const results = await Promise.all(molecules.map(m => getAdmetDataForIdentifier(m)));
+async function handleAdmetTool(message, model = null, properties = null) {
+    let smiles = null;
+    let chemicalName = null;
 
-    const successfulResults = results.filter(r => r.data);
-    const failedResults = results.filter(r => r.error);
-
-    if (successfulResults.length === 0) {
-        return { error: 'Could not analyze any of the provided molecules.' };
+    // 1. Extract chemical name or SMILES
+    // Strategy: Try Regex first, then fallback to LLM.
+    chemicalName = extractChemicalNameByRegex(message);
+    
+    if (!chemicalName) {
+        console.log("Regex extraction failed, trying LLM-based extraction...");
+        const extractedEntity = await extractChemicalWithLLM(message, model);
+        if (extractedEntity.type === 'smiles') {
+            smiles = extractedEntity.value;
+            chemicalName = extractedEntity.value; // Use SMILES as name if no name is found
+        } else if (extractedEntity.type === 'name') {
+            chemicalName = extractedEntity.value;
+        }
     }
 
-    let dataSummary = '';
-    successfulResults.forEach(res => {
-        dataSummary += `--- MOLECULE: ${res.data.moleculeName || res.identifier} ---\n`;
-        dataSummary += `SMILES: ${res.data.smiles}\n`;
-        dataSummary += `Overall Risk Score: ${res.data.riskScore.toFixed(1)}/100\n`;
-        dataSummary += "Key Predictions:\n";
-        res.data.admetPredictions.forEach(p => {
-            dataSummary += `- ${p.property}: ${p.prediction}\n`;
-        });
-        dataSummary += '\n';
+    if (chemicalName && !smiles) {
+        smiles = await getSmilesFromName(chemicalName);
+        if (!smiles) {
+            const englishName = await translateWithLLM(chemicalName, model);
+            if (englishName.toLowerCase() !== chemicalName.toLowerCase()) {
+                smiles = await getSmilesFromName(englishName);
+                if (smiles) {
+                    chemicalName = englishName;
+                }
+            }
+        }
+    }
+
+    if (!smiles) {
+        return { type: 'error', message: `I could not identify a valid molecule from your message.` };
+    }
+
+    // 2. Görevi Hazırla ve Başlat
+    const sessionId = randomUUID();
+    const task = {
+        type: 'single',
+        name: chemicalName || identifier,
+        smiles: smiles,
+        sessionId: sessionId,
+        identifier: chemicalName || smiles,
+        selected_parameters: properties
+    };
+    
+    // YENİ MANTIK: Bu fonksiyonun tek görevi görevi kuyruğa göndermek.
+    // Cache kontrolü ve özetleme gibi yavaş işler ARTIK BURADA DEĞİL.
+    // Onların hepsi server.js'de, arka planda yapılacak.
+    try {
+        sendTaskToQueue(task);
+        console.log(`Task sent to queue for SMILES: ${smiles}`);
+        return {
+            type: 'async', // Her zaman async dönüyoruz.
+            sessionId: sessionId,
+            message: `Analysis for "${chemicalName || smiles}" has started.`
+        };
+    } catch (error) {
+        console.error("Failed to send task to queue:", error);
+        return { type: 'error', message: "There was an error starting the analysis." };
+    }
+}
+
+
+
+
+async function handleComparisonRequest(molecules, model, properties) {
+    const sessionId = randomUUID();
+
+    const resolutionPromises = molecules.map(async (identifier) => {
+        let name = identifier;
+        
+        const englishName = await translateWithLLM(identifier, model);
+        if (englishName.toLowerCase() !== identifier.toLowerCase()) {
+            console.log(`LLM translated "${identifier}" to "${englishName}" for comparison.`);
+            name = englishName;
+        }
+
+        const foundSmiles = await getSmilesFromName(name);
+        if (foundSmiles) {
+            return { type: 'comparison', name, smiles: foundSmiles, sessionId, identifier };
+        }
+        
+        const isSmilesLike = /^[A-Za-z0-9@+\-\[\]()=#\\/%.]+$/.test(identifier);
+        if (isSmilesLike) {
+            return { type: 'comparison', name: identifier, smiles: identifier, sessionId, identifier };
+        }
+
+        return { identifier, error: 'Could not resolve to a valid molecule.' };
     });
 
-    if (failedResults.length > 0) {
-        dataSummary += '--- FAILED ANALYSES ---\n';
-        failedResults.forEach(res => {
-            dataSummary += `- ${res.identifier}: ${res.error}\n`;
-        });
+    const results = await Promise.all(resolutionPromises);
+
+    const tasksToDispatch = results.filter(r => r.smiles);
+    const failedResolutions = results.filter(r => r.error);
+
+    if (tasksToDispatch.length === 0) {
+        return { type: 'error', message: 'Could not analyze any of the provided molecules.' };
     }
 
-    const finalMessage = `
-Here is the data for ${successfulResults.length} molecules:
-${dataSummary}
+    const batchInfo = {
+        total: tasksToDispatch.length,
+        failedResolutions: failedResolutions,
+        results: [],
+        properties: properties
+    };
+    await redisClient.set(`batch:${sessionId}`, JSON.stringify(batchInfo), { EX: 3600 });
 
-Your task is to compare these molecules based on their ADMET properties.
-1.  Create a markdown table that compares the most important properties (e.g., Overall Risk Score, Ames, hERG, DILI, Hepatotoxicity, BBB, HIA, Clearance, VDss).
-2.  After the table, provide a brief summary explaining which molecule(s) have a more favorable ADMET profile and why, highlighting the key trade-offs.
-3.  If any molecules failed analysis, list them at the end.
-`;
+    tasksToDispatch.forEach(task => sendTaskToQueue(task));
 
     return {
-        systemPrompt: admetContextPrompt,
-        finalMessage: finalMessage.trim(),
-        rawComparisonData: { successfulResults, failedResults } // Add raw data
+        type: 'async',
+        sessionId: sessionId,
+        message: `Comparison analysis for ${molecules.length} molecules has started. You will be notified when the results are ready.`
     };
 }
 
+
 export async function handleChatMessage(message, conversationHistory, tools, model = null) {
     if (tools.active === 'admet' || tools.active === 'ADMET') {
-        return handleAdmetTool(message, model);
+        return handleAdmetTool(message, model, tools.properties);
     }
 
     let systemPrompt = "You are a helpful assistant.";
@@ -195,6 +222,14 @@ export async function handleChatMessage(message, conversationHistory, tools, mod
         systemPrompt = admetContextPrompt;
     }
     
+    // `handleAdmetTool` sync cevap dönebileceği için bu fonksiyonun çıktısını da ona göre ayarlıyoruz.
+    const result = await (tools.active === 'admet' ? handleAdmetTool(message, model, tools.properties) : Promise.resolve({ systemPrompt, finalMessage: message }));
+
+    // Eğer handleAdmetTool sync bir sonuç döndürdüyse, onu direkt yolla.
+    if (result.type === 'sync' || result.type === 'async' || result.type === 'error') {
+        return result;
+    }
+
     return { systemPrompt, finalMessage: message };
 }
 

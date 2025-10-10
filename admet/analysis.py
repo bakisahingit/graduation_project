@@ -5,7 +5,7 @@ from rdkit import Chem
 from .config import rule_based_catalog
 from .utils import find_keys, to_probish
 
-def aggregate_risk(admet_preds, mol_desc):
+def aggregate_risk(admet_preds, mol_desc, selected_parameters=None):
     keymap = find_keys(admet_preds)
     weights = {
         "Ames": 25,
@@ -20,6 +20,11 @@ def aggregate_risk(admet_preds, mol_desc):
         "HIA": -5,
         "Solubility": 6,
     }
+    
+    # If selected_parameters are provided, filter the weights
+    if selected_parameters:
+        weights = {k: v for k, v in weights.items() if k in selected_parameters}
+
     total_score, total_weight = 0.0, 0.0
     for tag, w in weights.items():
         k = keymap.get(tag)
@@ -38,6 +43,7 @@ def aggregate_risk(admet_preds, mol_desc):
         total_score += abs(w) * p if w > 0 else abs(w) * (1 - p)
         total_weight += abs(w)
     if total_weight == 0:
+        # Return a neutral score if no parameters were weighted
         return 50.0, keymap
     return float(100.0 * total_score / total_weight), keymap
 

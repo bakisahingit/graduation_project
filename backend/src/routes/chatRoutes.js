@@ -2,10 +2,11 @@
 
 import { Router } from 'express';
 import { handleChatMessage, handleComparisonRequest, extractSmilesOnly } from '../handlers/chatHandler.js';
+import { getChatCompletion, extractChemicalWithLLM } from '../services/llmService.js';
 import { getPubChemInfoBySmiles } from '../services/pubchemService.js';
-import { getChatCompletion } from '../services/llmService.js';
-import { openai } from '../config/index.js';
-import TitleGeneratorService from '../../title_generator/service.js';
+import { getSmilesFromName } from '../services/pubchemService.js';
+import TitleGeneratorService from '../../title_generator/service.js'; // Import title service
+import { openai } from '../config/index.js'; // Import openai client
 
 const router = Router();
 
@@ -16,24 +17,32 @@ router.post('/', async (req, res) => {
         return res.status(400).json({ error: 'Missing `message` in request body' });
     }
 
+    // Handle title generation request
+    if (generateTitle) {
+        try {
+            const titleService = new TitleGeneratorService();
+            const title = await titleService.generateTitle(message, openai, model);
+            return res.json({ type: 'title_generation', title: title });
+        } catch (err) {
+            console.error('Title generation route failed', err);
+            return res.status(500).json({ error: 'Failed to generate title' });
+        }
+    }
+
     try {
-        // Eğer başlık üretimi isteği ise
-        if (generateTitle) {
-            const titleGenerator = new TitleGeneratorService();
-            const title = await titleGenerator.generateTitle(message, openai, model || 'openai/gpt-3.5-turbo');
-            return res.json({ 
-                type: 'title_generation',
-                title: title 
-            });
+        const result = await handleChatMessage(message, conversationHistory, tools);
+
+        // Handle the new async response type
+        if (result.type === 'async') {
+            return res.status(202).json(result); // 202 Accepted
         }
 
-        const result = await handleChatMessage(message, conversationHistory, tools, model);
-
-        // Check for a direct error response from the handler
-        if (result.error) {
-            return res.json({ output: result.error });
+        // Handle direct error response
+        if (result.type === 'error') {
+            return res.status(400).json({ output: result.message });
         }
 
+        // Existing logic for synchronous LLM call
         const { systemPrompt, finalMessage } = result;
 
         const messages = [...conversationHistory];
@@ -45,17 +54,17 @@ router.post('/', async (req, res) => {
         }
         messages.push({ role: 'user', content: finalMessage });
 
-        console.log(`Frontend selected model: ${model}`);
-        const completion = await getChatCompletion(messages, model);
+        const completion = await getChatCompletion(messages);
         
-        // Check if LLM returned empty content
         const llmContent = completion.choices[0].message.content;
-        if (!llmContent || llmContent.trim() === '') {
+        const cleanedContent = llmContent.replace(/!<\｜begin of sentence｜>/g, '').replace(/!<\｜end of sentence｜>/g, '');
+
+        if (!cleanedContent || cleanedContent.trim() === '') {
             return res.json({ output: "I'm sorry, but I received an empty response from the model. Please try again." });
         }
 
         return res.json({
-            output: llmContent,
+            output: cleanedContent,
             rawAdmetData: result.rawAdmetData
         });
 
@@ -66,36 +75,32 @@ router.post('/', async (req, res) => {
 });
 
 router.post('/compare', async (req, res) => {
-    const { molecules, model } = req.body;
+    const { molecules, model, properties } = req.body;
 
     if (!molecules || !Array.isArray(molecules) || molecules.length < 2) {
         return res.status(400).json({ error: 'Request body must include an array of at least 2 molecules.' });
     }
 
+    if (!properties || !Array.isArray(properties) || properties.length === 0) {
+        return res.status(400).json({ error: 'Request body must include an array of properties to compare.' });
+    }
+
     try {
-        const result = await handleComparisonRequest(molecules, model);
+        const result = await handleComparisonRequest(molecules, model, properties);
 
-        if (result.error) {
-            return res.status(500).json({ error: result.error });
+        // Handle the new async response type for comparisons
+        if (result.type === 'async') {
+            return res.status(202).json(result); // 202 Accepted
         }
 
-        const { systemPrompt, finalMessage } = result;
-        const messages = [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: finalMessage }
-        ];
-
-        const completion = await getChatCompletion(messages);
-        
-        const llmContent = completion.choices[0].message.content;
-        if (!llmContent || llmContent.trim() === '') {
-            return res.json({ output: "I'm sorry, but I received an empty response from the model. Please try again." });
+        // Handle direct error response from the handler (e.g., no molecules could be resolved)
+        if (result.type === 'error') {
+            return res.status(400).json({ output: result.message });
         }
 
-        return res.json({ 
-            output: llmContent,
-            rawComparisonData: result.rawComparisonData // Pass the raw data through
-        });
+        // This part should ideally not be reached anymore as comparison is async.
+        // Kept as a fallback in case of unexpected synchronous responses.
+        return res.status(500).json({ error: 'An unexpected error occurred during the comparison request.' });
 
     } catch (err) {
         console.error('Comparison request failed', err);
@@ -152,5 +157,4 @@ router.post('/pubchem-info', async (req, res) => {
         return res.status(500).json({ success: false, error: String(err) });
     }
 });
-
 export default router;

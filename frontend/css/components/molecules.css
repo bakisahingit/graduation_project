@@ -27,8 +27,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    /* Match settings overlay darkness so background is dimmed when molecule modal opens */
-    background: rgba(0, 0, 0, 0.8);
+    background: transparent;
 }
 
 .molecule-content {
@@ -44,9 +43,6 @@
     transition: transform 0.3s ease;
     display: flex;
     flex-direction: column;
-    /* spacing token used to make all panel gaps consistent */
-    /* tuned gap after analysis: balances panel padding + margins to shorten vertical spacing */
-    --molecule-gap: 15px;
 }
 
 .molecule-modal.open .molecule-content {
@@ -121,10 +117,9 @@
 
 /* Body */
 .molecule-body {
-    padding: var(--molecule-gap);
+    padding: 16px;
     flex: 1;
-    /* prevent the whole modal body from scrolling; child panels will scroll internally */
-    overflow: hidden;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
 }
@@ -132,14 +127,9 @@
 .molecule-main-content {
     display: grid;
     grid-template-columns: 1fr 260px;
-    gap: var(--molecule-gap);
-    /* make the main content fill available vertical space inside molecule-body */
-    flex: 1 1 auto;
+    gap: 16px;
+    flex: 1;
     min-height: 0;
-    height: 100%;
-    /* split the gap equally between the panels block and the input block so border-to-border
-       spacing is perceived as uniform regardless of inner padding on either block */
-    margin-bottom: calc(var(--molecule-gap) / 2);
 }
 
 /* Align the smiles input section with the molecule main grid so the
@@ -148,110 +138,51 @@
     display: grid;
     grid-template-columns: 1fr 260px;
     gap: 16px;
-    padding: 12px; /* keep some breathing room like the panel */
+    padding: 12px;
+    /* keep some breathing room like the panel */
     align-items: center;
 }
 
 /* Make the input wrapper span the full content width (both columns)
    so its right edge aligns with the molecule info panel's right border. */
 .smiles-input-section .welcome-input-wrapper {
-    grid-column: 1 / -1; /* span both columns */
+    grid-column: 1 / -1;
+    /* span both columns */
     width: 100%;
     max-width: none;
-    margin: 0; /* remove auto centering to align flush with panel edges */
+    margin: 0;
+    /* remove auto centering to align flush with panel edges */
 }
 
 /* Molecule Panel */
 .molecule-panel {
     background: linear-gradient(135deg, #0a0b0d 0%, #111214 100%);
     border-radius: 12px;
-    /* Replace subtle outer dark border with a single green frame */
-    border: 1px solid rgba(26, 188, 156, 0.35);
-    /* remove internal padding so the drawing area can touch the panel border */
-    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     overflow: hidden;
     position: relative;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
 }
 
 .molecule-display {
     position: relative;
-    /* let the display take remaining space inside the panel */
-    flex: 1 1 auto;
+    height: 300px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: transparent; /* let the panel's background show through */
-    border-radius: 12px; /* match panel corners */
-    overflow: visible; /* allow canvas to fill the panel fully */
-    /* Ensure there is no inner frame; the only visible frame is the panel's green border */
-    border: none;
-    outline: none;
-    box-shadow: none;
+    background: transparent;
+    /* let the panel's background show through */
+    border-radius: 12px;
+    /* match panel corners */
+    overflow: hidden;
+    /* clip canvas/glow to panel corners */
 }
 
 #molecule-canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
-    height: 100%;
+    height: 300px;
     display: block;
     background: transparent;
     cursor: grab;
-}
-
-/* Molecule modal - make the send button green and input wrapper border green
-   Only scoped to the molecule drawer's input area so global inputs remain unchanged */
-.molecule-modal .smiles-input-section .send-btn {
-    color: var(--secondary);
-    /* hide border/outline by default; show on hover only */
-    border-color: transparent;
-    box-shadow: none;
-    background: transparent;
-}
-
-.molecule-modal .smiles-input-section .send-btn:hover:not(:disabled) {
-    background: var(--bg-glass);
-    border-color: rgba(76,175,80,0.35);
-    color: var(--secondary-light);
-    box-shadow: 0 4px 12px rgba(76,175,80,0.15);
-}
-
-/* Show focus/hover styles for send button only on :hover of the button itself */
-.molecule-modal .smiles-input-section .send-btn:not(:hover):not(:focus) {
-    /* ensure no borders/shadows when not hovered/focused */
-    border-color: transparent !important;
-    box-shadow: none !important;
-    background: transparent !important;
-}
-
-.molecule-modal .smiles-input-section .send-btn:active:not(:disabled) {
-    background: var(--bg-glass-hover);
-    border-color: rgba(76,175,80,0.45);
-}
-
-.molecule-modal .smiles-input-section .send-btn:focus-visible {
-    outline: 2px solid rgba(76,175,80,0.5);
-    outline-offset: 2px;
-}
-
-.molecule-modal .smiles-input-section .send-btn .btn-icon {
-    /* tint send icon toward green */
-    filter: brightness(0) saturate(100%) invert(61%) sepia(36%) saturate(417%) hue-rotate(77deg) brightness(93%) contrast(92%);
-}
-
-/* Input wrapper green border within molecule modal */
-.molecule-modal .smiles-input-section #molecule-query-form.welcome-input-wrapper {
-    border-color: rgba(76,175,80,0.35) !important;
-    box-shadow: var(--shadow-lg), inset 0 1px 0 var(--gray-950), 0 0 0 1px rgba(76,175,80,0.18);
-}
-
-.molecule-modal .smiles-input-section #molecule-query-form.welcome-input-wrapper:focus-within {
-    border-color: rgba(76,175,80,0.5) !important;
-    box-shadow: var(--shadow-lg), inset 0 1px 0 var(--gray-950), 0 0 0 2px rgba(76,175,80,0.18);
 }
 
 #molecule-canvas:active {
@@ -344,9 +275,6 @@
     position: absolute;
     bottom: 8px;
     left: 8px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
     background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(2px);
     border: 1px solid rgba(255, 255, 255, 0.15);
@@ -358,14 +286,6 @@
     transition: opacity 0.2s ease;
 }
 
-/* top-left variation for the SMILES overlay */
-.molecule-smiles-overlay.top-left {
-    top: 8px;
-    left: 8px;
-    bottom: auto;
-    transform: none;
-}
-
 .molecule-smiles-overlay:hover {
     opacity: 1;
     background: rgba(0, 0, 0, 0.6);
@@ -374,20 +294,19 @@
 .smiles-overlay-label {
     font-size: 9px;
     color: #b0b0b0;
-    margin: 0 8px 0 0; /* inline spacing instead of bottom margin */
+    margin-bottom: 1px;
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.3px;
-    display: inline-block;
-    vertical-align: middle;
 }
 
 .smiles-overlay-value {
     font-size: 11px;
     color: #ffffff;
     font-family: 'JetBrains Mono', monospace;
+    word-break: break-all;
     line-height: 1.2;
-    max-width: 220px; /* allow a bit more horizontal space now that label is inline */
+    max-width: 180px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -439,7 +358,7 @@
     height: 20px;
 }
 
-.h-toggle input { 
+.h-toggle input {
     opacity: 0;
     width: 0;
     height: 0;
@@ -452,10 +371,10 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(255,255,255,0.08);
+    background-color: rgba(255, 255, 255, 0.08);
     transition: .2s;
     border-radius: 12px;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 .h-toggle-slider:before {
@@ -468,14 +387,14 @@
     background-color: #ffffff;
     border-radius: 50%;
     transition: .2s;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
-.h-toggle input:checked + .h-toggle-slider {
+.h-toggle input:checked+.h-toggle-slider {
     background-color: rgba(26, 188, 156, 0.18);
 }
 
-.h-toggle input:checked + .h-toggle-slider:before {
+.h-toggle input:checked+.h-toggle-slider:before {
     transform: translateX(20px);
     background-color: #1abc9c;
 }
@@ -485,11 +404,7 @@
     display: flex;
     flex-direction: column;
     gap: 0;
-    /* Let individual panels manage their own scrolling so the sidebar doesn't push layout
-       (we'll make the info panel content scroll internally). */
-    overflow: visible;
-    min-height: 0;
-    height: 100%;
+    overflow-y: auto;
 }
 
 /* Info Panel */
@@ -497,11 +412,10 @@
     background: linear-gradient(135deg, #0a0b0d 0%, #111214 100%);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
-    padding: var(--molecule-gap);
+    padding: 16px;
     height: 100%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
 }
 
 .info-title {
@@ -516,11 +430,6 @@
     flex-direction: column;
     gap: 10px;
     flex: 1;
-    /* Allow this flex child to shrink and become scrollable inside the info panel. */
-    min-height: 0;
-    overflow-y: auto;
-    padding-right: 8px; /* space for scrollbar */
-    max-height: 100%;
 }
 
 .info-item {
@@ -546,18 +455,6 @@
     color: #ffffff;
     font-weight: 600;
     font-family: 'JetBrains Mono', monospace;
-}
-
-/* Molecular formula styling: convert digits to subscript cleanly */
-.chem-formula {
-    font-variant-numeric: lining-nums;
-}
-
-.chem-formula sub {
-    font-size: 0.7em;
-    line-height: 0;
-    position: relative;
-    bottom: -0.2em;
 }
 
 /* Examples */
@@ -619,10 +516,9 @@
     background: transparent;
     border: none;
     border-radius: 0;
-    /* remove extra internal padding so border-to-border spacing stays uniform */
     padding: 0;
     flex-shrink: 0;
-    margin-top: calc(var(--molecule-gap) / 2);
+    margin-top: auto;
 }
 
 .input-header {
@@ -770,16 +666,16 @@
         grid-template-columns: 1fr;
         gap: 20px;
     }
-    
+
     .molecule-sidebar {
         order: -1;
     }
-    
+
     .molecule-content {
         width: 95%;
         height: 85vh;
     }
-    
+
     .molecule-body {
         padding: 20px;
     }
@@ -789,34 +685,25 @@
     .molecule-header {
         padding: 16px 20px;
     }
-    
+
     .molecule-body {
         padding: 16px;
     }
-    
+
     .molecule-title {
         font-size: 18px;
     }
-    
+
     .molecule-content {
         width: 98%;
         height: 90vh;
     }
-    
+
     .molecule-main-content {
         gap: 16px;
     }
-    
+
     .examples-grid {
         grid-template-columns: 1fr 1fr;
     }
 }
-
-
-
-
-
-
-
-
-
