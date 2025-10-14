@@ -126,10 +126,14 @@ export class ConversationService {
      * @param {string} conversationId - Konuşma ID'si
      * @param {Object} message - Mesaj objesi
      */
-    updateConversation(conversationId, message) {
+    updateConversation(conversationId, message, rawData = null) {
         const conversation = this.conversations.find(c => c.id === conversationId);
         if (conversation) {
-            conversation.messages.push(message);
+            const messageToStore = { ...message };
+            if (rawData) {
+                messageToStore.rawData = rawData;
+            }
+            conversation.messages.push(messageToStore);
             conversation.updatedAt = new Date();
             this.saveConversations();
         }

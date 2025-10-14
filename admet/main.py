@@ -1,6 +1,7 @@
 # admet/main.py
 
 import os
+import json
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from rdkit import RDLogger
@@ -30,17 +31,41 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# In-memory cache
+admet_cache = {}
 
 class PredictionRequest(BaseModel):
     name: str | None = None
     smiles: str | None = None
+    selected_parameters: list[str] | None = None
 
 
 @app.post("/predict")
 async def predict_admet(request: PredictionRequest):
     """Run the full analysis pipeline for a given SMILES string."""
+    
+    # Create a cache key from SMILES and sorted parameters
+    params_key = json.dumps(request.selected_parameters, sort_keys=True) if request.selected_parameters else "{}"
+    cache_key = f"{request.smiles}:{params_key}"
+
+    # Check cache first
+    if cache_key in admet_cache:
+        print(f"Cache hit for key: {cache_key}")
+        return admet_cache[cache_key]
+    
+    print(f"Cache miss for key: {cache_key}")
+
     try:
-        return run_analysis_pipeline(request.name, request.smiles)
+        # Call the pipeline without notification
+        result = run_analysis_pipeline(
+            name=request.name, 
+            smiles=request.smiles, 
+            selected_parameters=request.selected_parameters,
+            notify=False
+        )
+        # Store result in cache
+        admet_cache[cache_key] = result
+        return result
     except HTTPException as e:
         # Re-raise HTTPException to let FastAPI handle it
         raise e

@@ -36,13 +36,18 @@ def notify_backend(payload):
 def run_analysis_pipeline(
     name: str | None,
     smiles: str | None,
-    session_id: str,
-    identifier: str,
-    type: str,
+    session_id: str | None = None, # Made optional
+    identifier: str | None = None, # Made optional
+    type: str | None = None,       # Made optional
     selected_parameters: list[str] | None = None,
+    notify: bool = True,           # New parameter
 ):
-    """Manages the entire analysis process and notifies the backend upon completion."""
-    print(f"Starting analysis for identifier: '{identifier}', session: {session_id}")
+    """Manages the entire analysis process and optionally notifies the backend."""
+    if notify:
+        print(f"Starting analysis for identifier: '{identifier}', session: {session_id}")
+    else:
+        print(f"Starting analysis for SMILES: {smiles}")
+
     if selected_parameters:
         print(f"Running with selected parameters: {selected_parameters}")
     
@@ -167,21 +172,24 @@ def run_analysis_pipeline(
         }
 
     except Exception as e:
-        print(f"---! ADMET ANALYSIS FAILED for identifier: '{identifier}' !---")
+        print(f"---! ADMET ANALYSIS FAILED for identifier: '{identifier or smiles}' !---")
         traceback.print_exc()
         print("---! End of Error Report !---")
         status = "error"
         task_result = {"error": f"Analysis failed: {e}"}
 
-    # 5. Notify Backend
-    notification_payload = {
-        "sessionId": session_id,
-        "status": status,
-        "data": task_result,
-        "type": type,
-        "identifier": identifier,
-    }
-    notify_backend(notification_payload)
-
-    print(f"Finished analysis for identifier: '{identifier}', session: {session_id}")
-    return notification_payload
+    # 5. Notify Backend (if requested)
+    if notify:
+        notification_payload = {
+            "sessionId": session_id,
+            "status": status,
+            "data": task_result,
+            "type": type,
+            "identifier": identifier,
+        }
+        notify_backend(notification_payload)
+        print(f"Finished analysis for identifier: '{identifier}', session: {session_id}")
+        return notification_payload
+    else:
+        # Or just return the raw results
+        return task_result

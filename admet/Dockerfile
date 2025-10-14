@@ -31,7 +31,11 @@ RUN sed -i "s/torch.load(path, map_location=lambda storage, loc: storage)/torch.
 # Copy source
 COPY admet/ ./admet/
 
+# Copy the start script
+COPY admet/start.sh /app/start.sh
+
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
 
-CMD ["python", "-u", "-m", "admet.worker"]
+# Run the script using bash, which doesn't require the executable bit
+CMD ["/bin/bash", "/app/start.sh"]

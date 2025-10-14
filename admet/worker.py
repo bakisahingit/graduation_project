@@ -1,26 +1,17 @@
-import torch
-import argparse
-import numpy
-import numpy.dtypes
-torch.serialization.add_safe_globals([
-    argparse.Namespace,
-    numpy.core.multiarray._reconstruct,
-    numpy.ndarray,
-    numpy.dtype,
-    numpy.dtypes.Float64DType
-])
-
 import pika
 import os
 import json
 import time
 import threading
+import requests # Import requests
 
-# Import the analysis function
-from admet.pipeline import run_analysis_pipeline
+# Import the analysis function (no longer directly used, but kept for context)
+# from admet.pipeline import run_analysis_pipeline
+from .pipeline import notify_backend # Import notify_backend directly
 
 RABBITMQ_URL = os.environ.get('CELERY_BROKER_URL', 'amqp://user:password@rabbitmq:5672//')
 TASK_QUEUE = 'admet_tasks'
+ADMET_API_URL = os.environ.get('ADMET_API_URL', 'http://localhost:8000') # URL for the FastAPI app
 
 def main():
     connection = None
@@ -38,26 +29,42 @@ def main():
                 try:
                     task_data = json.loads(body)
                     
-                    # We need to run the analysis in a separate thread because it's a long-running CPU-bound task.
-                    # pika's blocking connection is not thread-safe for acknowledgement across threads,
-                    # so we handle acknowledgement carefully.
-                    
                     def do_work(ch, method, properties, body):
+                        task_result = None
+                        status = "success"
                         try:
-                            run_analysis_pipeline(
-                                name=task_data.get('name'),
-                                smiles=task_data.get('smiles'),
-                                session_id=task_data.get('sessionId'),
-                                identifier=task_data.get('identifier'),
-                                type=task_data.get('type'),
-                                selected_parameters=task_data.get('selected_parameters') # Pass selected parameters
+                            # Call the FastAPI endpoint
+                            print(f"Calling ADMET API at {ADMET_API_URL}/predict")
+                            api_response = requests.post(
+                                f"{ADMET_API_URL}/predict",
+                                json={
+                                    "name": task_data.get('name'),
+                                    "smiles": task_data.get('smiles'),
+                                    "selected_parameters": task_data.get('selected_parameters')
+                                }
                             )
+                            api_response.raise_for_status() # Raise an exception for bad status codes
+                            task_result = api_response.json()
+
                         except Exception as e:
-                            print(f"Error during analysis: {e}")
-                        finally:
-                            # Acknowledge the message from the main thread
-                            connection.add_callback_threadsafe(lambda: ch.basic_ack(delivery_tag=method.delivery_tag))
-                            print(f" [x] Done and acknowledged task")
+                            print(f"Error during analysis API call: {e}")
+                            status = "error"
+                            task_result = {"error": f"Analysis failed: {e}"}
+                        
+                        # Notify the backend with the result from the API
+                        notification_payload = {
+                            "sessionId": task_data.get('sessionId'),
+                            "status": status,
+                            "data": task_result,
+                            "type": task_data.get('type'),
+                            "identifier": task_data.get('identifier'),
+                            "selected_parameters": task_data.get('selected_parameters') # Pass parameters to backend
+                        }
+                        notify_backend(notification_payload)
+
+                        # Acknowledge the message
+                        connection.add_callback_threadsafe(lambda: ch.basic_ack(delivery_tag=method.delivery_tag))
+                        print(f" [x] Done and acknowledged task")
 
                     # Start the work in a new thread
                     worker_thread = threading.Thread(target=do_work, args=(ch, method, properties, body))
