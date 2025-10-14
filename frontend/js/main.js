@@ -830,6 +830,11 @@ class ChatApp {
         if (!text) return;
 
         const model = this.ui.elements.modelSelectChat ? this.ui.elements.modelSelectChat.value : null;
+        
+        // Clear input and resize
+        this.ui.elements.input.value = '';
+        DOMUtils.autoResizeTextarea(this.ui.elements.input);
+
         await this.processMessage(text, model);
     }
 
@@ -976,7 +981,7 @@ async processMessage(text, model) {
 
                 if (this.isStreaming) {
                     const reply = HelperUtils.extractTextFromResponse(data) || 'Boş yanıt';
-                    this.conversation.updateConversation(this.conversation.currentConversationId, { role: 'bot', content: reply });
+                    this.conversation.updateConversation(this.conversation.currentConversationId, { role: 'bot', content: reply }, data.rawAdmetData);
 
                     const botMessageContainer = this.ui.createBotMessage();
                     const contentEl = botMessageContainer.querySelector('.message-content');
@@ -999,8 +1004,14 @@ async processMessage(text, model) {
                 this.ui.setInputsEnabled(true);
             }
         } catch (err) {
-            if (err.name !== 'AbortError') {
-                this.ui.removeThinkingIndicator(typingEl);
+            this.ui.removeThinkingIndicator(typingEl);
+            // AbortError'u veya özel "Request aborted" mesajını daha zarif bir şekilde işle
+            if (err.name === 'AbortError' || err.message === 'Request aborted') {
+                console.log('Request was aborted by the user.');
+                // İsteğe bağlı: kullanıcıya isteğin iptal edildiğini bildiren bir mesaj göster
+                this.ui.appendMessage('İstek iptal edildi.', 'bot');
+            } else {
+                console.error('An error occurred:', err);
                 this.ui.appendMessage('Sunucu hatası: ' + String(err), 'bot');
             }
             // Hata durumunda durumu sıfırla
@@ -1029,12 +1040,12 @@ setupWebSocket(sessionId, placeholderEl) {
 
             if (result.status === 'success') {
                 const reply = result.output || 'Analiz tamamlandı ancak sonuç boş.';
-                this.conversation.updateConversation(this.conversation.currentConversationId, { role: 'bot', content: reply });
+                const rawData = result.rawAdmetData || result.rawComparisonData;
+                this.conversation.updateConversation(this.conversation.currentConversationId, { role: 'bot', content: reply }, rawData);
 
                 await this.markdown.typeWriteMarkdown(contentEl, reply, 0.1, () => this.ui.smartScroll());
                 
                 // Hem tekli analiz hem de karşılaştırma sonuçlarını kontrol et
-                const rawData = result.rawAdmetData || result.rawComparisonData;
                 if (rawData) {
                     const scriptEl = DOMUtils.create('script', { 
                         type: 'application/json', 
@@ -1125,8 +1136,12 @@ setupWebSocket(sessionId, placeholderEl) {
                 this.ui.setInputsEnabled(true);
             }
         } catch (err) {
-            if (err.name !== 'AbortError') {
-                this.ui.removeThinkingIndicator(typingEl);
+            this.ui.removeThinkingIndicator(typingEl);
+            // AbortError'u veya özel "Request aborted" mesajını daha zarif bir şekilde işle
+            if (err.name === 'AbortError' || err.message === 'Request aborted') {
+                console.log('Comparison request was aborted by the user.');
+                this.ui.appendMessage('Karşılaştırma isteği iptal edildi.', 'bot');
+            } else {
                 this.ui.appendMessage('Sunucu hatası: ' + String(err), 'bot');
             }
             // Hata durumunda temizlik
@@ -1792,25 +1807,35 @@ setupWebSocket(sessionId, placeholderEl) {
             // Konuşma mesajlarını yükle
             conversation.messages.forEach(msg => {
                 if (msg.role === 'user') {
-                    // Kullanıcı mesajları: formatı koru
                     this.ui.appendMessage(msg.content, msg.role);
                 } else {
-                    // Bot mesajları: markdown olarak render et
+                    // Bot mesajları için temel elementleri oluştur
                     const botMessageContainer = DOMUtils.create('div', { className: 'message bot' });
                     const contentEl = DOMUtils.create('div', { 
                         className: 'message-content',
                         innerHTML: this.markdown.renderToHtml(msg.content)
                     });
                     const actionsEl = DOMUtils.create('div', { className: 'message-actions' });
+                    
                     botMessageContainer.appendChild(actionsEl);
                     botMessageContainer.appendChild(contentEl);
                     this.ui.elements.messagesEl.appendChild(botMessageContainer);
 
-                    // Final enhancements
+                    // Standart geliştirmeleri uygula (syntax highlighting, copy buttons, charts from markdown)
                     this.markdown.applySyntaxHighlighting(contentEl);
                     this.markdown.addCopyButtons(contentEl);
                     this.renderAdmetChart(contentEl);
-                    this.addExportButtons(botMessageContainer);
+
+                    // Eğer kaydedilmiş ham veri varsa, script'i ve export butonlarını ekle
+                    if (msg.rawData) {
+                        const scriptEl = DOMUtils.create('script', {
+                            type: 'application/json',
+                            id: 'admet-raw-data',
+                            textContent: JSON.stringify(msg.rawData)
+                        });
+                        botMessageContainer.appendChild(scriptEl);
+                        this.addExportButtons(botMessageContainer);
+                    }
                 }
             });
 
@@ -1819,6 +1844,9 @@ setupWebSocket(sessionId, placeholderEl) {
 
             // Aktif konuşmayı güncelle
             this.renderConversationHistory();
+
+            // Inputları etkinleştir
+            this.ui.setInputsEnabled(true);
         }
     }
 

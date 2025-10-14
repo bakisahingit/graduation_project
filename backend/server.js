@@ -15,20 +15,22 @@ import { formatAdmetReport } from './src/utils/formatters.js';
 import { admetContextPrompt } from './src/utils/constants.js';
 
 
-async function processSingleAnalysis(sessionId, data) {
+async function processSingleAnalysis(sessionId, data, selected_parameters) {
     if (!data || !data.smiles) { /* ... hata kontrolü ... */ return; }
 
-    const summaryCacheKey = `summary_cache:${data.smiles}`;
+    const paramsKey = (selected_parameters && selected_parameters.length > 0) ? JSON.stringify(selected_parameters.sort()) : 'all';
+    const summaryCacheKey = `summary_cache:${data.smiles}:${paramsKey}`;
+
     try {
         const cachedSummary = await redisClient.get(summaryCacheKey);
         if (cachedSummary) {
-            console.log(`✅✅ Cache hit for FINAL SUMMARY: ${data.smiles}. Sending instantly.`);
+            console.log(`✅✅ Cache hit for FINAL SUMMARY: ${data.smiles} with params ${paramsKey}. Sending instantly.`);
             notifyClient(sessionId, { status: 'success', output: cachedSummary, rawAdmetData: data });
             return;
         }
     } catch (e) { console.error("Summary cache check failed:", e); }
 
-    console.log(`Summary not cached for ${data.smiles}. Generating with LLM...`);
+    console.log(`Summary not cached for ${data.smiles} with params ${paramsKey}. Generating with LLM...`);
     
     try {
         let admetReportText = `Molecule: ${data.moleculeName || 'N/A'}\nSMILES: ${data.smiles}\nOverall Risk Score: ${data.riskScore?.toFixed(1) || 'N/A'}\n\nPredictions:\n`;
@@ -40,17 +42,21 @@ async function processSingleAnalysis(sessionId, data) {
 
         if (typeof admetContextPrompt !== 'string') { throw new Error("admetContextPrompt is not a valid string."); }
 
+        const propertiesToConsider = (selected_parameters && selected_parameters.length > 0) ? selected_parameters : ['Ames', 'hERG', 'DILI', 'HIA', 'BBB'];
+        const focusInstruction = `Özellikle şu parametrelere odaklan: ${propertiesToConsider.join(', ')}.`;
+
         // ★★★ YENİ TEKLİ ANALİZ PROMPT'U ★★★
         const finalMessage = `
 Sen, ADMET verilerini yorumlayan uzman bir farmakoloji asistanısın. Aşağıdaki ham ADMET raporunu bir ilaç kimyageri için profesyonelce, anlaşılır ve tamamen Türkçe olarak yorumlayacaksın. Cevabını aşağıdaki formata göre yapılandır:
 
 1.  **Genel Değerlendirme:** Molekülün risk profilini (örneğin, "düşük riskli ve umut verici", "orta riskli ve dikkatli olunması gereken", "yüksek riskli") tek bir cümleyle özetle.
-2.  **Kritik Bulgular:** En önemli 3-5 bulguyu maddeler halinde listele. Özellikle toksisite (Ames, hERG, DILI) ve emilim (HIA, BBB) gibi bir ilacın geleceğini belirleyecek en kritik özelliklere odaklan. Her maddenin ne anlama geldiğini kısaca açıkla (örn: "hERG inhibisyon riski düşüktür, bu da kardiyak güvenlik açısından çok olumludur.").
+2.  **Kritik Bulgular:** En önemli 3-5 bulguyu maddeler halinde listele. ${focusInstruction} Her maddenin ne anlama geldiğini kısaca açıkla (örn: "hERG inhibisyon riski düşüktür, bu da kardiyak güvenlik açısından çok olumludur.").
 3.  **Sonuç:** Molekülün ilaç adayı olma potansiyeli hakkında genel bir sonuç paragrafı yaz.
 
 ADMET ANALYSIS REPORT:
 ---
 ${admetReportText}`;
+
 
         const messages = [
             { role: 'system', content: admetContextPrompt },
@@ -58,7 +64,8 @@ ${admetReportText}`;
         ];
 
         const completion = await getChatCompletion(messages);
-        const llmContent = completion.choices[0].message.content;
+        let llmContent = completion.choices[0].message.content;
+        llmContent = llmContent.replace(/<\｜begin of sentence\｜>/g, '').trim();
 
         await redisClient.set(summaryCacheKey, llmContent, { EX: 86400 });
         notifyClient(sessionId, { status: 'success', output: llmContent, rawAdmetData: data });
@@ -116,7 +123,8 @@ ${dataSummary}`;
         ];
         
         const completion = await getChatCompletion(messages);
-        const llmContent = completion.choices[0].message.content;
+        let llmContent = completion.choices[0].message.content;
+		llmContent = llmContent.replace(/<\｜begin of sentence\｜>/g, '').trim();
         notifyClient(sessionId, { status: 'success', output: llmContent, rawComparisonData: finalBatch });
 
     } catch (llmError) {
@@ -144,7 +152,7 @@ app.use('/api/chat', chatRoutes);
 
 // Worker'dan gelen görev tamamlama bildirimlerini işleyen endpoint
 app.post('/api/task-complete', async (req, res) => {
-    const { sessionId, status, data, type, identifier } = req.body;
+    const { sessionId, status, data, type, identifier, selected_parameters } = req.body;
     if (!sessionId) {
         return res.status(400).json({ message: 'Session ID is required.' });
     }
@@ -179,14 +187,15 @@ app.post('/api/task-complete', async (req, res) => {
         }
     } else { // Tekli analiz
         if (status === 'success') {
-            // Ham ADMET verisini cache'le
+            // Ham ADMET verisini parametrelerle birlikte cache'le
             if (data && data.smiles) {
-                const cacheKey = `admet_cache:${data.smiles}`;
+                const paramsKey = (selected_parameters && selected_parameters.length > 0) ? JSON.stringify(selected_parameters.sort()) : 'all';
+                const cacheKey = `admet_cache:${data.smiles}:${paramsKey}`;
                 await redisClient.set(cacheKey, JSON.stringify(data), { EX: 86400 });
-                console.log(`Saved raw ADMET data to cache for ${data.smiles}`);
+                console.log(`Saved raw ADMET data to cache for ${data.smiles} with params ${paramsKey}`);
             }
             // Özetleme ve bildirme işini merkezi fonksiyona devret
-            await processSingleAnalysis(sessionId, data);
+            await processSingleAnalysis(sessionId, data, selected_parameters);
         } else {
             notifyClient(sessionId, {
                 status: 'error',

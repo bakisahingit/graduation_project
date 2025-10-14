@@ -57,7 +57,7 @@ router.post('/', async (req, res) => {
         const completion = await getChatCompletion(messages);
         
         const llmContent = completion.choices[0].message.content;
-        const cleanedContent = llmContent.replace(/!<\｜begin of sentence｜>/g, '').replace(/!<\｜end of sentence｜>/g, '');
+        const cleanedContent = llmContent.replace(/<\｜begin of sentence\｜>/g, '').replace(/<\｜end of sentence\｜>/g, '');
 
         if (!cleanedContent || cleanedContent.trim() === '') {
             return res.json({ output: "I'm sorry, but I received an empty response from the model. Please try again." });
