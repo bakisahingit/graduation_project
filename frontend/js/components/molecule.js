@@ -26,6 +26,15 @@ export class MoleculeComponent {
             this.showHydrogens = false;
             // Attach pan/zoom listeners
             this._attachCanvasInteractions();
+
+            // Keep canvas resolution in sync with container size
+            window.addEventListener('resize', () => {
+                if (!this.drawer) return;
+                this.drawer._adjustCanvasForHiDPI();
+                if (this.drawer.currentGraph) {
+                    this.drawer.parseAndDrawFromGraph(this.drawer.currentGraph);
+                }
+            });
         }
     }
 
@@ -200,6 +209,11 @@ export class MoleculeComponent {
         const canvas = this.canvas;
         const error = DOMUtils.select('#molecule-error');
         
+        // Ensure canvas resolution matches current CSS size before any draw
+        if (this.drawer && typeof this.drawer._adjustCanvasForHiDPI === 'function') {
+            this.drawer._adjustCanvasForHiDPI();
+        }
+
         // Tüm elementleri gizle
         if (placeholder) placeholder.style.display = 'none';
         if (canvas) canvas.style.display = 'none';
@@ -208,7 +222,14 @@ export class MoleculeComponent {
         if (smiles) {
             if (this.validateSMILES(smiles)) {
                 if (this.drawer && this.drawer.parseAndDraw(smiles)) {
-                    if (canvas) canvas.style.display = 'block';
+                    if (canvas) {
+                        canvas.style.display = 'block';
+                        // After becoming visible, recompute size and redraw to fill container
+                        this.drawer._adjustCanvasForHiDPI();
+                        if (this.drawer.currentGraph) {
+                            this.drawer.parseAndDrawFromGraph(this.drawer.currentGraph);
+                        }
+                    }
                 } else {
                     this.showPlaceholder(smiles, true);
                 }
@@ -707,6 +728,8 @@ class MoleculeDrawer {
      * @returns {boolean}
      */
     parseAndDraw(smiles) {
+        // Adjust canvas to current display size for crisp rendering
+        this._adjustCanvasForHiDPI();
         this.clear();
 
         // Background gradient for depth
@@ -734,6 +757,9 @@ class MoleculeDrawer {
             this._checkValence(graph);
 
             this._layoutGraph(graph);
+
+            // keep reference to original smiles for potential redraws
+            graph.smiles = smiles;
 
             // Save current graph for pan/zoom interactions
             this.currentGraph = graph;
@@ -782,7 +808,8 @@ class MoleculeDrawer {
      */
     parseAndDrawFromGraph(graph) {
         if (!graph) return false;
-
+        // Adjust canvas to current display size in case container changed
+        this._adjustCanvasForHiDPI();
         this.clear();
         // draw background
         this.ctx.fillStyle = 'rgba(26, 26, 26, 0.0)';

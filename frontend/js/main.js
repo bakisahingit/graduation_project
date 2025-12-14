@@ -2880,6 +2880,7 @@ closeCompareModal() {
 
         // Show a lightweight loading state
         const content = infoPanel.querySelector('.info-content');
+        const headerLink = document.getElementById('pubchem-open-link');
         if (!content) return;
         const prevHTML = content.innerHTML;
         content.innerHTML = `<div class="info-item"><span class="info-label">PubChem:</span><span class="info-value">Yükleniyor...</span></div>`;
@@ -2918,6 +2919,18 @@ closeCompareModal() {
 
             const desc = data.description ? `<div class="info-item"><span class="info-label">Açıklama:</span><span class="info-value">${DOMUtils.escapeHtml(data.description)}</span></div>` : '';
 
+            // Update sticky header "PubChem'de aç" link
+            if (headerLink) {
+                const cid = rows[0][1];
+                if (cid && cid !== '-') {
+                    headerLink.href = `https://pubchem.ncbi.nlm.nih.gov/compound/${cid}`;
+                    headerLink.style.visibility = 'visible';
+                } else {
+                    headerLink.href = `https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(smiles)}`;
+                    headerLink.style.visibility = 'visible';
+                }
+            }
+
             content.innerHTML = `
                 <div class="info-item"><span class="info-label">PubChem</span><span class="info-value">CID ${rows[0][1]}</span></div>
                 ${desc}
@@ -2925,14 +2938,16 @@ closeCompareModal() {
                     const value = k === 'Formül' ? this.formatMolecularFormula(v) : DOMUtils.escapeHtml(String(v));
                     return `<div class="info-item"><span class="info-label">${k}:</span><span class="info-value">${value}</span></div>`;
                 }).join('')}
-                <div class="info-item"><span class="info-label">Bağlantı:</span><span class="info-value"><a href="https://pubchem.ncbi.nlm.nih.gov/compound/${rows[0][1]}" target="_blank" rel="noopener">PubChem'de aç</a></span></div>
             `;
         } catch (err) {
             console.error('PubChem inline render error', err);
             // Restore previous content on failure and show link instead of forcing new tab
-            content.innerHTML = prevHTML + `
-                <div class="info-item"><span class="info-label">PubChem:</span><span class="info-value"><a href="https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(smiles)}" target="_blank" rel="noopener">PubChem'de aç</a></span></div>
-            `;
+            content.innerHTML = prevHTML;
+            const headerLink = document.getElementById('pubchem-open-link');
+            if (headerLink) {
+                headerLink.href = `https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(smiles)}`;
+                headerLink.style.visibility = 'visible';
+            }
         }
     }
 

@@ -471,3 +471,179 @@
     border-top: 1px solid var(--border-secondary);
     background: rgba(24, 24, 27, 0.5); /* zinc-900 with opacity */
 }
+
+/* ============================================= */
+/* === SETTINGS MODALI ÖZEL STİLLERİ === */
+/* ============================================= */
+
+/* Başlık alanı (settings-specific; modal-header benzeri) */
+.settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-5) var(--space-6);
+    border-bottom: 1px solid var(--border-secondary);
+    flex-shrink: 0;
+}
+
+.settings-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: var(--font-semibold);
+    color: var(--accent);
+}
+
+.settings-close {
+    background: transparent;
+    border: none;
+    color: var(--gray-300);
+    padding: var(--space-2);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: var(--transition-normal);
+    display: flex;
+}
+
+.settings-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+/* Navigasyon (Modeller / Kısayollar) */
+.settings-navigation {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-6);
+    border-bottom: 1px solid var(--border-secondary);
+}
+
+.settings-nav-btn {
+    background: transparent;
+    border: 1px solid var(--border-accent);
+    color: var(--gray-300);
+    padding: 8px 12px;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: var(--transition-normal);
+    font-size: var(--text-sm);
+}
+
+.settings-nav-btn:hover {
+    background: var(--bg-glass);
+    border-color: var(--border-accent);
+    color: var(--gray-100);
+}
+
+.settings-nav-btn.active {
+    background: var(--bg-glass);
+    border-color: rgba(79,195,247,0.3);
+    color: var(--primary-light);
+    box-shadow: 0 4px 12px rgba(79,195,247,0.12);
+}
+
+/* İçerik alanı (modal-body benzeri) */
+.settings-body {
+    flex-grow: 1;
+    padding: var(--space-6);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.settings-tab {
+    display: block; /* Görünürlük JS ile yönetiliyor (style.display) */
+}
+
+/* Modeller sekmesi: arama ve liste */
+.models-search-container {
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border-accent);
+}
+
+.models-search {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    background: #27272a; /* zinc-800 */
+    border: 1px solid var(--border-accent);
+    border-radius: var(--radius-md);
+    color: var(--accent);
+    font-size: var(--text-sm);
+    transition: var(--transition-normal);
+}
+
+.models-search:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.15);
+}
+
+.models-search::placeholder {
+    color: var(--gray-500);
+}
+
+.models-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: var(--space-2);
+    max-height: 55vh;
+    overflow-y: auto;
+}
+
+.models-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.models-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+
+/* Model öğesi içindeki rozet ve anahtar */
+.model-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 8px;
+    font-size: 12px;
+    line-height: 1;
+    border-radius: 9999px;
+    background: rgba(79,195,247,0.15);
+    color: var(--primary);
+}
+
+.model-switch {
+    position: relative;
+    width: 38px;
+    height: 22px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid var(--border-accent);
+    cursor: pointer;
+    transition: var(--transition-normal);
+}
+
+.model-switch::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 2px;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    border-radius: 9999px;
+    background: #fff;
+    transition: var(--transition-normal);
+}
+
+.model-switch.active {
+    background: rgba(79,195,247,0.35);
+    border-color: rgba(79,195,247,0.5);
+}
+
+.model-switch.active::after {
+    left: 18px;
+    background: #e6f7ff;
+}

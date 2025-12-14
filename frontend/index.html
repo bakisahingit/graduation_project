@@ -245,9 +245,9 @@
 	</div>
 
 	<!-- Settings Modal -->
-	<div class="settings-modal" id="settings-modal">
-		<div class="settings-overlay" id="settings-overlay"></div>
-		<div class="settings-content">
+	<div class="modal" id="settings-modal">
+		<div class="modal-overlay" id="settings-overlay"></div>
+		<div class="modal-content settings-content">
 			<div class="settings-header">
 				<h2 class="settings-title">Ayarlar</h2>
 				<button class="settings-close" id="settings-close">
@@ -357,7 +357,11 @@
 					</div>
 					<div class="molecule-sidebar">
 					<div class="molecule-info-panel" id="molecule-info-panel">
-						<h3 class="info-title">Molekül Özellikleri</h3>
+						<div class="info-header">
+							<h3 class="info-title">Molekül Özellikleri</h3>
+							<a id="pubchem-open-link" class="info-open-btn" href="#" target="_blank" rel="noopener">PubChem'de aç</a>
+						</div>
+						<div class="input-divider info-divider"></div>
 						<div class="info-content">
 							<!-- Info content intentionally left empty. PubChem results will populate here when available. -->
 						</div>
