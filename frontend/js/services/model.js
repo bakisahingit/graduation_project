@@ -18,14 +18,12 @@ export class ModelService {
      */
     loadActiveModels() {
         this.activeModels = StorageUtils.loadActiveModels();
-        
+
         // Eğer hiç aktif model yoksa, varsayılan modelleri aktif et
         if (this.activeModels.size === 0) {
             const defaultModels = [
-                "deepseek/deepseek-chat-v3.1:free",
-                "openai/gpt-oss-20b:free",
-                "meta-llama/llama-3.3-70b-instruct:free",
-                "google/gemini-2.0-flash-exp:free"
+                "AdmetGPT Fast",
+                "AdmetGPT High"
             ];
             defaultModels.forEach(model => this.activeModels.add(model));
             this.saveActiveModels();

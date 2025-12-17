@@ -10,8 +10,8 @@ import { randomUUID } from 'crypto';
 import { sendTaskToQueue } from '../services/queueService.js';
 import redisClient from '../services/redisService.js';
 import { extractChemicalWithLLM, translateWithLLM, getChatCompletion } from '../services/llmService.js';
-import { getSmilesFromName   } from '../services/pubchemService.js';
-import { admetContextPrompt } from '../utils/constants.js';
+import { getSmilesFromName } from '../services/pubchemService.js';
+import { mainSystemPrompt, admetContextPrompt } from '../utils/constants.js';
 import { formatAdmetReport } from '../utils/formatters.js';
 import { extractChemicalNameByRegex } from '../utils/nameResolvers.js';
 
@@ -37,7 +37,7 @@ export async function extractSmilesOnly(message, model = null) {
     if (chemicalName && !smiles) {
         // Önce direkt olarak kimyasal ismi dene
         smiles = await getSmilesFromName(chemicalName);
-        
+
         // Eğer başarısız olursa, çeviri yap
         if (!smiles) {
             const englishName = await translateWithLLM(chemicalName, model);
@@ -81,7 +81,7 @@ async function getAdmetDataForIdentifier(identifier) {
         // We could add a more robust SMILES validation here if needed.
         return { identifier, error: 'Could not resolve to a valid molecule.' };
     }
-    
+
     const admetData = await getAdmetPredictions(smiles, name || identifier);
     if (!admetData) {
         return { identifier, error: 'ADMET analysis failed.' };
@@ -96,7 +96,7 @@ async function handleAdmetTool(message, model = null, properties = null) {
     // 1. Extract chemical name or SMILES
     // Strategy: Try Regex first, then fallback to LLM.
     chemicalName = extractChemicalNameByRegex(message);
-    
+
     if (!chemicalName) {
         console.log("Regex extraction failed, trying LLM-based extraction...");
         const extractedEntity = await extractChemicalWithLLM(message, model);
@@ -135,7 +135,7 @@ async function handleAdmetTool(message, model = null, properties = null) {
         identifier: chemicalName || smiles,
         selected_parameters: properties
     };
-    
+
     // YENİ MANTIK: Bu fonksiyonun tek görevi görevi kuyruğa göndermek.
     // Cache kontrolü ve özetleme gibi yavaş işler ARTIK BURADA DEĞİL.
     // Onların hepsi server.js'de, arka planda yapılacak.
@@ -161,7 +161,7 @@ async function handleComparisonRequest(molecules, model, properties) {
 
     const resolutionPromises = molecules.map(async (identifier) => {
         let name = identifier;
-        
+
         const englishName = await translateWithLLM(identifier, model);
         if (englishName.toLowerCase() !== identifier.toLowerCase()) {
             console.log(`LLM translated "${identifier}" to "${englishName}" for comparison.`);
@@ -172,7 +172,7 @@ async function handleComparisonRequest(molecules, model, properties) {
         if (foundSmiles) {
             return { type: 'comparison', name, smiles: foundSmiles, sessionId, identifier };
         }
-        
+
         const isSmilesLike = /^[A-Za-z0-9@+\-\[\]()=#\\/%.]+$/.test(identifier);
         if (isSmilesLike) {
             return { type: 'comparison', name: identifier, smiles: identifier, sessionId, identifier };
@@ -213,7 +213,10 @@ export async function handleChatMessage(message, conversationHistory, tools, mod
         return handleAdmetTool(message, model, tools.properties);
     }
 
-    let systemPrompt = "You are a helpful assistant.";
+    // Varsayılan olarak AdmetGPT ana system prompt'unu kullan
+    let systemPrompt = mainSystemPrompt;
+
+    // Eğer konuşma geçmişinde ADMET raporu varsa, daha spesifik prompt kullan
     const hasAdmetReportInHistory = conversationHistory.some(
         (msg) => msg.role === 'assistant' && msg.content.includes('## 🧪 ADMET Analysis Report:')
     );
@@ -221,7 +224,7 @@ export async function handleChatMessage(message, conversationHistory, tools, mod
     if (hasAdmetReportInHistory) {
         systemPrompt = admetContextPrompt;
     }
-    
+
     // `handleAdmetTool` sync cevap dönebileceği için bu fonksiyonun çıktısını da ona göre ayarlıyoruz.
     const result = await (tools.active === 'admet' ? handleAdmetTool(message, model, tools.properties) : Promise.resolve({ systemPrompt, finalMessage: message }));
 

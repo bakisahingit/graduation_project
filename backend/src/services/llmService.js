@@ -6,7 +6,7 @@
 // - Başarılı LLM sonuçları 24 saatliğine Redis'e kaydediliyor.
 // - Rate limit hatalarına karşı yeniden deneme mekanizması eklendi.
 
-import { openai, config } from '../config/index.js';
+import { openai, config, resolveModel } from '../config/index.js';
 import { entityExtractionPrompt, translationPrompt } from '../utils/constants.js';
 import redisClient from './redisService.js'; // Redis client'ı import et
 
@@ -30,7 +30,7 @@ async function withRetry(fn, retries = MAX_RETRIES, delay = INITIAL_DELAY_MS) {
 
 export async function extractChemicalWithLLM(userMessage, model = null) {
     const cacheKey = `llm_extract:${userMessage.trim().toLowerCase()}`;
-    
+
     try {
         const cachedExtraction = await redisClient.get(cacheKey);
         if (cachedExtraction) {
@@ -40,11 +40,11 @@ export async function extractChemicalWithLLM(userMessage, model = null) {
     } catch (e) {
         console.error("LLM extraction cache check failed:", e);
     }
-    
+
     console.log("Attempting to extract chemical with LLM...");
-    const selectedModel = model || config.llmModel;
+    const selectedModel = resolveModel(model);
     console.log(`Using model for extraction: ${selectedModel}`);
-    
+
     const apiCall = () => openai.chat.completions.create({
         model: selectedModel,
         messages: [{ role: 'system', content: entityExtractionPrompt }, { role: 'user', content: userMessage }],
@@ -61,7 +61,7 @@ export async function extractChemicalWithLLM(userMessage, model = null) {
         }
 
         const rawResponse = completion.choices[0].message.content;
-        
+
         let result;
         try {
             const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
@@ -80,7 +80,7 @@ export async function extractChemicalWithLLM(userMessage, model = null) {
         } catch (e) {
             console.error("LLM extraction cache set failed:", e);
         }
-        
+
         return result;
     } catch (error) {
         console.error("LLM-based extraction failed after retries:", error);
@@ -103,9 +103,9 @@ export async function translateWithLLM(turkishName, model = null) {
     }
 
     console.log(`Translating "${turkishName}" to English with LLM...`);
-    const selectedModel = model || config.llmModel;
+    const selectedModel = resolveModel(model);
     console.log(`Using model for translation: ${selectedModel}`);
-    
+
     const systemInstruction = "Translate the following Turkish chemical name to English. Respond with only a JSON object like this: {\"englishName\": \"...\"}";
     const userExample = `Turkish: ${turkishName}`;
 
@@ -128,7 +128,7 @@ export async function translateWithLLM(turkishName, model = null) {
         }
 
         const rawResponse = completion.choices[0].message.content;
-        
+
         let parsedResponse;
         try {
             const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
@@ -143,7 +143,7 @@ export async function translateWithLLM(turkishName, model = null) {
         }
 
         const translatedName = parsedResponse.englishName || turkishName;
-        
+
         if (translatedName !== turkishName) {
             try {
                 await redisClient.set(cacheKey, translatedName, { EX: LLM_CACHE_TTL_SECONDS });
@@ -151,7 +151,7 @@ export async function translateWithLLM(turkishName, model = null) {
                 console.error("LLM translation cache set failed:", e);
             }
         }
-        
+
         console.log(`LLM translation result for "${turkishName}": "${translatedName}"`);
         return translatedName;
     } catch (error) {
@@ -162,7 +162,7 @@ export async function translateWithLLM(turkishName, model = null) {
 
 export async function getChatCompletion(messages, model = null) {
     console.log("Generating final response...");
-    const selectedModel = model || config.llmModel;
+    const selectedModel = resolveModel(model);
     console.log(`Using model: ${selectedModel}`);
 
     const apiCall = () => openai.chat.completions.create({ model: selectedModel, messages });

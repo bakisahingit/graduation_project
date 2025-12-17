@@ -4,7 +4,8 @@
  */
 
 /* Input wrapper */
-.input-wrapper, .welcome-input-wrapper {
+.input-wrapper,
+.welcome-input-wrapper {
     width: 70%;
     max-width: 800px;
     /* local gaps: form-divider for actions/standard dividers, chips-divider for chip-related spacing */
@@ -16,7 +17,8 @@
     backdrop-filter: blur(calc(var(--glass-blur) - 2px));
     -webkit-backdrop-filter: blur(calc(var(--glass-blur) - 2px));
     box-shadow: var(--shadow-lg), inset 0 1px 0 var(--gray-950);
-    border: 1px solid var(--border-secondary);
+    /* More visible border */
+    border: 1px solid rgba(255, 255, 255, 0.12);
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -40,11 +42,13 @@
 .smiles-input-section .welcome-input-wrapper {
     width: 90%;
     max-width: 980px;
-    margin: 0 auto; /* center horizontally */
+    margin: 0 auto;
+    /* center horizontally */
 }
 
 /* ADMET tool aktif olduğunda input wrapper border rengi */
-.input-wrapper.admet-active, .welcome-input-wrapper.admet-active {
+.input-wrapper.admet-active,
+.welcome-input-wrapper.admet-active {
     border-color: rgba(227, 130, 248, 0.5);
     box-shadow: var(--shadow-lg), inset 0 1px 0 var(--gray-950), 0 0 0 1px rgba(227, 130, 248, 0.2);
 }
@@ -56,21 +60,25 @@
     padding: var(--space-1) 0;
     display: flex;
     flex-direction: column;
-    justify-content: center; /* vertically center textarea between dividers */
+    justify-content: center;
+    /* vertically center textarea between dividers */
 }
 
 /* File chips container */
 .file-chips {
-    display: none; /* hidden until JS enables when files exist */
+    display: none;
+    /* hidden until JS enables when files exist */
     flex-wrap: wrap;
     gap: 6px;
-    margin: var(--chips-divider-gap) 0; /* chips ile divider arasına kontrollü boşluk ver */
+    margin: var(--chips-divider-gap) 0;
+    /* chips ile divider arasına kontrollü boşluk ver */
 }
 
 /* chips-divider: hidden by default; only show when chips exist */
 .chips-divider {
     display: none;
-    margin: var(--chips-divider-gap) 0; /* chips için daha geniş boşluk */
+    margin: var(--chips-divider-gap) 0;
+    /* chips için daha geniş boşluk */
 }
 
 /* Single file chip */
@@ -84,8 +92,10 @@
     border: 1px solid var(--border-secondary);
     color: var(--gray-200);
     font-size: var(--text-xs);
-    max-width: 150px; /* limit chip width so long names truncate */
-    min-width: 0; /* allow children to shrink */
+    max-width: 150px;
+    /* limit chip width so long names truncate */
+    min-width: 0;
+    /* allow children to shrink */
 }
 
 .file-chip .file-ext {
@@ -100,7 +110,8 @@
     white-space: nowrap;
     display: block;
     flex: 1 1 auto;
-    min-width: 0; /* necessary for flex children to truncate */
+    min-width: 0;
+    /* necessary for flex children to truncate */
 }
 
 .file-chip .file-ext {
@@ -113,7 +124,8 @@
     justify-content: center;
     width: 18px;
     height: 18px;
-    flex: 0 0 18px; /* prevent shrinking when chip is narrow */
+    flex: 0 0 18px;
+    /* prevent shrinking when chip is narrow */
     min-width: 18px;
     min-height: 18px;
     border-radius: 50%;
@@ -121,13 +133,14 @@
     border: 1px solid transparent;
     color: var(--gray-400);
     cursor: pointer;
-    padding: 0; /* ensure shape stays circular */
+    padding: 0;
+    /* ensure shape stays circular */
 }
 
 .file-chip .remove-chip:hover {
     background: var(--bg-glass-hover);
-    border-color: rgba(255,80,80,0.98);
-    color: rgba(255,80,80,0.98);
+    border-color: rgba(255, 80, 80, 0.98);
+    color: rgba(255, 80, 80, 0.98);
 }
 
 .file-chip .remove-chip:focus {
@@ -139,7 +152,8 @@
     width: 100%;
     height: 1px;
     background: linear-gradient(90deg, transparent, var(--border-secondary), transparent);
-    margin: var(--form-divider-gap) 0; /* eşit boşluk: form değişkeninden al */
+    margin: var(--form-divider-gap) 0;
+    /* eşit boşluk: form değişkeninden al */
 }
 
 /* Input actions */
@@ -189,7 +203,7 @@
 /* Molekül çizme butonu için özel hover efekti */
 .add-option[id*="molecule-draw"]:hover:not(:disabled) {
     background: var(--bg-glass-hover);
-    border-color: rgba(76,175,80,0.3);
+    border-color: rgba(76, 175, 80, 0.3);
     color: var(--secondary-light);
 }
 
@@ -208,10 +222,11 @@
 }
 
 /* Tools dropdown'ı tools butonunun tam altında konumlandır */
-.tools-btn + .tools-dropdown {
+.tools-btn+.tools-dropdown {
     position: absolute;
     bottom: 100%;
-    left: 40px; /* Tools butonunun sol kenarı hizası */
+    left: 40px;
+    /* Tools butonunun sol kenarı hizası */
     margin-bottom: var(--space-2);
 }
 
@@ -226,19 +241,19 @@
 
 .tool-option:active:not(:disabled) {
     background: var(--bg-glass-hover);
-    border-color: rgba(255,255,255,0.15);
+    border-color: rgba(255, 255, 255, 0.15);
     transform: scale(0.98);
 }
 
 .tool-option:focus-visible {
-    outline: 2px solid rgba(255,255,255,0.3);
+    outline: 2px solid rgba(255, 255, 255, 0.3);
     outline-offset: 2px;
 }
 
 .tool-option:disabled {
     background: transparent;
     border-color: transparent;
-    color: rgba(255,255,255,0.3);
+    color: rgba(255, 255, 255, 0.3);
     cursor: not-allowed;
 }
 
@@ -283,16 +298,16 @@
 
 .select-trigger-input:hover {
     background: var(--bg-glass);
-    border-color: rgba(255,255,255,0.2);
+    border-color: rgba(255, 255, 255, 0.2);
     color: var(--gray-100);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(255,255,255,0.1);
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
 }
 
 .select-trigger-input.active {
     background: var(--bg-glass-hover);
-    border-color: rgba(255,255,255,0.3);
-    box-shadow: 0 4px 12px rgba(255,255,255,0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
 }
 
 .select-value-input {
@@ -417,13 +432,13 @@
 
 .select-add-model-btn:hover:not(:disabled) {
     background: var(--bg-glass-hover);
-    border-color: rgba(79,195,247,0.3);
+    border-color: rgba(79, 195, 247, 0.3);
     color: var(--primary-light);
 }
 
 .select-add-model-btn:active:not(:disabled) {
     background: var(--bg-glass);
-    border-color: rgba(79,195,247,0.4);
+    border-color: rgba(79, 195, 247, 0.4);
     transform: scale(0.98);
 }
 
@@ -435,7 +450,8 @@
 }
 
 /* Textarea */
-.input-wrapper textarea, .welcome-input-wrapper textarea {
+.input-wrapper textarea,
+.welcome-input-wrapper textarea {
     width: 100%;
     border: 0;
     outline: none;
@@ -445,35 +461,40 @@
     background: transparent;
     border-radius: var(--radius-lg);
     resize: none;
-    min-height: 20px;
-    max-height: 100px;
-    overflow-y: auto;
+    min-height: 30px;
+    max-height: 120px;
+    overflow-y: hidden;
     font-family: inherit;
     line-height: 1.3;
     scroll-margin-top: 20px;
     scroll-behavior: smooth;
 }
 
-.input-wrapper textarea::placeholder, .welcome-input-wrapper textarea::placeholder {
+.input-wrapper textarea::placeholder,
+.welcome-input-wrapper textarea::placeholder {
     color: var(--gray-500);
 }
 
 /* Textarea scrollbar */
-.input-wrapper textarea::-webkit-scrollbar, .welcome-input-wrapper textarea::-webkit-scrollbar {
+.input-wrapper textarea::-webkit-scrollbar,
+.welcome-input-wrapper textarea::-webkit-scrollbar {
     width: 6px;
 }
 
-.input-wrapper textarea::-webkit-scrollbar-track, .welcome-input-wrapper textarea::-webkit-scrollbar-track {
+.input-wrapper textarea::-webkit-scrollbar-track,
+.welcome-input-wrapper textarea::-webkit-scrollbar-track {
     background: var(--gray-900);
     border-radius: 3px;
 }
 
-.input-wrapper textarea::-webkit-scrollbar-thumb, .welcome-input-wrapper textarea::-webkit-scrollbar-thumb {
+.input-wrapper textarea::-webkit-scrollbar-thumb,
+.welcome-input-wrapper textarea::-webkit-scrollbar-thumb {
     background: var(--gray-700);
     border-radius: 3px;
 }
 
-.input-wrapper textarea::-webkit-scrollbar-thumb:hover, .welcome-input-wrapper textarea::-webkit-scrollbar-thumb:hover {
+.input-wrapper textarea::-webkit-scrollbar-thumb:hover,
+.welcome-input-wrapper textarea::-webkit-scrollbar-thumb:hover {
     background: var(--gray-500);
 }
 
@@ -509,7 +530,7 @@
 .select-trigger-sidebar.active {
     background: var(--gray-900);
     border-color: var(--border-focus);
-    box-shadow: 0 0 0 3px rgba(79,195,247,0.1);
+    box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.1);
 }
 
 .select-value-sidebar {
@@ -532,7 +553,7 @@
     top: 100%;
     left: 0;
     right: 0;
-    background: rgba(26,26,26,0.95);
+    background: rgba(26, 26, 26, 0.95);
     backdrop-filter: blur(20px);
     border: 1px solid var(--border-secondary);
     border-radius: var(--radius-xl);
@@ -569,12 +590,12 @@
 }
 
 .select-option-sidebar:hover {
-    background: rgba(79,195,247,0.2);
+    background: rgba(79, 195, 247, 0.2);
     color: var(--primary-light);
 }
 
 .select-option-sidebar.selected {
-    background: rgba(79,195,247,0.3);
+    background: rgba(79, 195, 247, 0.3);
     color: var(--primary);
     font-weight: var(--font-medium);
 }
@@ -591,7 +612,7 @@
     cursor: pointer;
     transition: var(--transition-normal);
     border-top: 1px solid var(--border-secondary);
-    background: rgba(79,195,247,0.05);
+    background: rgba(79, 195, 247, 0.05);
     display: flex;
     align-items: center;
     gap: var(--space-2);
@@ -601,7 +622,7 @@
 }
 
 .add-model-option:hover {
-    background: rgba(79,195,247,0.15);
+    background: rgba(79, 195, 247, 0.15);
     color: var(--primary-light);
 }
 
@@ -640,8 +661,8 @@
 
 .smiles-textarea:focus {
     outline: none;
-    border-color: rgba(76,175,80,0.5);
-    box-shadow: 0 0 0 3px rgba(76,175,80,0.1);
+    border-color: rgba(76, 175, 80, 0.5);
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
     background: var(--gray-900);
 }
 
@@ -651,35 +672,38 @@
 
 /* Responsive form adjustments */
 @media (max-width: 768px) {
-    .input-wrapper, .welcome-input-wrapper {
+
+    .input-wrapper,
+    .welcome-input-wrapper {
         width: 95%;
         padding: var(--space-1) var(--space-2);
     }
-    
-    .input-wrapper textarea, .welcome-input-wrapper textarea {
+
+    .input-wrapper textarea,
+    .welcome-input-wrapper textarea {
         font-size: var(--text-md);
         padding: 6px 10px;
     }
-    
+
     .input-actions {
         gap: var(--space-2);
     }
-    
+
     .add-dropdown {
         min-width: 180px;
         margin-bottom: var(--space-1);
     }
-    
+
     .add-option {
         padding: var(--space-2) var(--space-3);
         font-size: var(--text-xs);
     }
-    
+
     .tools-dropdown {
         min-width: 180px;
         margin-bottom: var(--space-1);
     }
-    
+
     .tool-option {
         padding: var(--space-2) var(--space-3);
         font-size: var(--text-xs);
@@ -687,45 +711,48 @@
 }
 
 @media (max-width: 520px) {
-    .input-wrapper, .welcome-input-wrapper {
+
+    .input-wrapper,
+    .welcome-input-wrapper {
         padding: 4px var(--space-3);
     }
-    
-    .input-wrapper textarea, .welcome-input-wrapper textarea {
+
+    .input-wrapper textarea,
+    .welcome-input-wrapper textarea {
         font-size: var(--text-base);
         padding: 4px 8px;
     }
-    
+
     .add-dropdown {
         min-width: 160px;
     }
-    
+
     .add-option {
         padding: var(--space-2);
         font-size: var(--text-xs);
         gap: var(--space-1);
     }
-    
+
     .add-option svg {
         width: 14px;
         height: 14px;
     }
-    
+
     .tools-dropdown {
         min-width: 160px;
     }
-    
+
     .tool-option {
         padding: var(--space-2);
         font-size: var(--text-xs);
         gap: var(--space-1);
     }
-    
+
     .tool-option-icon {
         width: 22px;
         height: 22px;
     }
-    
+
     .select-trigger-input {
         padding: var(--space-1);
         font-size: var(--text-xs);
@@ -733,37 +760,37 @@
         max-width: 120px;
         height: 28px;
     }
-    
+
     .custom-select-input {
         width: 120px;
         max-width: 120px;
     }
-    
+
     .select-arrow-input {
         width: 10px;
         height: 10px;
     }
-    
+
     .select-options-input {
         min-width: 120px;
         max-height: 150px;
     }
-    
+
     .select-option-input {
         padding: var(--space-1) var(--space-2);
         font-size: var(--text-xs);
     }
-    
+
     .select-add-model {
         padding: var(--space-1);
     }
-    
+
     .select-add-model-btn {
         padding: var(--space-1);
         font-size: var(--text-xs);
         gap: var(--space-1);
     }
-    
+
     .select-add-model-btn svg {
         width: 10px;
         height: 10px;

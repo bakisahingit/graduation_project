@@ -45,17 +45,51 @@ router.post('/', async (req, res) => {
         // Existing logic for synchronous LLM call
         const { systemPrompt, finalMessage } = result;
 
-        const messages = [...conversationHistory];
+        // Konuşma geçmişini kopyala ve filtrele
+        let messages = [...conversationHistory];
+
+        // Geçersiz veya boş mesajları temizle + rol normalizasyonu
+        messages = messages.filter(m => {
+            // role ve content olmalı
+            if (!m || !m.role || !m.content) return false;
+            // content boş olmamalı
+            if (typeof m.content !== 'string' || m.content.trim() === '') return false;
+            return true;
+        }).map(m => {
+            // 'bot' rolünü 'assistant'a çevir (frontend 'bot' kullanıyor)
+            const role = m.role === 'bot' ? 'assistant' : m.role;
+            // Sadece geçerli rolleri kabul et
+            if (!['user', 'assistant', 'system'].includes(role)) {
+                return null;
+            }
+            return { role, content: m.content };
+        }).filter(m => m !== null);
+
+        // System prompt'u ekle veya güncelle
         const systemPromptIndex = messages.findIndex(m => m.role === 'system');
         if (systemPromptIndex > -1) {
             messages[systemPromptIndex].content = systemPrompt;
         } else {
             messages.unshift({ role: 'system', content: systemPrompt });
         }
-        messages.push({ role: 'user', content: finalMessage });
+
+        // Mesajların son kullanıcı mesajını kontrol et
+        // Eğer son mesaj zaten mevcut mesajsa tekrar ekleme (frontend eklemiş olabilir)
+        const lastMessage = messages[messages.length - 1];
+        const isLastMessageSame = lastMessage &&
+            lastMessage.role === 'user' &&
+            lastMessage.content === finalMessage;
+
+        if (!isLastMessageSame) {
+            // Sadece son mesaj farklıysa ekle
+            messages.push({ role: 'user', content: finalMessage });
+        }
+
+        // Debug: Mesaj yapısını logla
+        console.log('Messages to send:', JSON.stringify(messages.map(m => ({ role: m.role, contentLength: m.content?.length || 0 })), null, 2));
 
         const completion = await getChatCompletion(messages);
-        
+
         const llmContent = completion.choices[0].message.content;
         const cleanedContent = llmContent.replace(/<\｜begin of sentence\｜>/g, '').replace(/<\｜end of sentence\｜>/g, '');
 
@@ -118,7 +152,7 @@ router.post('/extract-smiles', async (req, res) => {
 
     try {
         const result = await extractSmilesOnly(message, model);
-        
+
         if (result.success) {
             return res.json({
                 success: true,
@@ -135,9 +169,9 @@ router.post('/extract-smiles', async (req, res) => {
 
     } catch (err) {
         console.error('SMILES extraction failed', err);
-        return res.status(500).json({ 
+        return res.status(500).json({
             success: false,
-            error: String(err) 
+            error: String(err)
         });
     }
 });

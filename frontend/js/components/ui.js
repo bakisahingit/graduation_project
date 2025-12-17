@@ -24,7 +24,7 @@ export class UIComponent {
             messagesEl: DOMUtils.select('#messages'),
             form: DOMUtils.select('#chat-form'),
             input: DOMUtils.select('#chat-input'),
-            
+
             // Welcome screen elementleri
             welcomeScreen: DOMUtils.select('#welcome-screen'),
             chatInterface: DOMUtils.select('#chat-interface'),
@@ -32,11 +32,11 @@ export class UIComponent {
             welcomeInput: DOMUtils.select('#welcome-input'),
             welcomeSendBtn: DOMUtils.select('#welcome-send-btn'),
             chatSendBtn: DOMUtils.select('#chat-send-btn'),
-            
+
             // Input wrapper elementleri
             inputWrapper: DOMUtils.select('.input-wrapper'),
             welcomeInputWrapper: DOMUtils.select('.welcome-input-wrapper'),
-            
+
             // Sidebar elementleri
             sidebar: DOMUtils.select('#sidebar'),
             newChatBtn: DOMUtils.select('#new-chat-btn'),
@@ -48,7 +48,7 @@ export class UIComponent {
             // selectValueSidebar: DOMUtils.select('.select-value-sidebar'),
             // selectOptionsSidebar: DOMUtils.select('#select-options-sidebar'),
             historyList: DOMUtils.select('#history-list'),
-            
+
             // Settings modal elementleri
             settingsModal: DOMUtils.select('#settings-modal'),
             settingsOverlay: DOMUtils.select('#settings-overlay'),
@@ -57,7 +57,7 @@ export class UIComponent {
             modelsSearch: DOMUtils.select('#models-search'),
             addModelOption: DOMUtils.select('#add-model-option'),
             selectOptionsScroll: DOMUtils.select('#select-options-scroll'),
-            
+
             // Molecule modal elementleri
             moleculeModal: DOMUtils.select('#molecule-modal'),
             moleculeOverlay: DOMUtils.select('#molecule-overlay'),
@@ -67,7 +67,7 @@ export class UIComponent {
             smilesInput: DOMUtils.select('#smiles-input'),
             clearMoleculeBtn: DOMUtils.select('#clear-molecule'),
             insertMoleculeBtn: DOMUtils.select('#insert-molecule'),
-            
+
             // Add dropdown elementleri
             welcomeAddBtn: DOMUtils.select('#welcome-add-btn'),
             chatAddBtn: DOMUtils.select('#chat-add-btn'),
@@ -77,7 +77,7 @@ export class UIComponent {
             chatFileUpload: DOMUtils.select('#chat-file-upload'),
             welcomeMoleculeDraw: DOMUtils.select('#welcome-molecule-draw'),
             chatMoleculeDraw: DOMUtils.select('#chat-molecule-draw'),
-            
+
             // Input wrapper model select elementleri
             modelSelectWelcome: DOMUtils.select('#model-select-welcome'),
             customSelectWelcome: DOMUtils.select('#custom-model-select-welcome'),
@@ -91,7 +91,7 @@ export class UIComponent {
             selectOptionsChat: DOMUtils.select('#select-options-chat'),
             welcomeAddModelBtn: DOMUtils.select('#welcome-add-model-btn'),
             chatAddModelBtn: DOMUtils.select('#chat-add-model-btn'),
-            
+
             // Tools dropdown elementleri
             welcomeToolsDropdown: DOMUtils.select('#welcome-tools-dropdown'),
             chatToolsDropdown: DOMUtils.select('#chat-tools-dropdown'),
@@ -133,14 +133,14 @@ export class UIComponent {
         if (this.elements.input && this.elements.form) {
             this.setupTextareaHandlers(this.elements.input, this.elements.form);
         }
-        
+
         // Scroll listener
         if (this.elements.messagesEl) {
             DOMUtils.on(this.elements.messagesEl, 'scroll', () => {
                 this.checkUserScroll();
             });
         }
-        
+
         // Send button handlers
         if (this.elements.welcomeSendBtn) {
             DOMUtils.on(this.elements.welcomeSendBtn, 'click', (e) => {
@@ -150,7 +150,7 @@ export class UIComponent {
                 }
             });
         }
-        
+
         if (this.elements.chatSendBtn) {
             DOMUtils.on(this.elements.chatSendBtn, 'click', (e) => {
                 if (this.isStreaming) {
@@ -170,7 +170,7 @@ export class UIComponent {
         DOMUtils.on(textarea, 'input', () => {
             DOMUtils.autoResizeTextarea(textarea);
         });
-        
+
         DOMUtils.on(textarea, 'keydown', (e) => {
             if (e.key === 'Enter') {
                 if (e.shiftKey) {
@@ -206,7 +206,7 @@ export class UIComponent {
      */
     appendMessage(text, role = 'bot') {
         const el = DOMUtils.create('div', { className: `message ${role}` });
-        
+
         if (role === 'user') {
             // Kullanıcı mesajları için satır sonlarını koru
             const escapedText = DOMUtils.escapeHtml(text);
@@ -215,7 +215,7 @@ export class UIComponent {
             // Bot mesajları için normal textContent
             el.textContent = text;
         }
-        
+
         this.elements.messagesEl.appendChild(el);
         this.smartScroll();
     }
@@ -225,7 +225,7 @@ export class UIComponent {
      * @returns {Element}
      */
     createBotMessage() {
-        const el = DOMUtils.create('div', { 
+        const el = DOMUtils.create('div', {
             className: 'message bot',
         });
 
@@ -239,7 +239,7 @@ export class UIComponent {
 
         this.elements.messagesEl.appendChild(el);
         this.smartScroll();
-        
+
         // Return the main message container element
         return el;
     }
@@ -255,14 +255,14 @@ export class UIComponent {
         return new Promise((resolve) => {
             let i = 0;
             el.textContent = '';
-            
+
             const step = () => {
                 // Stream durduruldu mu kontrol et
                 if (window.app && !window.app.isStreaming) {
                     resolve();
                     return;
                 }
-                
+
                 if (i < text.length && this.isStreaming) {
                     el.textContent += text[i++];
                     this.smartScroll();
@@ -272,7 +272,7 @@ export class UIComponent {
                     resolve();
                 }
             };
-            
+
             step();
         });
     }
@@ -283,7 +283,7 @@ export class UIComponent {
      */
     updateSendButtonState(isStreaming) {
         const isInChatMode = this.elements.chatInterface.style.display !== 'none';
-        
+
         if (isInChatMode) {
             this.elements.chatSendBtn.disabled = false;
             const icon = this.elements.chatSendBtn.querySelector('.btn-icon');
@@ -318,12 +318,12 @@ export class UIComponent {
     switchToChatMode(selectedModel) {
         DOMUtils.toggleVisibility(this.elements.welcomeScreen, false);
         DOMUtils.toggleVisibility(this.elements.chatInterface, true);
-        
+
         // Welcome'dan seçilen modeli chat model select'e aktar
         if (selectedModel && this.elements.modelSelectChat && this.elements.selectValueChat) {
             this.elements.modelSelectChat.value = selectedModel;
             this.elements.selectValueChat.textContent = selectedModel;
-            
+
             // Chat model select'teki seçenekleri güncelle
             if (this.elements.selectOptionsChat) {
                 const options = this.elements.selectOptionsChat.querySelectorAll('.select-option-input');
@@ -336,7 +336,7 @@ export class UIComponent {
                 });
             }
         }
-        
+
         // Focus'u yumuşak bir şekilde yap (sayfa kaydırmasını önlemek için)
         setTimeout(() => {
             this.elements.input.focus();
@@ -349,21 +349,21 @@ export class UIComponent {
     switchToWelcomeMode() {
         DOMUtils.toggleVisibility(this.elements.chatInterface, false);
         DOMUtils.toggleVisibility(this.elements.welcomeScreen, true);
-        
+
         // Mesajları temizle
         this.elements.messagesEl.innerHTML = '';
-        
+
         // Input alanlarını temizle
         this.elements.input.value = '';
         this.elements.welcomeInput.value = '';
-        
+
         // Chat'ten seçilen modeli welcome model select'e aktar
         if (this.elements.modelSelectChat && this.elements.modelSelectWelcome && this.elements.selectValueWelcome) {
             const chatSelectedModel = this.elements.modelSelectChat.value;
             if (chatSelectedModel) {
                 this.elements.modelSelectWelcome.value = chatSelectedModel;
                 this.elements.selectValueWelcome.textContent = chatSelectedModel;
-                
+
                 // Welcome model select'teki seçenekleri güncelle
                 if (this.elements.selectOptionsWelcome) {
                     const options = this.elements.selectOptionsWelcome.querySelectorAll('.select-option-input');
@@ -377,11 +377,11 @@ export class UIComponent {
                 }
             }
         }
-        
+
         // Textarea yüksekliklerini sıfırla
         DOMUtils.autoResizeTextarea(this.elements.input);
         DOMUtils.autoResizeTextarea(this.elements.welcomeInput);
-        
+
         this.elements.welcomeInput.focus();
     }
 
@@ -392,7 +392,7 @@ export class UIComponent {
     setInputsEnabled(enabled) {
         this.elements.input.disabled = !enabled;
         this.elements.welcomeInput.disabled = !enabled;
-        
+
         if (enabled) {
             const isInChatMode = this.elements.chatInterface.style.display !== 'none';
             // Focus'u yumuşak bir şekilde yap (sayfa kaydırmasını önlemek için)
@@ -411,7 +411,7 @@ export class UIComponent {
      * @returns {Element}
      */
     showThinkingIndicator() {
-        const typingEl = DOMUtils.create('div', { 
+        const typingEl = DOMUtils.create('div', {
             className: 'message typing',
             innerHTML: '<span>Düşünüyor</span><div class="thinking-dots"><span></span><span></span><span></span></div>'
         });
@@ -445,21 +445,21 @@ export class UIComponent {
      */
     stopStream() {
         this.setStreamingState(false);
-        
+
         // Ana uygulama seviyesindeki streaming flag'ini de güncelle
         if (window.app && window.app.isStreaming !== undefined) {
             window.app.isStreaming = false;
         }
-        
+
         // Abort controller'ı kullan
         if (this.currentStreamController) {
             this.currentStreamController.abort();
         }
-        
+
         // Thinking indicator'ı kaldır
         const typing = DOMUtils.select('.message.typing');
         if (typing) typing.remove();
-        
+
         this.setInputsEnabled(true);
     }
 

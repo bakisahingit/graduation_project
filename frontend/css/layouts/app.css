@@ -40,13 +40,23 @@
 }
 
 .welcome-title {
-    font-size: var(--text-3xl);
+    font-size: 3rem;
     font-weight: var(--font-bold);
-    background: linear-gradient(135deg, var(--primary), var(--primary-light), #b3e5fc);
+    /* Logo gradient: Green (#00C896) to Blue (#0075FF) */
+    background: linear-gradient(135deg, #00C896 0%, #00A87A 30%, #0088CC 70%, #0075FF 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    text-shadow: var(--shadow-glow);
+    /* Glow effect - Optimized for performance */
+    /* Replaced 3x drop-shadow filter with text-shadow (much cheaper) */
+    text-shadow:
+        0 0 20px rgba(0, 200, 150, 0.5),
+        0 0 40px rgba(0, 117, 255, 0.3);
+
+    /* Hardware acceleration for text rendering */
+    transform: translateZ(0);
+    will-change: opacity;
+    letter-spacing: 2px;
 }
 
 .welcome-subtitle {
@@ -77,7 +87,7 @@
     left: 50%;
     width: 2px;
     transform: translateX(-50%);
-    background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,0.18) 50%, rgba(255,255,255,0) 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.18) 50%, rgba(255, 255, 255, 0) 100%);
     pointer-events: none;
 }
 
@@ -90,7 +100,7 @@
     top: 50%;
     height: 2px;
     transform: translateY(-50%);
-    background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.18) 50%, rgba(255,255,255,0) 100%);
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.18) 50%, rgba(255, 255, 255, 0) 100%);
     pointer-events: none;
 }
 
@@ -140,12 +150,61 @@
     text-align: left;
     cursor: pointer;
     transition: var(--transition-normal);
+    position: relative;
+    /* Ensure glow pseudo-element is positioned relative to card */
+    z-index: 1;
+}
+
+/* Gradient Glow on Hover - "Unified Whole" Effect */
+.card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    filter: blur(20px);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    transform: translateZ(0);
+}
+
+/* 
+ * 4 cards form a continuous 135deg gradient (Green #00C896 -> Blue #0075FF)
+ * Card 1 (Top-Left): Pure Green
+ * Card 2 (Top-Right): Green-Teal
+ * Card 3 (Bottom-Left): Teal-Blue
+ * Card 4 (Bottom-Right): Pure Blue
+ */
+
+/* Card 1: Start of gradient (Top-Left) */
+.card-grid .card:nth-child(1)::before {
+    background: linear-gradient(135deg, #00C896, #00B4AA);
+}
+
+/* Card 2: Mid-Start (Top-Right) */
+.card-grid .card:nth-child(2)::before {
+    background: linear-gradient(135deg, #00B4AA, #009BD0);
+}
+
+/* Card 3: Mid-End (Bottom-Left) */
+.card-grid .card:nth-child(3)::before {
+    background: linear-gradient(135deg, #009BD0, #0082E5);
+}
+
+/* Card 4: End of gradient (Bottom-Right) */
+.card-grid .card:nth-child(4)::before {
+    background: linear-gradient(135deg, #0082E5, #0075FF);
 }
 
 .card:hover {
-    background: var(--bg-glass-hover);
-    border-color: var(--border-accent);
-    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.card:hover::before {
+    opacity: 0.25;
+    /* Subtle glow intensity */
 }
 
 .card .card-title {
@@ -197,7 +256,7 @@
 }
 
 .shortcuts-mini {
-    background: rgba(15,17,19,0.9);
+    background: rgba(15, 17, 19, 0.9);
     color: var(--gray-200);
     border: 1px solid var(--border-secondary);
     border-radius: 12px;
@@ -229,12 +288,14 @@
 .shortcut-desc {
     color: var(--gray-500);
     font-size: 12px;
-    font-weight: 400; /* less prominent */
+    font-weight: 400;
+    /* less prominent */
     opacity: 0.7;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 160px; /* limit title width */
+    max-width: 160px;
+    /* limit title width */
 }
 
 .shortcut-key kbd {
@@ -304,20 +365,20 @@
     .main-content {
         height: calc(100% - 200px);
     }
-    
+
     .welcome-title {
         font-size: 1.6rem;
     }
-    
+
     .welcome-content {
         max-width: 95%;
     }
-    
+
     .messages {
         width: 95%;
         padding: var(--space-4);
     }
-    
+
     /* hide diagonal and plus on small screens */
     .quick-start-plain::before,
     .quick-start-plain::after {
@@ -329,13 +390,12 @@
     .welcome-title {
         font-size: 1.4rem;
     }
-    
+
     .welcome-content {
         gap: var(--space-5);
     }
-    
+
     .messages {
         padding: var(--space-3);
     }
 }
-

@@ -1,0 +1,114 @@
+/**
+ * Aurora Background Effect
+ * Creates soft, blurred glowing orbs for atmospheric depth
+ */
+
+/* Aurora glow base styles */
+.aurora-glow {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    /* Removed expensive blur filter in favor of gradient softness */
+    /* filter: blur(150px); */
+    opacity: 0.15;
+    mix-blend-mode: screen;
+    /* Force GPU acceleration */
+    transform: translate3d(0, 0, 0);
+    will-change: transform;
+}
+
+/* Green/Turquoise Spectrum matching logo start - Top Left */
+.aurora-glow-1 {
+    width: 800px;
+    height: 800px;
+    top: -200px;
+    left: -200px;
+    /* Simulate blur with gradient stops */
+    background: radial-gradient(circle,
+            rgba(0, 200, 150, 0.4) 0%,
+            /* Center */
+            rgba(0, 168, 122, 0.2) 30%,
+            /* Middle */
+            rgba(0, 136, 204, 0.05) 60%,
+            /* Edge */
+            transparent 70%);
+    /* Fade out */
+}
+
+/* Blue Spectrum matching logo end - Bottom Right */
+.aurora-glow-2 {
+    width: 900px;
+    height: 900px;
+    bottom: -300px;
+    right: -300px;
+    /* Simulate blur with gradient stops */
+    background: radial-gradient(circle,
+            rgba(0, 117, 255, 0.35) 0%,
+            /* Center */
+            rgba(0, 136, 204, 0.15) 30%,
+            /* Middle */
+            rgba(0, 168, 122, 0.05) 60%,
+            /* Edge */
+            transparent 70%);
+    /* Fade out */
+}
+
+/* Ensure app content stays above aurora */
+.app-root {
+    position: relative;
+    z-index: 10;
+}
+
+/* Light theme - hide or soften aurora effect */
+[data-theme="light"] .aurora-glow {
+    opacity: 0.08;
+    filter: blur(150px);
+}
+
+[data-theme="light"] .aurora-glow-1 {
+    background: radial-gradient(circle,
+            rgba(0, 200, 150, 0.5) 0%,
+            rgba(0, 168, 122, 0.3) 40%,
+            transparent 70%);
+}
+
+[data-theme="light"] .aurora-glow-2 {
+    background: radial-gradient(circle,
+            rgba(0, 117, 255, 0.4) 0%,
+            rgba(0, 136, 204, 0.2) 40%,
+            transparent 70%);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .aurora-glow-1 {
+        width: 400px;
+        height: 400px;
+        top: -100px;
+        left: -100px;
+    }
+
+    .aurora-glow-2 {
+        width: 450px;
+        height: 450px;
+        bottom: -120px;
+        right: -120px;
+    }
+}
+
+@media (max-width: 520px) {
+    .aurora-glow {
+        opacity: 0.18;
+    }
+
+    .aurora-glow-1 {
+        width: 300px;
+        height: 300px;
+    }
+
+    .aurora-glow-2 {
+        width: 350px;
+        height: 350px;
+    }
+}

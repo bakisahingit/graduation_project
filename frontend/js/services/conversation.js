@@ -46,7 +46,7 @@ export class ConversationService {
             createdAt: new Date(),
             updatedAt: new Date()
         };
-        
+
         this.conversations.unshift(conversation);
         this.saveConversations();
         return conversation;
@@ -62,14 +62,10 @@ export class ConversationService {
         // Geçici başlık ile konuşma oluştur
         const tempTitle = 'Yeni Sohbet';
         const conversation = this.createConversation(tempTitle, model);
-        
-        // İlk mesajı ekle
-        this.updateConversation(conversation.id, {
-            role: 'user',
-            content: firstMessage,
-            timestamp: new Date()
-        });
-        
+
+        // NOT: İlk mesajı BURAYA EKLEMİYORUZ
+        // processMessage() içinde eklenecek, duplikasyon olmaması için
+
         return conversation;
     }
 
@@ -83,7 +79,7 @@ export class ConversationService {
     async updateConversationTitleAsync(conversationId, firstMessage, model) {
         // Loading durumunu başlat
         this.loadingTitles.add(conversationId);
-        
+
         // UI'yi güncelle (loading durumu)
         console.log('Starting title generation for:', conversationId);
         if (this.onTitleUpdated) {
@@ -92,7 +88,7 @@ export class ConversationService {
         } else {
             console.log('onTitleUpdated callback not set!');
         }
-        
+
         try {
             const generatedTitle = await this.apiService.generateTitle(firstMessage, model);
             const conversation = this.conversations.find(c => c.id === conversationId);
@@ -100,10 +96,10 @@ export class ConversationService {
                 conversation.title = generatedTitle;
                 this.saveConversations();
                 console.log('Otomatik başlık üretildi:', generatedTitle);
-                
+
                 // Loading durumunu kaldır
                 this.loadingTitles.delete(conversationId);
-                
+
                 // UI'yi güncelle (final başlık)
                 if (this.onTitleUpdated) {
                     this.onTitleUpdated(conversationId, generatedTitle, false);
@@ -113,7 +109,7 @@ export class ConversationService {
             console.error('Başlık üretimi başarısız:', error);
             // Loading durumunu kaldır
             this.loadingTitles.delete(conversationId);
-            
+
             // UI'yi güncelle (hata durumu - başlık değişmez)
             if (this.onTitleUpdated) {
                 this.onTitleUpdated(conversationId, null, false);
@@ -146,7 +142,7 @@ export class ConversationService {
     deleteConversation(conversationId) {
         this.conversations = this.conversations.filter(c => c.id !== conversationId);
         this.saveConversations();
-        
+
         // Eğer mevcut konuşma silindiyse, current ID'yi temizle
         if (this.currentConversationId === conversationId) {
             this.currentConversationId = null;
@@ -167,7 +163,7 @@ export class ConversationService {
      * @returns {Object|null} - Mevcut konuşma
      */
     getCurrentConversation() {
-        return this.currentConversationId ? 
+        return this.currentConversationId ?
             this.loadConversation(this.currentConversationId) : null;
     }
 

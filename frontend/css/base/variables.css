@@ -5,11 +5,12 @@
 
 :root {
     /* Ana renkler */
-    --bg: #0f1113; /* deep near-black */
-    --frost: rgba(255,255,255,0.06);
-    --accent: rgba(255,255,255,0.75);
+    --bg: #0f1113;
+    /* deep near-black */
+    --frost: rgba(255, 255, 255, 0.06);
+    --accent: rgba(255, 255, 255, 0.75);
     --glass-blur: 8px;
-    
+
     /* Renk paleti */
     --primary: #4fc3f7;
     --primary-light: #81d4fa;
@@ -21,43 +22,43 @@
     --error-light: #ff5252;
     --warning: #ff9800;
     --success: #4caf50;
-    
+
     /* Gri tonları */
-    --gray-50: rgba(255,255,255,0.95);
-    --gray-100: rgba(255,255,255,0.9);
-    --gray-200: rgba(255,255,255,0.8);
-    --gray-300: rgba(255,255,255,0.7);
-    --gray-400: rgba(255,255,255,0.6);
-    --gray-500: rgba(255,255,255,0.5);
-    --gray-600: rgba(255,255,255,0.4);
-    --gray-700: rgba(255,255,255,0.3);
-    --gray-800: rgba(255,255,255,0.2);
-    --gray-900: rgba(255,255,255,0.1);
-    --gray-950: rgba(255,255,255,0.05);
-    
+    --gray-50: rgba(255, 255, 255, 0.95);
+    --gray-100: rgba(255, 255, 255, 0.9);
+    --gray-200: rgba(255, 255, 255, 0.8);
+    --gray-300: rgba(255, 255, 255, 0.7);
+    --gray-400: rgba(255, 255, 255, 0.6);
+    --gray-500: rgba(255, 255, 255, 0.5);
+    --gray-600: rgba(255, 255, 255, 0.4);
+    --gray-700: rgba(255, 255, 255, 0.3);
+    --gray-800: rgba(255, 255, 255, 0.2);
+    --gray-900: rgba(255, 255, 255, 0.1);
+    --gray-950: rgba(255, 255, 255, 0.05);
+
     /* Arka plan renkleri */
     --bg-primary: linear-gradient(180deg, #0b0c0d 0%, #111214 100%);
-    --bg-secondary: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-    --bg-glass: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
-    --bg-glass-hover: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.08));
-    
+    --bg-secondary: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+    --bg-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+    --bg-glass-hover: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.08));
+
     /* Border renkleri */
-    --border-primary: rgba(255,255,255,0.05);
-    --border-secondary: rgba(255,255,255,0.1);
-    --border-accent: rgba(255,255,255,0.15);
-    --border-focus: rgba(79,195,247,0.5);
-    
+    --border-primary: rgba(255, 255, 255, 0.05);
+    --border-secondary: rgba(255, 255, 255, 0.1);
+    --border-accent: rgba(255, 255, 255, 0.15);
+    --border-focus: rgba(79, 195, 247, 0.5);
+
     /* Gölge renkleri */
-    --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
-    --shadow-md: 0 4px 20px rgba(0,0,0,0.3);
-    --shadow-lg: 0 8px 40px rgba(2,6,8,0.8);
-    --shadow-xl: 0 20px 60px rgba(0,0,0,0.5);
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 8px 40px rgba(2, 6, 8, 0.8);
+    --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.5);
     --shadow-glow: 0 0 30px rgba(79, 195, 247, 0.3);
-    
+
     /* Typography */
     --font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
     --font-family-mono: 'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
-    
+
     /* Font boyutları */
     --text-xs: 10px;
     --text-sm: 12px;
@@ -67,13 +68,13 @@
     --text-xl: 18px;
     --text-2xl: 1.5rem;
     --text-3xl: 2rem;
-    
+
     /* Font ağırlıkları */
     --font-normal: 400;
     --font-medium: 500;
     --font-semibold: 600;
     --font-bold: 700;
-    
+
     /* Spacing */
     --space-1: 4px;
     --space-2: 8px;
@@ -86,7 +87,7 @@
     --space-12: 48px;
     --space-16: 64px;
     --space-20: 80px;
-    
+
     /* Border radius */
     --radius-sm: 4px;
     --radius-md: 6px;
@@ -94,17 +95,17 @@
     --radius-xl: 12px;
     --radius-2xl: 16px;
     --radius-full: 50%;
-    
+
     /* Transitions */
     --transition-fast: 0.15s ease;
     --transition-normal: 0.2s ease;
     --transition-slow: 0.3s ease;
-    
+
     /* Z-index */
     --z-dropdown: 1000;
     --z-modal: 10000;
     --z-tooltip: 10001;
-    
+
     /* Breakpoints (CSS custom properties olarak) */
     --breakpoint-sm: 520px;
     --breakpoint-md: 768px;
@@ -112,3 +113,184 @@
     --breakpoint-xl: 1280px;
 }
 
+/* ========================================
+   LIGHT THEME VARIABLES
+   ======================================== */
+[data-theme="light"] {
+    /* Ana renkler */
+    --bg: #f5f7fa;
+    --frost: rgba(0, 0, 0, 0.04);
+    --accent: rgba(0, 0, 0, 0.85);
+
+    /* Renk paleti - daha canlı */
+    --primary: #0d96cb;
+    --primary-light: #4fc3f7;
+    --primary-dark: #0288d1;
+    --secondary: #2e7d32;
+    --secondary-light: #43a047;
+    --secondary-dark: #1b5e20;
+
+    /* Gri tonları - ters çevrilmiş */
+    --gray-50: rgba(0, 0, 0, 0.95);
+    --gray-100: rgba(0, 0, 0, 0.9);
+    --gray-200: rgba(0, 0, 0, 0.8);
+    --gray-300: rgba(0, 0, 0, 0.7);
+    --gray-400: rgba(0, 0, 0, 0.55);
+    --gray-500: rgba(0, 0, 0, 0.45);
+    --gray-600: rgba(0, 0, 0, 0.35);
+    --gray-700: rgba(0, 0, 0, 0.25);
+    --gray-800: rgba(0, 0, 0, 0.15);
+    --gray-900: rgba(0, 0, 0, 0.08);
+    --gray-950: rgba(0, 0, 0, 0.03);
+
+    /* Arka plan renkleri */
+    --bg-primary: linear-gradient(180deg, #ffffff 0%, #f0f2f5 100%);
+    --bg-secondary: linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.01));
+    --bg-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+    --bg-glass-hover: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+
+    /* Border renkleri */
+    --border-primary: rgba(0, 0, 0, 0.08);
+    --border-secondary: rgba(0, 0, 0, 0.12);
+    --border-accent: rgba(0, 0, 0, 0.18);
+    --border-focus: rgba(13, 150, 203, 0.5);
+
+    /* Gölge renkleri */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.12);
+    --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.15);
+    --shadow-glow: 0 0 30px rgba(13, 150, 203, 0.2);
+}
+
+/* Smooth theme transitions */
+body,
+.app-root,
+.sidebar,
+.main-content,
+.messages,
+.input-wrapper,
+.welcome-input-wrapper,
+.modal-content,
+.card {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* ========================================
+   THEME SELECTOR STYLES
+   ======================================== */
+.theme-settings {
+    padding: 16px;
+}
+
+.theme-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--gray-100);
+    margin-bottom: 8px;
+}
+
+.theme-description {
+    font-size: 13px;
+    color: var(--gray-400);
+    margin-bottom: 20px;
+}
+
+.theme-options {
+    display: flex;
+    gap: 16px;
+}
+
+.theme-option {
+    cursor: pointer;
+    display: block;
+}
+
+.theme-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.theme-option-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 2px solid var(--border-secondary);
+    transition: all 0.2s ease;
+}
+
+.theme-option input[type="radio"]:checked+.theme-option-content {
+    border-color: var(--primary);
+    background: rgba(79, 195, 247, 0.08);
+}
+
+.theme-option:hover .theme-option-content {
+    border-color: var(--gray-600);
+}
+
+.theme-preview {
+    width: 100px;
+    height: 70px;
+    border-radius: 8px;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    grid-template-rows: 12px 1fr;
+    gap: 2px;
+    padding: 4px;
+}
+
+.dark-preview {
+    background: #0f1113;
+}
+
+.dark-preview .preview-header {
+    grid-column: 1 / -1;
+    background: #1a1d21;
+    border-radius: 2px;
+}
+
+.dark-preview .preview-sidebar {
+    background: #16191d;
+    border-radius: 2px;
+}
+
+.dark-preview .preview-content {
+    background: #1e2227;
+    border-radius: 2px;
+}
+
+.light-preview {
+    background: #f5f7fa;
+}
+
+.light-preview .preview-header {
+    grid-column: 1 / -1;
+    background: #e8eaed;
+    border-radius: 2px;
+}
+
+.light-preview .preview-sidebar {
+    background: #e0e3e7;
+    border-radius: 2px;
+}
+
+.light-preview .preview-content {
+    background: #ffffff;
+    border-radius: 2px;
+    border: 1px solid #e0e3e7;
+}
+
+.theme-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray-300);
+}
+
+.theme-option input[type="radio"]:checked+.theme-option-content .theme-label {
+    color: var(--primary);
+}

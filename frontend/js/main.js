@@ -20,14 +20,14 @@ class ChatApp {
         this.api = new ApiService();
         this.conversation = new ConversationService();
         this.model = new ModelService();
-        
+
         this.isStreaming = false;
         this.userScrolledUp = false;
         this.currentStreamController = null;
         this.activeTool = null; // Aktif tool (null, 'admet', vs.)
         // Keep track of last PubChem-loaded SMILES to avoid redundant fetches
         this._lastPubChemSmiles = null;
-        
+
         this.init();
     }
 
@@ -54,31 +54,69 @@ class ChatApp {
     async init() {
         // DOM elementlerinin yüklenmesini bekle
         await this.waitForDOM();
-        
+
         // Event listener'ları kur
         this.setupEventListeners();
-        
+
         // UI event listener'ları kur
         this.ui.setupEventListeners();
 
         // File chips UI başlangıçta gizli olsun
         this.initializeFileChipsUI();
-        
+
+        // Tema ayarlarını yükle ve uygula
+        this.initializeTheme();
+
         // Modelleri yükle
         await this.populateModels();
-        
+
         // Konuşma geçmişini yükle
         this.renderConversationHistory();
 
         // Onboarding içeriklerini doldur
         this.renderOnboarding();
-        
+
         // Molekül çizim sistemini başlat
         this.initializeMoleculeDrawing();
-        
+
         // Welcome input'a focus
         if (this.ui.elements.welcomeInput) {
             this.ui.elements.welcomeInput.focus();
+        }
+    }
+
+    /**
+     * Tema ayarlarını başlat
+     */
+    initializeTheme() {
+        // Kaydedilmiş temayı yükle
+        const savedTheme = localStorage.getItem('admetgpt-theme') || 'dark';
+        this.applyTheme(savedTheme);
+
+        // Tema radio butonlarını dinle
+        document.querySelectorAll('input[name="theme"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const theme = e.target.value;
+                this.applyTheme(theme);
+                localStorage.setItem('admetgpt-theme', theme);
+            });
+
+            // Mevcut temaya göre radio'yu işaretle
+            if (radio.value === savedTheme) {
+                radio.checked = true;
+            }
+        });
+    }
+
+    /**
+     * Temayı uygula
+     * @param {string} theme - 'dark' veya 'light'
+     */
+    applyTheme(theme) {
+        if (theme === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
         }
     }
 
@@ -116,18 +154,18 @@ class ChatApp {
         if (moleculeName) {
             const tag = document.createElement('div');
             tag.className = 'molecule-tag';
-            
+
             const text = document.createElement('span');
             text.textContent = moleculeName;
-            
+
             const removeBtn = document.createElement('button');
             removeBtn.className = 'tag-remove-btn';
             removeBtn.innerHTML = '&times;';
-            
+
             tag.appendChild(text);
             tag.appendChild(removeBtn);
             container.appendChild(tag);
-            
+
             input.value = ''; // Giriş alanını temizle
             input.focus(); // Tekrar giriş yapmak için focusla
         }
@@ -204,31 +242,31 @@ class ChatApp {
                 molecule: 'shortcut_molecule',
                 admet: 'shortcut_admet'
             };
-// Karşılaştırma modali için etiket ekleme/silme event'leri
-        const addMoleculeBtn = document.getElementById('add-molecule-btn');
-        const moleculeAddInput = document.getElementById('molecule-add-input');
-        const tagsContainer = document.getElementById('molecule-tags-container');
+            // Karşılaştırma modali için etiket ekleme/silme event'leri
+            const addMoleculeBtn = document.getElementById('add-molecule-btn');
+            const moleculeAddInput = document.getElementById('molecule-add-input');
+            const tagsContainer = document.getElementById('molecule-tags-container');
 
-        if (addMoleculeBtn) {
-            DOMUtils.on(addMoleculeBtn, 'click', () => this.addMoleculeTag());
-        }
+            if (addMoleculeBtn) {
+                DOMUtils.on(addMoleculeBtn, 'click', () => this.addMoleculeTag());
+            }
 
-        if (moleculeAddInput) {
-            DOMUtils.on(moleculeAddInput, 'keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault(); // Formun submit olmasını engelle
-                    this.addMoleculeTag();
-                }
-            });
-        }
+            if (moleculeAddInput) {
+                DOMUtils.on(moleculeAddInput, 'keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault(); // Formun submit olmasını engelle
+                        this.addMoleculeTag();
+                    }
+                });
+            }
 
-        if (tagsContainer) {
-            DOMUtils.on(tagsContainer, 'click', (e) => {
-                if (e.target.classList.contains('tag-remove-btn')) {
-                    e.target.parentElement.remove();
-                }
-            });
-        }
+            if (tagsContainer) {
+                DOMUtils.on(tagsContainer, 'click', (e) => {
+                    if (e.target.classList.contains('tag-remove-btn')) {
+                        e.target.parentElement.remove();
+                    }
+                });
+            }
             const loadShortcutsToUI = () => {
                 const m = DOMUtils.select('#shortcut-molecule-display');
                 const a = DOMUtils.select('#shortcut-admet-display');
@@ -480,7 +518,7 @@ class ChatApp {
                         if (this.ui.elements.smilesInput) this.ui.elements.smilesInput.value = data.smiles;
                         const smilesDisplay = document.getElementById('smiles-display');
                         if (smilesDisplay) smilesDisplay.textContent = data.smiles;
-                        
+
                         // Update the molecule visualization
                         this.updateMoleculeDisplay();
 
@@ -589,9 +627,9 @@ class ChatApp {
             DOMUtils.on(this.ui.elements.admetSettingsCancelBtn, 'click', () => this.closeAdmetSettingsModal());
         }
         if (this.ui.elements.saveAdmetSettingsBtn) {
-            DOMUtils.on(this.ui.elements.saveAdmetSettingsBtn, 'click', () => { 
+            DOMUtils.on(this.ui.elements.saveAdmetSettingsBtn, 'click', () => {
                 this.activateAdmetTool();
-                this.closeAdmetSettingsModal(); 
+                this.closeAdmetSettingsModal();
             });
         }
 
@@ -669,22 +707,22 @@ class ChatApp {
         // Dropdown dışına tıklayınca kapat
         DOMUtils.on(document, 'click', (e) => {
             // Tools dropdown kontrolü
-            if ((this.ui.elements.welcomeToolsDropdown && 
-                 !this.ui.elements.welcomeToolsDropdown.contains(e.target) &&
-                 !this.ui.elements.welcomeToolsBtn.contains(e.target)) ||
-                (this.ui.elements.chatToolsDropdown && 
-                 !this.ui.elements.chatToolsDropdown.contains(e.target) &&
-                 !this.ui.elements.chatToolsBtn.contains(e.target))) {
+            if ((this.ui.elements.welcomeToolsDropdown &&
+                !this.ui.elements.welcomeToolsDropdown.contains(e.target) &&
+                !this.ui.elements.welcomeToolsBtn.contains(e.target)) ||
+                (this.ui.elements.chatToolsDropdown &&
+                    !this.ui.elements.chatToolsDropdown.contains(e.target) &&
+                    !this.ui.elements.chatToolsBtn.contains(e.target))) {
                 this.closeAllToolsDropdowns();
             }
-            
+
             // Add dropdown kontrolü
-            if ((this.ui.elements.welcomeAddDropdown && 
-                 !this.ui.elements.welcomeAddDropdown.contains(e.target) &&
-                 !this.ui.elements.welcomeAddBtn.contains(e.target)) ||
-                (this.ui.elements.chatAddDropdown && 
-                 !this.ui.elements.chatAddDropdown.contains(e.target) &&
-                 !this.ui.elements.chatAddBtn.contains(e.target))) {
+            if ((this.ui.elements.welcomeAddDropdown &&
+                !this.ui.elements.welcomeAddDropdown.contains(e.target) &&
+                !this.ui.elements.welcomeAddBtn.contains(e.target)) ||
+                (this.ui.elements.chatAddDropdown &&
+                    !this.ui.elements.chatAddDropdown.contains(e.target) &&
+                    !this.ui.elements.chatAddBtn.contains(e.target))) {
                 this.closeAllAddDropdowns();
             }
         });
@@ -724,7 +762,7 @@ class ChatApp {
                 } else if (this.ui.elements.compareModal.classList.contains('open')) {
                     this.closeCompareModal();
                 } else if ((this.ui.elements.welcomeToolsDropdown && this.ui.elements.welcomeToolsDropdown.classList.contains('open')) ||
-                          (this.ui.elements.chatToolsDropdown && this.ui.elements.chatToolsDropdown.classList.contains('open'))) {
+                    (this.ui.elements.chatToolsDropdown && this.ui.elements.chatToolsDropdown.classList.contains('open'))) {
                     this.closeAllToolsDropdowns();
                 }
             }
@@ -811,13 +849,13 @@ class ChatApp {
         if (!text) return;
 
         const selectedModel = this.ui.elements.modelSelectWelcome ? this.ui.elements.modelSelectWelcome.value : null;
-        
+
         // Chat moduna geç
         this.ui.switchToChatMode(selectedModel);
-        
+
         // Tool buton durumunu güncelle (chat moduna geçtikten sonra)
         this.updateToolButtonState();
-        
+
         // Mesajı işle
         await this.processMessage(text, selectedModel);
     }
@@ -830,7 +868,7 @@ class ChatApp {
         if (!text) return;
 
         const model = this.ui.elements.modelSelectChat ? this.ui.elements.modelSelectChat.value : null;
-        
+
         // Clear input and resize
         this.ui.elements.input.value = '';
         DOMUtils.autoResizeTextarea(this.ui.elements.input);
@@ -841,7 +879,7 @@ class ChatApp {
     /**
      * Comparison form submit handler
      */
-async handleComparisonSubmit() {
+    async handleComparisonSubmit() {
         const tags = document.querySelectorAll('#molecule-tags-container .molecule-tag');
         const molecules = Array.from(tags).map(tag => tag.querySelector('span').textContent);
 
@@ -862,9 +900,9 @@ async handleComparisonSubmit() {
 
         const isInChatMode = this.ui.elements.chatInterface.style.display !== 'none';
         if (!isInChatMode) {
-             this.ui.switchToChatMode(model);
+            this.ui.switchToChatMode(model);
         }
-        
+
         await this.processComparison(molecules, model, properties);
     }
 
@@ -876,27 +914,27 @@ async handleComparisonSubmit() {
         const emptyState = document.getElementById('empty-state');
         if (!quickGrid) return;
 
-        // Hızlı başlat kartları (eczacı/molekül toksisite odaklı)
+        // Hızlı başlat kartları (ilaç güvenliği ve etkileşim odaklı)
         const quickCards = [
             {
-                title: 'Kafein toksisite profili',
-                desc: 'ADMET parametreleri ve risk değerlendirmesi',
-                prompt: 'Kafein için ADMET ve toksisite risk profilini çıkar. Özellikle hepatotoksisite ve kardiyotoksisite risklerini değerlendir.'
+                title: 'İlaç-İlaç Etkileşimi',
+                desc: 'Birden fazla ilacın birlikte kullanım riski',
+                prompt: 'Aspirin ve ibuprofen beraber kullanılabilir mi? Bu iki ilacın birlikte kullanılmasının riskleri nelerdir?'
             },
             {
-                title: 'Eşdeğer molekül öner',
-                desc: 'Benzer etki, daha düşük risk',
-                prompt: 'Parasetamol için terapötik açıdan benzer ama daha düşük toksisite riski taşıyan alternatif molekülleri öner ve kıyasla.'
+                title: 'İlaç-Besin Etkileşimi',
+                desc: 'Yiyeceklerin ilaçlarla etkileşimi',
+                prompt: 'Warfarin kullanırken hangi yiyeceklerden kaçınmalıyım? Greyfurt suyu içmem sakıncalı mı?'
             },
             {
-                title: 'SMILES çöz ve çiz',
-                desc: 'İsimden yapıyı çöz, görselleştir',
-                prompt: 'Ibuprofen için SMILES’ı çöz, yapıyı çiz ve temel ADMET özetini ver.'
+                title: 'Güvenli Alternatif Öner',
+                desc: 'Daha az riskli muadil ilaçlar',
+                prompt: 'Parasetamol karaciğerime zarar veriyor olabilir mi? Daha güvenli ağrı kesici alternatifleri nelerdir?'
             },
             {
-                title: 'Formülasyonda etkileşim',
-                desc: 'Yardımcı madde-molekül riski',
-                prompt: 'Lidokain ile etanol ve propilen glikol varlığında stabilite ve potansiyel toksisite etkileşim risklerini değerlendir.'
+                title: 'Toksisite Risk Analizi',
+                desc: 'İlacın yan etki ve risk profili',
+                prompt: 'Metformin kullanıyorum. Bu ilacın karaciğer ve böbrek üzerindeki etkileri nelerdir? Hangi durumlarda dikkatli olmalıyım?'
             },
         ];
 
@@ -925,15 +963,15 @@ async handleComparisonSubmit() {
      * @param {string} text - Mesaj metni
      * @param {string} model - Model
      */
-async processMessage(text, model) {
+    async processMessage(text, model) {
         // Yeni konuşma oluştur (geçici başlık ile)
         if (!this.conversation.currentConversationId) {
             const conversation = this.conversation.createConversationWithTempTitle(text, model);
             this.conversation.setCurrentConversation(conversation.id);
-            
+
             // Sidebar'da konuşmayı göster
             this.renderConversationHistory();
-            
+
             // Başlık üretimini asenkron olarak başlat
             this.conversation.onTitleUpdated = (conversationId, newTitle, isLoading) => {
                 this.updateConversationTitleInUI(conversationId, newTitle, isLoading);
@@ -948,7 +986,7 @@ async processMessage(text, model) {
         this.conversation.updateConversation(this.conversation.currentConversationId, { role: 'user', content: text });
 
         // Input'ları deaktif et
-        this.ui.setInputsEnabled(false, true); 
+        this.ui.setInputsEnabled(false, true);
 
         // "Thinking" animasyonunu göster
         const typingEl = this.ui.showThinkingIndicator();
@@ -1021,7 +1059,7 @@ async processMessage(text, model) {
             this.ui.setInputsEnabled(true);
         }
     }
-setupWebSocket(sessionId, placeholderEl) {
+    setupWebSocket(sessionId, placeholderEl) {
         const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${proto}//${window.location.host}?sessionId=${sessionId}`;
         const ws = new WebSocket(wsUrl);
@@ -1044,13 +1082,13 @@ setupWebSocket(sessionId, placeholderEl) {
                 this.conversation.updateConversation(this.conversation.currentConversationId, { role: 'bot', content: reply }, rawData);
 
                 await this.markdown.typeWriteMarkdown(contentEl, reply, 0.1, () => this.ui.smartScroll());
-                
+
                 // Hem tekli analiz hem de karşılaştırma sonuçlarını kontrol et
                 if (rawData) {
-                    const scriptEl = DOMUtils.create('script', { 
-                        type: 'application/json', 
+                    const scriptEl = DOMUtils.create('script', {
+                        type: 'application/json',
                         id: 'admet-raw-data', // ID hep aynı kalmalı
-                        textContent: JSON.stringify(rawData) 
+                        textContent: JSON.stringify(rawData)
                     });
                     botMessageContainer.appendChild(scriptEl);
                 }
@@ -1249,15 +1287,15 @@ setupWebSocket(sessionId, placeholderEl) {
             const isComparison = rawData.successfulResults && Array.isArray(rawData.successfulResults);
             console.log("isComparison:", isComparison);
 
-            const pdfButton = DOMUtils.create('button', { 
-                className: 'message-action-btn', 
+            const pdfButton = DOMUtils.create('button', {
+                className: 'message-action-btn',
                 textContent: 'PDF',
                 title: isComparison ? 'Karşılaştırma Raporunu PDF olarak indir' : 'Raporu PDF olarak indir'
             });
             DOMUtils.on(pdfButton, 'click', () => this.exportToPdf(rawData, isComparison));
 
-            const csvButton = DOMUtils.create('button', { 
-                className: 'message-action-btn', 
+            const csvButton = DOMUtils.create('button', {
+                className: 'message-action-btn',
                 textContent: 'CSV',
                 title: isComparison ? 'Karşılaştırma Verilerini CSV olarak indir' : 'Tahminleri CSV olarak indir'
             });
@@ -1272,7 +1310,7 @@ setupWebSocket(sessionId, placeholderEl) {
         }
     }
 
-    
+
     /**
      * Exports ADMET prediction data to a CSV file.
      * @param {object} rawData The full raw data from the analysis.
@@ -1285,7 +1323,7 @@ setupWebSocket(sessionId, placeholderEl) {
         if (isComparison && rawData.successfulResults?.length > 0) {
             // --- YENİ KARŞILAŞTIRMA FORMATI (GENİŞ FORMAT) ---
             fileName = "admet_comparison.csv";
-            
+
             // 1. ADIM: Tüm molekül ve özellik isimlerini topla
             const moleculeNames = rawData.successfulResults.map(mol => mol.data.moleculeName || mol.identifier);
             const allProperties = new Set();
@@ -1326,7 +1364,7 @@ setupWebSocket(sessionId, placeholderEl) {
                 csvContent += `"${p.property}","${p.prediction}"\r\n`;
             });
         }
-        
+
         // İndirme linkini oluştur ve tıkla
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
@@ -1426,7 +1464,7 @@ setupWebSocket(sessionId, placeholderEl) {
             doc.save(`${rawData.moleculeName || rawData.smiles}_admet_report.pdf`);
         }
     }
-    
+
 
 
     /**
@@ -1441,7 +1479,7 @@ setupWebSocket(sessionId, placeholderEl) {
         // Mevcut seçenekleri temizle (sidebar kaldırıldı)
         // this.ui.elements.modelSelectSidebar.innerHTML = '';
         // this.ui.elements.selectOptionsScroll.innerHTML = '';
-        
+
         // Input wrapper model select'leri de temizle
         if (this.ui.elements.modelSelectWelcome) {
             this.ui.elements.modelSelectWelcome.innerHTML = '';
@@ -1476,7 +1514,7 @@ setupWebSocket(sessionId, placeholderEl) {
 
             // İlk modeli seçili olarak ayarla
             const firstModel = activeModelsList[0];
-            
+
             // Sidebar model select kaldırıldı
             // if (this.ui.elements.selectValueSidebar) {
             //     this.ui.elements.selectValueSidebar.textContent = firstModel;
@@ -1499,9 +1537,9 @@ setupWebSocket(sessionId, placeholderEl) {
 
                 // Welcome model select'e ekle (gizli)
                 if (this.ui.elements.modelSelectWelcome) {
-                    const optWelcome = DOMUtils.create('option', { 
-                        value: model, 
-                        textContent: model 
+                    const optWelcome = DOMUtils.create('option', {
+                        value: model,
+                        textContent: model
                     });
                     if (idx === 0) {
                         optWelcome.selected = true;
@@ -1512,9 +1550,9 @@ setupWebSocket(sessionId, placeholderEl) {
 
                 // Chat model select'e ekle (gizli)
                 if (this.ui.elements.modelSelectChat) {
-                    const optChat = DOMUtils.create('option', { 
-                        value: model, 
-                        textContent: model 
+                    const optChat = DOMUtils.create('option', {
+                        value: model,
+                        textContent: model
                     });
                     if (idx === 0) {
                         optChat.selected = true;
@@ -1590,7 +1628,7 @@ setupWebSocket(sessionId, placeholderEl) {
                     const addModelDiv = DOMUtils.create('div', {
                         className: 'select-add-model'
                     });
-                    
+
                     const addModelBtn = DOMUtils.create('button', {
                         className: 'select-add-model-btn',
                         id: 'welcome-add-model-btn',
@@ -1619,7 +1657,7 @@ setupWebSocket(sessionId, placeholderEl) {
                     const addModelDiv = DOMUtils.create('div', {
                         className: 'select-add-model'
                     });
-                    
+
                     const addModelBtn = DOMUtils.create('button', {
                         className: 'select-add-model-btn',
                         id: 'chat-add-model-btn',
@@ -1703,10 +1741,10 @@ setupWebSocket(sessionId, placeholderEl) {
      * @param {boolean} isLoading - Loading durumu
      */
     createHistoryItem(conversation, isLoading = false) {
-        const historyItem = DOMUtils.create('div', { 
+        const historyItem = DOMUtils.create('div', {
             className: 'panel-item history-item'
         });
-        
+
         if (conversation.id === this.conversation.currentConversationId) {
             DOMUtils.addClass(historyItem, 'active');
         }
@@ -1724,7 +1762,7 @@ setupWebSocket(sessionId, placeholderEl) {
         `;
 
         DOMUtils.on(historyItem, 'click', (e) => {
-            if (!e.target.classList.contains('history-item-menu') && 
+            if (!e.target.classList.contains('history-item-menu') &&
                 !e.target.classList.contains('ellipsis-icon')) {
                 this.loadConversation(conversation.id);
             }
@@ -1742,7 +1780,7 @@ setupWebSocket(sessionId, placeholderEl) {
         // Hem pinned hem de normal listede ara
         const pinnedList = document.getElementById('pinned-list');
         const historyList = document.getElementById('history-list');
-        
+
         const allItems = [
             ...pinnedList.querySelectorAll('.history-item'),
             ...historyList.querySelectorAll('.history-item')
@@ -1762,7 +1800,7 @@ setupWebSocket(sessionId, placeholderEl) {
      */
     updateConversationTitleInUI(conversationId, newTitle, isLoading) {
         console.log('updateConversationTitleInUI called:', { conversationId, newTitle, isLoading });
-        
+
         const historyItem = this.findHistoryItemById(conversationId);
         if (!historyItem) {
             console.log('History item not found for:', conversationId);
@@ -1771,7 +1809,7 @@ setupWebSocket(sessionId, placeholderEl) {
 
         const titleElement = historyItem.querySelector('.history-item-title');
         const editInput = historyItem.querySelector('.history-item-edit');
-        
+
         if (isLoading) {
             // Loading durumu - çok bulanık metin
             console.log('Setting loading state...');
@@ -1811,12 +1849,12 @@ setupWebSocket(sessionId, placeholderEl) {
                 } else {
                     // Bot mesajları için temel elementleri oluştur
                     const botMessageContainer = DOMUtils.create('div', { className: 'message bot' });
-                    const contentEl = DOMUtils.create('div', { 
+                    const contentEl = DOMUtils.create('div', {
                         className: 'message-content',
                         innerHTML: this.markdown.renderToHtml(msg.content)
                     });
                     const actionsEl = DOMUtils.create('div', { className: 'message-actions' });
-                    
+
                     botMessageContainer.appendChild(actionsEl);
                     botMessageContainer.appendChild(contentEl);
                     this.ui.elements.messagesEl.appendChild(botMessageContainer);
@@ -1871,7 +1909,7 @@ setupWebSocket(sessionId, placeholderEl) {
         this.ui.switchToWelcomeMode();
         this.conversation.setCurrentConversation(null);
         this.renderConversationHistory();
-        
+
         // Tool buton durumunu güncelle (welcome moduna geçtikten sonra)
         this.updateToolButtonState();
     }
@@ -1888,12 +1926,12 @@ setupWebSocket(sessionId, placeholderEl) {
     /**
      * Compare modal kapat
      */
-closeCompareModal() {
+    closeCompareModal() {
         if (!this.ui.elements.compareModal) return;
-        
+
         // Kapanış animasyonunu tetikle
         DOMUtils.addClass(this.ui.elements.compareModal, 'closing');
-        
+
         // Animasyon bittikten sonra modal'ı kaldır
         setTimeout(() => {
             DOMUtils.removeClass(this.ui.elements.compareModal, 'open');
@@ -1906,7 +1944,7 @@ closeCompareModal() {
      */
     toggleSidebarSelect() {
         if (!this.ui.elements.selectOptionsSidebar) return;
-        
+
         const isOpen = this.ui.elements.selectOptionsSidebar.classList.contains('open');
         if (isOpen) {
             this.closeSidebarSelect();
@@ -1920,7 +1958,7 @@ closeCompareModal() {
      */
     openSidebarSelect() {
         if (!this.ui.elements.selectOptionsSidebar || !this.ui.elements.selectTriggerSidebar) return;
-        
+
         DOMUtils.addClass(this.ui.elements.selectOptionsSidebar, 'open');
         DOMUtils.addClass(this.ui.elements.selectTriggerSidebar, 'active');
         this.ui.elements.selectTriggerSidebar.setAttribute('aria-expanded', 'true');
@@ -1931,7 +1969,7 @@ closeCompareModal() {
      */
     closeSidebarSelect() {
         if (!this.ui.elements.selectOptionsSidebar || !this.ui.elements.selectTriggerSidebar) return;
-        
+
         DOMUtils.removeClass(this.ui.elements.selectOptionsSidebar, 'open');
         DOMUtils.removeClass(this.ui.elements.selectTriggerSidebar, 'active');
         this.ui.elements.selectTriggerSidebar.setAttribute('aria-expanded', 'false');
@@ -1944,7 +1982,7 @@ closeCompareModal() {
      */
     selectSidebarOption(value, text) {
         if (!this.ui.elements.selectValueSidebar || !this.ui.elements.modelSelectSidebar) return;
-        
+
         // Model seçimini güncelle
         this.ui.elements.selectValueSidebar.textContent = text;
         this.ui.elements.modelSelectSidebar.value = value;
@@ -1969,7 +2007,7 @@ closeCompareModal() {
     toggleInputSelect(type) {
         const elements = this.getInputSelectElements(type);
         if (!elements.selectOptions) return;
-        
+
         const isOpen = elements.selectOptions.classList.contains('open');
         if (isOpen) {
             this.closeInputSelect(type);
@@ -1985,7 +2023,7 @@ closeCompareModal() {
     openInputSelect(type) {
         const elements = this.getInputSelectElements(type);
         if (!elements.selectOptions || !elements.selectTrigger) return;
-        
+
         // Tüm stilleri temizle
         elements.selectOptions.style.position = '';
         elements.selectOptions.style.top = '';
@@ -1994,14 +2032,14 @@ closeCompareModal() {
         elements.selectOptions.style.right = '';
         elements.selectOptions.style.width = '';
         elements.selectOptions.style.zIndex = '';
-        
+
         // Chat ekranında yukarı açılma için özel sınıf ekle
         if (type === 'chat') {
             DOMUtils.addClass(elements.selectOptions, 'open-upward');
         } else {
             DOMUtils.removeClass(elements.selectOptions, 'open-upward');
         }
-        
+
         // Menüyü göster
         DOMUtils.addClass(elements.selectOptions, 'open');
         DOMUtils.addClass(elements.selectTrigger, 'active');
@@ -2015,13 +2053,13 @@ closeCompareModal() {
     closeInputSelect(type) {
         const elements = this.getInputSelectElements(type);
         if (!elements.selectOptions || !elements.selectTrigger) return;
-        
+
         // Tüm sınıfları ve stilleri temizle
         DOMUtils.removeClass(elements.selectOptions, 'open');
         DOMUtils.removeClass(elements.selectOptions, 'open-upward');
         DOMUtils.removeClass(elements.selectTrigger, 'active');
         elements.selectTrigger.setAttribute('aria-expanded', 'false');
-        
+
         // Tüm inline stilleri sıfırla
         elements.selectOptions.style.position = '';
         elements.selectOptions.style.top = '';
@@ -2064,13 +2102,13 @@ closeCompareModal() {
     selectInputOption(type, value, text) {
         const elements = this.getInputSelectElements(type);
         if (!elements.selectValue || !elements.modelSelect) return;
-        
+
         // Görsel değeri güncelle
         elements.selectValue.textContent = text;
-        
+
         // Gizli select'i güncelle
         elements.modelSelect.value = value;
-        
+
         // Seçenekleri güncelle
         const options = elements.selectOptions.querySelectorAll('.select-option-input');
         options.forEach(option => {
@@ -2080,12 +2118,12 @@ closeCompareModal() {
                 DOMUtils.removeClass(option, 'selected');
             }
         });
-        
+
         // Diğer model select'i de senkronize et
         if (type === 'welcome' && this.ui.elements.modelSelectChat && this.ui.elements.selectValueChat) {
             this.ui.elements.modelSelectChat.value = value;
             this.ui.elements.selectValueChat.textContent = text;
-            
+
             // Chat model select'teki seçenekleri güncelle
             if (this.ui.elements.selectOptionsChat) {
                 const chatOptions = this.ui.elements.selectOptionsChat.querySelectorAll('.select-option-input');
@@ -2100,7 +2138,7 @@ closeCompareModal() {
         } else if (type === 'chat' && this.ui.elements.modelSelectWelcome && this.ui.elements.selectValueWelcome) {
             this.ui.elements.modelSelectWelcome.value = value;
             this.ui.elements.selectValueWelcome.textContent = text;
-            
+
             // Welcome model select'teki seçenekleri güncelle
             if (this.ui.elements.selectOptionsWelcome) {
                 const welcomeOptions = this.ui.elements.selectOptionsWelcome.querySelectorAll('.select-option-input');
@@ -2113,7 +2151,7 @@ closeCompareModal() {
                 });
             }
         }
-        
+
         this.closeInputSelect(type);
     }
 
@@ -2124,13 +2162,13 @@ closeCompareModal() {
         if (!this.ui.elements.settingsModal) {
             return;
         }
-        
+
         DOMUtils.addClass(this.ui.elements.settingsModal, 'open');
         this.populateModelsList();
-        
+
         // Event delegation için models list'e click listener ekle
         this.setupModelsListEventDelegation();
-        
+
         // Arama özelliğini kur
         this.setupModelsSearch();
     }
@@ -2140,12 +2178,12 @@ closeCompareModal() {
      */
     closeSettingsModal() {
         if (!this.ui.elements.settingsModal) return;
-        
+
         DOMUtils.removeClass(this.ui.elements.settingsModal, 'open');
-        
+
         // Event delegation listener'ını kaldır
         this.removeModelsListEventDelegation();
-        
+
         // Arama özelliğini temizle
         this.removeModelsSearch();
     }
@@ -2155,10 +2193,10 @@ closeCompareModal() {
      */
     setupModelsListEventDelegation() {
         if (!this.ui.elements.modelsList) return;
-        
+
         // Eski listener'ı kaldır
         this.removeModelsListEventDelegation();
-        
+
         // Yeni listener ekle
         this.modelsListClickHandler = (e) => {
             const switchElement = e.target.closest('.model-switch');
@@ -2170,7 +2208,7 @@ closeCompareModal() {
                 }
             }
         };
-        
+
         DOMUtils.on(this.ui.elements.modelsList, 'click', this.modelsListClickHandler);
     }
 
@@ -2190,18 +2228,18 @@ closeCompareModal() {
     setupModelsSearch() {
         const searchInput = document.getElementById('models-search');
         if (!searchInput) return;
-        
+
         // Eski listener'ı kaldır
         this.removeModelsSearch();
-        
+
         // Debounced search handler
         this.modelsSearchHandler = this.debounce((e) => {
             const query = e.target.value.toLowerCase().trim();
             this.filterModels(query);
         }, 300);
-        
+
         DOMUtils.on(searchInput, 'input', this.modelsSearchHandler);
-        
+
         // Arama input'una focus
         searchInput.focus();
     }
@@ -2224,17 +2262,17 @@ closeCompareModal() {
      */
     filterModels(query) {
         if (!this.ui.elements.modelsList) return;
-        
+
         const modelItems = this.ui.elements.modelsList.querySelectorAll('.model-item');
         let visibleCount = 0;
-        
+
         modelItems.forEach(item => {
             const modelName = item.querySelector('.model-name');
             if (!modelName) return;
-            
+
             const modelText = modelName.textContent.toLowerCase();
             const isVisible = !query || modelText.includes(query);
-            
+
             if (isVisible) {
                 item.style.display = 'flex';
                 visibleCount++;
@@ -2242,7 +2280,7 @@ closeCompareModal() {
                 item.style.display = 'none';
             }
         });
-        
+
         // Eğer hiç sonuç yoksa mesaj göster
         this.showNoResultsMessage(visibleCount === 0 && query);
     }
@@ -2253,7 +2291,7 @@ closeCompareModal() {
      */
     showNoResultsMessage(show) {
         let noResultsEl = this.ui.elements.modelsList.querySelector('.no-results');
-        
+
         if (show && !noResultsEl) {
             noResultsEl = DOMUtils.create('div', {
                 className: 'no-results',
@@ -2288,31 +2326,31 @@ closeCompareModal() {
      */
     async populateModelsList() {
         if (!this.ui.elements.modelsList) return;
-        
+
         // Loading state göster
         this.ui.elements.modelsList.innerHTML = '<div class="model-item loading">Modeller yükleniyor...</div>';
-        
+
         try {
             const models = await this.model.getAllModels();
 
             // DocumentFragment kullanarak performansı artır
             const fragment = document.createDocumentFragment();
-            
+
             // Batch processing ile modelleri işle (57 model için)
             const batchSize = 15; // Her seferde 15 model işle
             let currentIndex = 0;
-            
+
             const processBatch = () => {
                 const endIndex = Math.min(currentIndex + batchSize, models.length);
-                
+
                 for (let i = currentIndex; i < endIndex; i++) {
                     const model = models[i];
                     const modelItem = this.createModelItem(model);
                     fragment.appendChild(modelItem);
                 }
-                
+
                 currentIndex = endIndex;
-                
+
                 // Eğer daha model varsa, bir sonraki batch'i işle
                 if (currentIndex < models.length) {
                     // UI'yi güncelle ve sonraki batch'i işle
@@ -2324,10 +2362,10 @@ closeCompareModal() {
                     this.ui.elements.modelsList.appendChild(fragment);
                 }
             };
-            
+
             // İlk batch'i başlat
             requestAnimationFrame(processBatch);
-            
+
         } catch (error) {
             this.ui.elements.modelsList.innerHTML = '<div class="model-item error">Modeller yüklenemedi</div>';
         }
@@ -2339,20 +2377,20 @@ closeCompareModal() {
      * @returns {HTMLElement} - Model item elementi
      */
     createModelItem(model) {
-                const modelItem = DOMUtils.create('div', { 
+        const modelItem = DOMUtils.create('div', {
             className: 'panel-item model-item',
-                    innerHTML: `
+            innerHTML: `
                 <span class="panel-item-text model-name">${model}</span>
                 <div class="panel-item-controls model-controls">
                             <span class="model-status">free</span>
                             <div class="model-switch ${this.model.isModelActive(model) ? 'active' : ''}" data-model="${model}"></div>
                         </div>
                     `
-                });
+        });
 
         // Event delegation kullanarak performansı artır
-                const switchElement = modelItem.querySelector('.model-switch');
-                if (switchElement) {
+        const switchElement = modelItem.querySelector('.model-switch');
+        if (switchElement) {
             // Data attribute ile model bilgisini sakla
             switchElement.dataset.modelName = model;
         }
@@ -2390,7 +2428,7 @@ closeCompareModal() {
                 }
             });
         }
-        
+
         if (this.ui.elements.modelSelectChat && !this.model.isModelActive(this.ui.elements.modelSelectChat.value)) {
             this.model.getFirstActiveModel().then(firstModel => {
                 if (firstModel) {
@@ -2411,9 +2449,9 @@ closeCompareModal() {
         if (!this.ui.elements.moleculeModal) {
             return;
         }
-        
+
         DOMUtils.addClass(this.ui.elements.moleculeModal, 'open');
-        
+
         if (this.ui.elements.smilesInput) {
             this.ui.elements.smilesInput.focus();
         }
@@ -2429,7 +2467,7 @@ closeCompareModal() {
      */
     closeMoleculeModal() {
         if (!this.ui.elements.moleculeModal) return;
-        
+
         DOMUtils.removeClass(this.ui.elements.moleculeModal, 'open');
     }
 
@@ -2447,10 +2485,10 @@ closeCompareModal() {
      */
     closeCompareModal() {
         if (!this.ui.elements.compareModal) return;
-        
+
         // Kapanış animasyonunu tetikle
         DOMUtils.addClass(this.ui.elements.compareModal, 'closing');
-        
+
         // Animasyon bittikten sonra modal'ı kaldır
         setTimeout(() => {
             DOMUtils.removeClass(this.ui.elements.compareModal, 'open');
@@ -2471,9 +2509,9 @@ closeCompareModal() {
      */
     closeAdmetSettingsModal() {
         if (!this.ui.elements.admetSettingsModal) return;
-        
+
         DOMUtils.addClass(this.ui.elements.admetSettingsModal, 'closing');
-        
+
         setTimeout(() => {
             DOMUtils.removeClass(this.ui.elements.admetSettingsModal, 'open');
             DOMUtils.removeClass(this.ui.elements.admetSettingsModal, 'closing');
@@ -2491,7 +2529,7 @@ closeCompareModal() {
         const selected = Array.from(this.ui.elements.admetSettingsCheckboxes)
             .filter(cb => cb.checked)
             .map(cb => cb.value);
-        
+
         return selected; // Always return an array
     }
 
@@ -2500,10 +2538,10 @@ closeCompareModal() {
      */
     updateMoleculeDisplay() {
         if (!this.ui.elements.smilesInput) return;
-        
+
         const smiles = this.ui.elements.smilesInput.value.trim();
         this.molecule.updateDisplay(smiles);
-        
+
         // Molekül bilgilerini güncelle
         if (smiles) {
             this.updateMoleculeInfo(smiles);
@@ -2609,7 +2647,7 @@ closeCompareModal() {
      */
     clearMolecule() {
         if (!this.ui.elements.smilesInput) return;
-        
+
         this.ui.elements.smilesInput.value = '';
         this.updateMoleculeDisplay();
     }
@@ -2619,7 +2657,7 @@ closeCompareModal() {
      */
     insertMoleculeToChat() {
         if (!this.ui.elements.smilesInput) return;
-        
+
         const smiles = this.ui.elements.smilesInput.value.trim();
         if (!smiles) {
             alert('Lütfen bir SMILES formatı girin.');
@@ -2843,7 +2881,7 @@ closeCompareModal() {
      */
     searchMoleculeInPubChem() {
         if (!this.ui.elements.smilesInput) return;
-        
+
         const smiles = this.ui.elements.smilesInput.value.trim();
         if (!smiles) {
             alert('Lütfen önce bir SMILES formatı girin.');
@@ -2934,10 +2972,10 @@ closeCompareModal() {
             content.innerHTML = `
                 <div class="info-item"><span class="info-label">PubChem</span><span class="info-value">CID ${rows[0][1]}</span></div>
                 ${desc}
-                ${rows.slice(1).map(([k,v]) => {
-                    const value = k === 'Formül' ? this.formatMolecularFormula(v) : DOMUtils.escapeHtml(String(v));
-                    return `<div class="info-item"><span class="info-label">${k}:</span><span class="info-value">${value}</span></div>`;
-                }).join('')}
+                ${rows.slice(1).map(([k, v]) => {
+                const value = k === 'Formül' ? this.formatMolecularFormula(v) : DOMUtils.escapeHtml(String(v));
+                return `<div class="info-item"><span class="info-label">${k}:</span><span class="info-value">${value}</span></div>`;
+            }).join('')}
             `;
         } catch (err) {
             console.error('PubChem inline render error', err);
@@ -2956,7 +2994,7 @@ closeCompareModal() {
      */
     exportMolecule() {
         if (!this.ui.elements.smilesInput) return;
-        
+
         const smiles = this.ui.elements.smilesInput.value.trim();
         if (!smiles) {
             alert('Lütfen önce bir SMILES formatı girin.');
@@ -3035,17 +3073,17 @@ closeCompareModal() {
      */
     toggleToolsDropdown(type) {
         const dropdown = type === 'welcome' ? this.ui.elements.welcomeToolsDropdown : this.ui.elements.chatToolsDropdown;
-        
+
         if (!dropdown) {
             return;
         }
-        
+
         // Eğer bu dropdown zaten açıksa, kapat
         if (dropdown.classList.contains('open')) {
             DOMUtils.removeClass(dropdown, 'open');
             return;
         }
-        
+
         // Diğer dropdown'ları kapat ve bu dropdown'ı aç
         this.closeAllToolsDropdowns();
         this.closeAllAddDropdowns();
@@ -3070,17 +3108,17 @@ closeCompareModal() {
      */
     toggleAddDropdown(type) {
         const dropdown = type === 'welcome' ? this.ui.elements.welcomeAddDropdown : this.ui.elements.chatAddDropdown;
-        
+
         if (!dropdown) {
             return;
         }
-        
+
         // Eğer bu dropdown zaten açıksa, kapat
         if (dropdown.classList.contains('open')) {
             DOMUtils.removeClass(dropdown, 'open');
             return;
         }
-        
+
         // Diğer dropdown'ları kapat ve bu dropdown'ı aç
         this.closeAllAddDropdowns();
         this.closeAllToolsDropdowns();
@@ -3105,20 +3143,20 @@ closeCompareModal() {
      */
     handleFileUpload(type) {
         this.closeAllAddDropdowns();
-        
+
         // Dosya seçici oluştur
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.txt,.md,.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif';
         input.multiple = true;
-        
+
         input.onchange = (e) => {
             const files = Array.from(e.target.files);
             if (files.length > 0) {
                 this.processUploadedFiles(files, type);
             }
         };
-        
+
         input.click();
     }
 
@@ -3279,7 +3317,7 @@ closeCompareModal() {
         const isInChatMode = this.ui.elements.chatInterface.style.display !== 'none';
         const toolsBtn = isInChatMode ? this.ui.elements.chatToolsBtn : this.ui.elements.welcomeToolsBtn;
         const inputWrapper = isInChatMode ? this.ui.elements.inputWrapper : this.ui.elements.welcomeInputWrapper;
-        
+
         if (toolsBtn) {
             if (this.activeTool === 'admet') {
                 DOMUtils.addClass(toolsBtn, 'active');
@@ -3298,7 +3336,7 @@ closeCompareModal() {
                         </svg>
                     </button>
                 `;
-                
+
                 // Remove button için event listener ekle
                 const removeBtn = toolsBtn.querySelector('.tool-remove-btn');
                 if (removeBtn) {
@@ -3329,57 +3367,57 @@ closeCompareModal() {
     toggleConversationMenu(event, conversationId) {
         event.preventDefault();
         event.stopPropagation();
-        
+
         const menu = document.getElementById('conversation-menu');
         const isVisible = menu.classList.contains('show');
-        
+
         if (isVisible) {
             this.hideConversationMenu();
             return;
         }
-        
+
         // Menu'yu göster
         this.currentMenuConversationId = conversationId;
         menu.classList.add('show');
         document.body.classList.add('menu-open');
-        
+
         // Butonun parent elementini al (history-item-menu)
         const buttonElement = event.target.closest('.history-item-menu');
         const historyItem = buttonElement.closest('.history-item');
         this.currentActiveButton = buttonElement;
         this.currentActiveHistoryItem = historyItem;
-        
+
         // Butonu ve history item'ı aktif göster
         buttonElement.classList.add('active');
         historyItem.classList.add('menu-active');
-        
+
         // Menu pozisyonunu ayarla (sidebar'ın sağ tarafında)
         const sidebar = document.querySelector('.sidebar');
         const sidebarRect = sidebar.getBoundingClientRect();
         const buttonRect = buttonElement.getBoundingClientRect();
-        
+
         // Menüyü geçici olarak göster ve yüksekliğini hesapla
         menu.style.visibility = 'hidden';
         menu.style.opacity = '0';
         menu.style.display = 'block';
-        
+
         const menuHeight = menu.offsetHeight;
         const viewportHeight = window.innerHeight;
-        
+
         // Menünün ekranın alt kısmına taşacağını kontrol et
         const wouldOverflowBottom = (buttonRect.top + menuHeight) > viewportHeight;
-        
+
         // Menüyü tekrar gizle (show class'ı ile tekrar gösterilecek)
         menu.style.visibility = '';
         menu.style.opacity = '';
         menu.style.display = '';
-        
+
         menu.style.left = `${sidebarRect.right + 5}px`;
-        
+
         if (wouldOverflowBottom) {
             // Menüyü butonun üstüne yerleştir
             const topPosition = buttonRect.bottom - menuHeight;
-            
+
             // Menünün ekranın üst kısmına taşmamasını kontrol et
             if (topPosition < 0) {
                 // Menüyü ekranın üst kısmına yapıştır
@@ -3391,82 +3429,82 @@ closeCompareModal() {
             // Menüyü butonun altına yerleştir (varsayılan)
             menu.style.top = `${buttonRect.top}px`;
         }
-        
+
         // Dışarı tıklama ile kapatma
         setTimeout(() => {
             document.addEventListener('click', this.handleMenuOutsideClick.bind(this), { once: true });
         }, 0);
-        
+
         // Menu butonlarına event listener ekle
         this.setupMenuEventListeners();
-        
+
         // Pin butonunun görünümünü güncelle
         this.updatePinButtonAppearance();
     }
-    
+
     hideConversationMenu() {
         const menu = document.getElementById('conversation-menu');
         menu.classList.remove('show');
         document.body.classList.remove('menu-open');
-        
+
         // Aktif butonu ve history item'ı temizle
         if (this.currentActiveButton) {
             this.currentActiveButton.classList.remove('active');
             this.currentActiveButton = null;
         }
-        
+
         if (this.currentActiveHistoryItem) {
             this.currentActiveHistoryItem.classList.remove('menu-active');
             this.currentActiveHistoryItem = null;
         }
-        
+
         this.currentMenuConversationId = null;
     }
-    
+
     handleMenuOutsideClick(event) {
         const menu = document.getElementById('conversation-menu');
         if (!menu.contains(event.target)) {
             this.hideConversationMenu();
         }
     }
-    
+
     setupMenuEventListeners() {
         const menuPin = document.getElementById('menu-pin');
         const menuRename = document.getElementById('menu-rename');
         const menuDelete = document.getElementById('menu-delete');
-        
+
         // Eski event listener'ları temizle
         menuPin.replaceWith(menuPin.cloneNode(true));
         menuRename.replaceWith(menuRename.cloneNode(true));
         menuDelete.replaceWith(menuDelete.cloneNode(true));
-        
+
         // Yeni referansları al
         const newMenuPin = document.getElementById('menu-pin');
         const newMenuRename = document.getElementById('menu-rename');
         const newMenuDelete = document.getElementById('menu-delete');
-        
+
         newMenuPin.addEventListener('click', () => {
             this.pinConversation(this.currentMenuConversationId);
             this.hideConversationMenu();
         });
-        
+
         newMenuRename.addEventListener('click', () => {
             this.renameConversation(this.currentMenuConversationId);
             this.hideConversationMenu();
         });
-        
+
         newMenuDelete.addEventListener('click', () => {
             this.deleteConversation(this.currentMenuConversationId);
             this.hideConversationMenu();
         });
     }
-    
+
     updatePinButtonAppearance() {
         const conversation = this.conversation.loadConversation(this.currentMenuConversationId);
         const menuPin = document.getElementById('menu-pin');
         const menuIcon = menuPin.querySelector('.menu-icon');
         const menuText = menuPin.querySelector('.menu-text');
-        
+
         if (conversation && conversation.pinned) {
             // Unpin görünümü
             menuIcon.innerHTML = `
@@ -3490,23 +3528,23 @@ closeCompareModal() {
         this.conversation.togglePinConversation(conversationId);
         this.renderConversationHistory();
     }
-    
+
     renameConversation(conversationId) {
         const conversation = this.conversation.loadConversation(conversationId);
         if (!conversation) return;
-        
+
         // Konuşma öğesini bul
         const historyItem = this.findHistoryItemById(conversationId);
         if (!historyItem) return;
-        
+
         // Edit moduna geç
         DOMUtils.addClass(historyItem, 'editing');
         const editInput = historyItem.querySelector('.history-item-edit');
-        
+
         // Input'u seç ve focus et
         editInput.focus();
         editInput.select();
-        
+
         // Event listener'ları ekle
         const handleSave = () => {
             const newTitle = editInput.value.trim();
@@ -3520,12 +3558,12 @@ closeCompareModal() {
                 DOMUtils.removeClass(historyItem, 'editing');
             }
         };
-        
+
         const handleCancel = () => {
             editInput.value = conversation.title;
             DOMUtils.removeClass(historyItem, 'editing');
         };
-        
+
         // Enter tuşu ile kaydet
         editInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
@@ -3536,10 +3574,10 @@ closeCompareModal() {
                 handleCancel();
             }
         });
-        
+
         // Focus kaybında kaydet
         editInput.addEventListener('blur', handleSave);
-        
+
         // Dışarı tıklama ile iptal
         const handleOutsideClick = (e) => {
             if (!historyItem.contains(e.target)) {
@@ -3547,7 +3585,7 @@ closeCompareModal() {
                 document.removeEventListener('click', handleOutsideClick);
             }
         };
-        
+
         setTimeout(() => {
             document.addEventListener('click', handleOutsideClick);
         }, 0);

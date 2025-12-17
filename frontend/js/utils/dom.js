@@ -120,7 +120,10 @@ export class DOMUtils {
      */
     static autoResizeTextarea(textarea) {
         textarea.style.height = 'auto';
-        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        const maxHeight = 120;
+        const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+        textarea.style.height = newHeight + 'px';
+        textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
     }
 
     /**
@@ -145,7 +148,7 @@ export class DOMUtils {
         try {
             const u = url.trim();
             if (/^(https?:|mailto:)/i.test(u)) return u;
-        } catch (e) {}
+        } catch (e) { }
         return '#';
     }
 }

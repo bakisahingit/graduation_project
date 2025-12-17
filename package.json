@@ -9,7 +9,7 @@
 		"start": "node backend/server.js",
 		"dev": "concurrently \"npm:dev:backend\" \"npm:start:admet\"",
 		"dev:backend": "nodemon backend/server.js",
-		"start:admet": "uvicorn admet.main:app --port 8000"
+		"start:admet": ".venv\\Scripts\\python.exe -m uvicorn admet.main:app --port 8000 --reload"
 	},
 	"dependencies": {
 		"axios": "^1.12.2",

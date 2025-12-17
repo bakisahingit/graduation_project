@@ -6,9 +6,11 @@
 .sidebar {
     width: 280px;
     height: 100%;
-    background: var(--bg-secondary);
-    backdrop-filter: blur(var(--glass-blur));
-    border-right: 1px solid var(--border-primary);
+    /* Frosted glass effect - darker semi-transparent background */
+    background: rgba(10, 12, 15, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-right: 1px solid var(--border-secondary);
     display: flex;
     flex-direction: column;
     padding: var(--space-5);
@@ -16,6 +18,9 @@
     overflow: hidden;
     /* Sidebar genişliğini sabit tut */
     box-sizing: border-box;
+    /* Ensure sidebar is above aurora */
+    position: relative;
+    z-index: 20;
 }
 
 .sidebar-header {
@@ -74,7 +79,8 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    min-height: 0; /* Flex item'ın küçülmesine izin ver */
+    min-height: 0;
+    /* Flex item'ın küçülmesine izin ver */
 }
 
 .history-title {
@@ -111,21 +117,21 @@
         gap: var(--space-3);
         overflow-x: auto;
     }
-    
+
     .sidebar-header {
         flex-shrink: 0;
     }
-    
+
     .model-selector-sidebar {
         flex-shrink: 0;
         min-width: 150px;
     }
-    
+
     .conversation-history {
         flex: 1;
         min-width: 200px;
     }
-    
+
     .history-list {
         flex-direction: row;
         gap: 1px;
