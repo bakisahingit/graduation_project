@@ -5,14 +5,43 @@
 // - `extractChemicalWithLLM` ve `translateWithLLM` fonksiyonlarına Redis önbellek mekanizması eklendi.
 // - Başarılı LLM sonuçları 24 saatliğine Redis'e kaydediliyor.
 // - Rate limit hatalarına karşı yeniden deneme mekanizması eklendi.
+// - Gemma modelleri için system mesajı user mesajına birleştiriliyor.
 
-import { openai, config, resolveModel } from '../config/index.js';
+import { openai, config, resolveModel, cacheConfig, retryConfig } from '../config/index.js';
 import { entityExtractionPrompt, translationPrompt } from '../utils/constants.js';
-import redisClient from './redisService.js'; // Redis client'ı import et
+import redisClient from './redisService.js';
 
-const LLM_CACHE_TTL_SECONDS = 3600 * 24; // LLM sonuçlarını 24 saat cache'le
-const MAX_RETRIES = 5; // Increased retries to 5
-const INITIAL_DELAY_MS = 1000;
+const LLM_CACHE_TTL_SECONDS = cacheConfig.llmTtlSeconds;
+const MAX_RETRIES = retryConfig.maxRetries;
+const INITIAL_DELAY_MS = retryConfig.initialDelayMs;
+
+// Gemma modelleri için system mesajını user mesajına birleştir
+function prepareMessagesForModel(messages, modelName) {
+    // Eğer model gemma içeriyorsa, system rolünü desteklemiyor
+    if (modelName && modelName.toLowerCase().includes('gemma')) {
+        const systemMessage = messages.find(m => m.role === 'system');
+        const otherMessages = messages.filter(m => m.role !== 'system');
+
+        if (systemMessage && otherMessages.length > 0) {
+            // System mesajını ilk user mesajının başına ekle
+            const firstUserIndex = otherMessages.findIndex(m => m.role === 'user');
+            if (firstUserIndex !== -1) {
+                otherMessages[firstUserIndex] = {
+                    ...otherMessages[firstUserIndex],
+                    content: `[System Talimatı]: ${systemMessage.content}\n\n[Kullanıcı]: ${otherMessages[firstUserIndex].content}`
+                };
+            }
+            console.log(`Gemma model detected (${modelName}): System message merged into user message`);
+            return otherMessages;
+        }
+    }
+    return messages;
+}
+
+// Model Gemma mı kontrol et
+function isGemmaModel(modelName) {
+    return modelName && modelName.toLowerCase().includes('gemma');
+}
 
 // Yeniden deneme mekanizması için yardımcı fonksiyon
 async function withRetry(fn, retries = MAX_RETRIES, delay = INITIAL_DELAY_MS) {
@@ -45,13 +74,22 @@ export async function extractChemicalWithLLM(userMessage, model = null) {
     const selectedModel = resolveModel(model);
     console.log(`Using model for extraction: ${selectedModel}`);
 
-    const apiCall = () => openai.chat.completions.create({
+    const originalMessages = [{ role: 'system', content: entityExtractionPrompt }, { role: 'user', content: userMessage }];
+    const preparedMessages = prepareMessagesForModel(originalMessages, selectedModel);
+
+    // Gemma modelleri için response_format kullanma
+    const requestOptions = {
         model: selectedModel,
-        messages: [{ role: 'system', content: entityExtractionPrompt }, { role: 'user', content: userMessage }],
+        messages: preparedMessages,
         temperature: 0,
         max_tokens: 60,
-        response_format: { type: "json_object" },
-    });
+    };
+
+    if (!isGemmaModel(selectedModel)) {
+        requestOptions.response_format = { type: "json_object" };
+    }
+
+    const apiCall = () => openai.chat.completions.create(requestOptions);
 
     try {
         const completion = await withRetry(apiCall);
@@ -109,16 +147,24 @@ export async function translateWithLLM(turkishName, model = null) {
     const systemInstruction = "Translate the following Turkish chemical name to English. Respond with only a JSON object like this: {\"englishName\": \"...\"}";
     const userExample = `Turkish: ${turkishName}`;
 
-    const apiCall = () => openai.chat.completions.create({
+    const originalMessages = [
+        { role: 'system', content: systemInstruction },
+        { role: 'user', content: userExample }
+    ];
+    const preparedMessages = prepareMessagesForModel(originalMessages, selectedModel);
+
+    const requestOptions = {
         model: selectedModel,
-        messages: [
-            { role: 'system', content: systemInstruction },
-            { role: 'user', content: userExample }
-        ],
+        messages: preparedMessages,
         temperature: 0,
         max_tokens: 20,
-        response_format: { type: "json_object" },
-    });
+    };
+
+    if (!isGemmaModel(selectedModel)) {
+        requestOptions.response_format = { type: "json_object" };
+    }
+
+    const apiCall = () => openai.chat.completions.create(requestOptions);
 
     try {
         const completion = await withRetry(apiCall);
@@ -165,7 +211,10 @@ export async function getChatCompletion(messages, model = null) {
     const selectedModel = resolveModel(model);
     console.log(`Using model: ${selectedModel}`);
 
-    const apiCall = () => openai.chat.completions.create({ model: selectedModel, messages });
+    // Gemma modelleri için system mesajını user mesajına birleştir
+    const preparedMessages = prepareMessagesForModel(messages, selectedModel);
+
+    const apiCall = () => openai.chat.completions.create({ model: selectedModel, messages: preparedMessages });
 
     try {
         const completion = await withRetry(apiCall);

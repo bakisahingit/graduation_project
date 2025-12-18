@@ -19,14 +19,16 @@ export class MarkdownComponent {
      */
     renderToHtml(markdown) {
         if (!markdown) return '';
-        
+
+        // Baştaki ve sondaki boşlukları/satır sonlarını temizle
+        const trimmedMarkdown = markdown.trim();
         // Kütüphane tabanlı render tercih edilir
         if (this.isMarkedLoaded && this.isDOMPurifyLoaded) {
             try {
                 // Prism.js entegrasyonu
                 if (this.isPrismLoaded) {
                     marked.setOptions({
-                        highlight: function(code, lang) {
+                        highlight: function (code, lang) {
                             try {
                                 if (lang && Prism.languages[lang]) {
                                     return Prism.highlight(code, Prism.languages[lang], lang);
@@ -39,18 +41,18 @@ export class MarkdownComponent {
                     });
                 }
 
-                const raw = marked.parse(markdown);
+                const raw = marked.parse(trimmedMarkdown);
                 // HTML'i sanitize et
-                return DOMPurify.sanitize(raw, {ADD_ATTR: ['target']});
+                return DOMPurify.sanitize(raw, { ADD_ATTR: ['target'] });
             } catch (e) {
                 console.error('marked/DOMPurify render failed', e);
                 // Fallback: basit escape
-                return DOMUtils.escapeHtml(markdown).replace(/\n/g, '<br>');
+                return DOMUtils.escapeHtml(trimmedMarkdown).replace(/\n/g, '<br>');
             }
         }
 
         // Fallback: basit renderer
-        return DOMUtils.escapeHtml(markdown).replace(/\n/g, '<br>');
+        return DOMUtils.escapeHtml(trimmedMarkdown).replace(/\n/g, '<br>');
     }
 
     /**
@@ -66,45 +68,45 @@ export class MarkdownComponent {
             let i = 0;
             let buffer = '';
             element.innerHTML = '';
-            
+
             const step = () => {
                 // Stream durduruldu mu kontrol et
                 if (window.app && !window.app.isStreaming) {
                     resolve();
                     return;
                 }
-                
+
                 if (i < text.length) {
                     buffer += text[i++];
                     try {
                         const html = this.renderToHtml(buffer);
                         element.innerHTML = html;
-                        
+
                         // Syntax highlighting uygula
                         if (this.isPrismLoaded) {
-                            element.querySelectorAll('pre code').forEach(block => { 
-                                try { 
-                                    Prism.highlightElement(block); 
-                                } catch(e) {} 
+                            element.querySelectorAll('pre code').forEach(block => {
+                                try {
+                                    Prism.highlightElement(block);
+                                } catch (e) { }
                             });
                         }
-                        
+
                         // Copy butonları ekle
                         this.addCopyButtons(element);
-                        
+
                         if (onProgress) onProgress();
                     } catch (e) {
                         // Fallback: plain text
                         element.textContent = buffer;
                     }
-                    
+
                     const jitter = Math.random() * 0.05;
                     setTimeout(step, speed + jitter);
                 } else {
                     resolve();
                 }
             };
-            
+
             step();
         });
     }
@@ -115,20 +117,20 @@ export class MarkdownComponent {
      */
     addCopyButtons(container) {
         if (!container) return;
-        
+
         const pres = container.querySelectorAll('pre');
         pres.forEach(pre => {
             if (pre.dataset.copy === 'true') return;
             pre.dataset.copy = 'true';
             pre.style.position = 'relative';
-            
+
             const btn = DOMUtils.create('button', {
                 className: 'copy-btn',
                 type: 'button',
                 title: 'Kodu kopyala',
                 textContent: 'Copy'
             });
-            
+
             DOMUtils.on(btn, 'click', async () => {
                 try {
                     await navigator.clipboard.writeText(pre.innerText);
@@ -140,7 +142,7 @@ export class MarkdownComponent {
                     setTimeout(() => btn.textContent = 'Copy', 1500);
                 }
             });
-            
+
             pre.appendChild(btn);
         });
     }
@@ -151,12 +153,12 @@ export class MarkdownComponent {
      */
     applySyntaxHighlighting(container) {
         if (!this.isPrismLoaded || !container) return;
-        
+
         try {
-            container.querySelectorAll('pre code').forEach(block => { 
-                try { 
-                    Prism.highlightElement(block); 
-                } catch(e) {} 
+            container.querySelectorAll('pre code').forEach(block => {
+                try {
+                    Prism.highlightElement(block);
+                } catch (e) { }
             });
         } catch (e) {
             console.error('Syntax highlighting failed', e);

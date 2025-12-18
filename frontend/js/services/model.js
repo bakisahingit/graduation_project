@@ -5,6 +5,7 @@
 
 import { StorageUtils } from '../utils/storage.js';
 import { ApiService } from './api.js';
+import { config } from '../config.js';
 
 export class ModelService {
     constructor() {
@@ -21,10 +22,7 @@ export class ModelService {
 
         // Eğer hiç aktif model yoksa, varsayılan modelleri aktif et
         if (this.activeModels.size === 0) {
-            const defaultModels = [
-                "AdmetGPT Fast",
-                "AdmetGPT High"
-            ];
+            const defaultModels = config.models.list;
             defaultModels.forEach(model => this.activeModels.add(model));
             this.saveActiveModels();
         }

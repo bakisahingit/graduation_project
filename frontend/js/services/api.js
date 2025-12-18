@@ -3,9 +3,11 @@
  * Backend ile iletişim için API servisi
  */
 
+import { config } from '../config.js';
+
 export class ApiService {
     constructor() {
-        this.baseUrl = '/api';
+        this.baseUrl = config.api.baseUrl;
     }
 
     /**
@@ -174,11 +176,8 @@ export class ApiService {
      * @returns {Promise<Array>}
      */
     async fetchModels() {
-        // AdmetGPT modelleri - Gemini API kullanır
-        return [
-            "AdmetGPT Fast",   // gemini-2.0-flash - Hızlı yanıtlar
-            "AdmetGPT High"    // gemini-2.5-flash - Yüksek kalite
-        ];
+        // Config'den model listesini döndür
+        return config.models.list;
     }
 }
 

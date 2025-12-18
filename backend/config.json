@@ -1,0 +1,23 @@
+{
+    "models": {
+        "mapping": {
+            "AdmetGPT Fast": "gemma-3-1b-it",
+            "AdmetGPT High": "gemma-3-12b-it"
+        },
+        "default": "gemma-3-1b-it",
+        "titleGeneration": "gemma-3-1b-it"
+    },
+    "cache": {
+        "llmTtlSeconds": 86400,
+        "pubchemTtlSeconds": 86400
+    },
+    "retry": {
+        "maxRetries": 5,
+        "initialDelayMs": 1000
+    },
+    "titleGenerator": {
+        "maxTokens": 256,
+        "temperature": 0.5,
+        "maxTitleLength": 50
+    }
+}

@@ -11,6 +11,9 @@
     --accent: rgba(255, 255, 255, 0.75);
     --glass-blur: 8px;
 
+    /* Modal overlay kararma oranı */
+    --modal-overlay-opacity: 0.7;
+
     /* Renk paleti */
     --primary: #4fc3f7;
     --primary-light: #81d4fa;

@@ -64,9 +64,8 @@
 .modal-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(10, 10, 10, 0.7);
-    backdrop-filter: blur(8px);
-    /* Performans sorunu yoksa modern bir görünüm katar */
+    background: rgba(0, 0, 0, var(--modal-overlay-opacity, 0.7));
+    /* backdrop-filter kaldırıldı - sadece kararma efekti */
     cursor: pointer;
 }
 
@@ -418,7 +417,8 @@
 .modal-header-icon {
     width: 24px;
     height: 24px;
-    color: #e382f8; /* ADMET purple */
+    color: #e382f8;
+    /* ADMET purple */
     flex-shrink: 0;
 }
 
@@ -460,7 +460,8 @@
 .admet-settings-content .checkbox-grid input[type="checkbox"] {
     width: 1.125rem;
     height: 1.125rem;
-    accent-color: #e382f8; /* ADMET purple */
+    accent-color: #e382f8;
+    /* ADMET purple */
 }
 
 .modal-footer {
@@ -469,7 +470,8 @@
     gap: var(--space-3);
     padding: var(--space-4) var(--space-6);
     border-top: 1px solid var(--border-secondary);
-    background: rgba(24, 24, 27, 0.5); /* zinc-900 with opacity */
+    background: rgba(24, 24, 27, 0.5);
+    /* zinc-900 with opacity */
 }
 
 /* ============================================= */
@@ -537,9 +539,9 @@
 
 .settings-nav-btn.active {
     background: var(--bg-glass);
-    border-color: rgba(79,195,247,0.3);
+    border-color: rgba(79, 195, 247, 0.3);
     color: var(--primary-light);
-    box-shadow: 0 4px 12px rgba(79,195,247,0.12);
+    box-shadow: 0 4px 12px rgba(79, 195, 247, 0.12);
 }
 
 /* İçerik alanı (modal-body benzeri) */
@@ -553,7 +555,8 @@
 }
 
 .settings-tab {
-    display: block; /* Görünürlük JS ile yönetiliyor (style.display) */
+    display: block;
+    /* Görünürlük JS ile yönetiliyor (style.display) */
 }
 
 /* Modeller sekmesi: arama ve liste */
@@ -565,7 +568,8 @@
 .models-search {
     width: 100%;
     padding: var(--space-3) var(--space-4);
-    background: #27272a; /* zinc-800 */
+    background: #27272a;
+    /* zinc-800 */
     border: 1px solid var(--border-accent);
     border-radius: var(--radius-md);
     color: var(--accent);
@@ -610,7 +614,7 @@
     font-size: 12px;
     line-height: 1;
     border-radius: 9999px;
-    background: rgba(79,195,247,0.15);
+    background: rgba(79, 195, 247, 0.15);
     color: var(--primary);
 }
 
@@ -639,8 +643,8 @@
 }
 
 .model-switch.active {
-    background: rgba(79,195,247,0.35);
-    border-color: rgba(79,195,247,0.5);
+    background: rgba(79, 195, 247, 0.35);
+    border-color: rgba(79, 195, 247, 0.5);
 }
 
 .model-switch.active::after {

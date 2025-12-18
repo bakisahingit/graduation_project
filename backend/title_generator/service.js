@@ -3,11 +3,18 @@
  * Otomatik başlık üretimi için ayrı LLM servisi
  */
 
+import { titleModel, titleGeneratorConfig } from '../src/config/index.js';
+
+// Gemma modeli mi kontrol et
+function isGemmaModel(modelName) {
+    return modelName && modelName.toLowerCase().includes('gemma');
+}
+
 class TitleGeneratorService {
     constructor() {
         // Kısa ve öz system prompt (token tasarrufu için)
         this.systemPrompt = `Kullanıcının mesajından kısa, çekici bir Türkçe sohbet başlığı üret.
-Kurallar: Maksimum 50 karakter, emoji yok, tırnak yok, sadece başlığı yaz.
+Kurallar: Maksimum ${titleGeneratorConfig.maxTitleLength} karakter, emoji yok, tırnak yok, sadece başlığı yaz.
 Örnek: "JavaScript nasıl öğrenilir?" → JavaScript Yolculuğu`;
     }
 
@@ -15,28 +22,39 @@ Kurallar: Maksimum 50 karakter, emoji yok, tırnak yok, sadece başlığı yaz.
      * Kullanıcının ilk mesajından başlık üret
      * @param {string} firstMessage - Kullanıcının ilk mesajı
      * @param {Object} openaiClient - OpenAI client instance
-     * @param {string} model - Kullanılacak model (artık kullanılmıyor, sabit model kullanılır)
+     * @param {string} model - Kullanılacak model (artık kullanılmıyor, config'den alınır)
      * @returns {Promise<string>} - Üretilen başlık
      */
     async generateTitle(firstMessage, openaiClient, model = null) {
         try {
             console.log('Başlık üretimi başlatılıyor:', firstMessage.substring(0, 100) + '...');
 
-            // Başlık üretimi için sabit ucuz model kullan (quota tasarrufu)
-            // gemini-2.0-flash-lite kullanıyoruz çünkü OpenAI-uyumlu endpoint sadece Gemini modellerini destekliyor
-            const titleModel = 'gemma-3-12b';
+            // Config'den title generation modelini kullan
             console.log(`Başlık üretimi için model: ${titleModel}`);
 
-            const messages = [
-                { role: 'system', content: this.systemPrompt },
-                { role: 'user', content: firstMessage.substring(0, 200) } // Mesajı da kısalt
-            ];
+            let messages;
+
+            // Gemma modelleri için system mesajını user mesajına birleştir
+            if (isGemmaModel(titleModel)) {
+                console.log('Gemma model detected: System message merged into user message');
+                messages = [
+                    {
+                        role: 'user',
+                        content: `[Talimat]: ${this.systemPrompt}\n\n[Mesaj]: ${firstMessage.substring(0, 200)}`
+                    }
+                ];
+            } else {
+                messages = [
+                    { role: 'system', content: this.systemPrompt },
+                    { role: 'user', content: firstMessage.substring(0, 200) }
+                ];
+            }
 
             const completion = await openaiClient.chat.completions.create({
                 model: titleModel,
                 messages: messages,
-                max_tokens: 256, // Gemini için daha yüksek token limiti
-                temperature: 0.5 // Daha tutarlı sonuçlar için düşürüldü
+                max_tokens: titleGeneratorConfig.maxTokens,
+                temperature: titleGeneratorConfig.temperature
             });
 
             // Debug: API yanıtını logla
@@ -71,7 +89,9 @@ Kurallar: Maksimum 50 karakter, emoji yok, tırnak yok, sadece başlığı yaz.
     generateFallbackTitle(message) {
         const words = message.split(' ').slice(0, 4);
         const fallbackTitle = words.join(' ') + (message.split(' ').length > 4 ? '...' : '');
-        return fallbackTitle.length > 50 ? fallbackTitle.substring(0, 47) + '...' : fallbackTitle;
+        return fallbackTitle.length > titleGeneratorConfig.maxTitleLength
+            ? fallbackTitle.substring(0, titleGeneratorConfig.maxTitleLength - 3) + '...'
+            : fallbackTitle;
     }
 
     /**
@@ -82,9 +102,10 @@ Kurallar: Maksimum 50 karakter, emoji yok, tırnak yok, sadece başlığı yaz.
     isValidTitle(title) {
         return title &&
             title.length > 0 &&
-            title.length <= 50 &&
+            title.length <= titleGeneratorConfig.maxTitleLength &&
             title.trim().length > 0;
     }
 }
 
 export default TitleGeneratorService;
+

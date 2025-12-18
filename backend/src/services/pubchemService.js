@@ -5,10 +5,10 @@
 // - Fonksiyonun en başına Redis'ten önbellek kontrolü eklendi.
 // - API'den başarılı sonuç alındığında Redis'e kayıt yapılıyor (24 saat geçerli).
 
-import { httpClient } from '../config/index.js';
-import redisClient from './redisService.js'; // Redis client'ı import et
+import { httpClient, cacheConfig } from '../config/index.js';
+import redisClient from './redisService.js';
 
-const CACHE_TTL_SECONDS = 3600 * 24; // PubChem sonuçlarını 24 saat cache'le
+const CACHE_TTL_SECONDS = cacheConfig.pubchemTtlSeconds;
 
 export async function getSmilesFromName(name) {
     const normalizedName = name.trim().toLowerCase();
@@ -27,21 +27,21 @@ export async function getSmilesFromName(name) {
 
     // 2. Cache'te yoksa PubChem API'sine git
     const pubchemUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(name)}/property/CanonicalSMILES/JSON`;
-    
+
     try {
         console.log(`Querying PubChem for "${name}"`);
         const response = await httpClient.get(pubchemUrl);
-        
+
         if (response.data?.PropertyTable?.Properties?.[0]) {
             const properties = response.data.PropertyTable.Properties[0];
             const smiles = properties.CanonicalSMILES || properties.ConnectivitySMILES || null;
-            
+
             // 3. Geçerli bir sonuç varsa Redis'e kaydet
             if (smiles) {
                 try {
                     await redisClient.set(cacheKey, smiles, { EX: CACHE_TTL_SECONDS });
                     console.log(`Cached PubChem result for "${normalizedName}"`);
-                } catch(e) {
+                } catch (e) {
                     console.error("PubChem Redis cache set failed:", e);
                 }
             }
@@ -51,7 +51,7 @@ export async function getSmilesFromName(name) {
     } catch (error) {
         // PubChem'de bulunamayan isimler için 404 hatası normaldir, bunu error olarak loglamaya gerek yok.
         if (error.response && error.response.status !== 404) {
-             console.error(`!!! PubChem API request failed for "${name}" !!!`, error.response ? `Status: ${error.response.status}` : error.message);
+            console.error(`!!! PubChem API request failed for "${name}" !!!`, error.response ? `Status: ${error.response.status}` : error.message);
         }
         return null;
     }
@@ -98,10 +98,14 @@ export async function getPubChemInfoBySmiles(smiles) {
             const flat = JSON.stringify(sections);
             const match = flat.match(/"Description"\s*:\s*\{"TOCHeading":"Description"[\s\S]*?"String":"([\s\S]*?)"/);
             if (match) description = match[1];
-        } catch (_) {}
+        } catch (_) { }
+
+        // Construct 2D structure image URL
+        const imageUrl = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/PNG?image_size=300x300`;
 
         return {
             cid,
+            imageUrl,
             description,
             properties: {
                 molecularFormula: prop.MolecularFormula || null,
@@ -120,6 +124,71 @@ export async function getPubChemInfoBySmiles(smiles) {
         };
     } catch (error) {
         console.error('PubChem info fetch failed:', error.response ? error.response.data : error.message);
+        return null;
+    }
+}
+
+/**
+ * Atomic number to element symbol mapping
+ */
+const ELEMENT_MAP = {
+    1: 'H', 2: 'He', 3: 'Li', 4: 'Be', 5: 'B', 6: 'C', 7: 'N', 8: 'O', 9: 'F', 10: 'Ne',
+    11: 'Na', 12: 'Mg', 13: 'Al', 14: 'Si', 15: 'P', 16: 'S', 17: 'Cl', 18: 'Ar',
+    19: 'K', 20: 'Ca', 26: 'Fe', 29: 'Cu', 30: 'Zn', 35: 'Br', 53: 'I'
+};
+
+/**
+ * Fetch 2D coordinates for a molecule by CID from PubChem.
+ * Returns atom positions and bond information for custom visualization.
+ * @param {number} cid - PubChem Compound ID
+ * @returns {Object|null} { atoms: [{id, symbol, x, y}], bonds: [{from, to, order}] }
+ */
+export async function getPubChem2DCoordinates(cid) {
+    try {
+        const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/record/JSON?record_type=2d`;
+        console.log(`Fetching PubChem 2D coordinates for CID ${cid}`);
+        const response = await httpClient.get(url);
+
+        const compound = response.data?.PC_Compounds?.[0];
+        if (!compound) return null;
+
+        // Parse atoms
+        const atomIds = compound.atoms?.aid || [];
+        const elements = compound.atoms?.element || [];
+
+        // Parse coordinates
+        const coords = compound.coords?.[0]?.conformers?.[0];
+        const xCoords = coords?.x || [];
+        const yCoords = coords?.y || [];
+
+        // Build atoms array with positions
+        const atoms = atomIds.map((aid, index) => ({
+            id: aid,
+            symbol: ELEMENT_MAP[elements[index]] || 'X',
+            x: xCoords[index] || 0,
+            y: yCoords[index] || 0
+        }));
+
+        // Parse bonds
+        const bondAid1 = compound.bonds?.aid1 || [];
+        const bondAid2 = compound.bonds?.aid2 || [];
+        const bondOrders = compound.bonds?.order || [];
+
+        const bonds = bondAid1.map((from, index) => ({
+            from: from,
+            to: bondAid2[index],
+            order: bondOrders[index] || 1 // 1=single, 2=double, 3=triple
+        }));
+
+        console.log(`Parsed ${atoms.length} atoms and ${bonds.length} bonds for CID ${cid}`);
+
+        return {
+            cid,
+            atoms,
+            bonds
+        };
+    } catch (error) {
+        console.error('PubChem 2D coordinates fetch failed:', error.response ? error.response.data : error.message);
         return null;
     }
 }

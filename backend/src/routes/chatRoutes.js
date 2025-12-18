@@ -3,7 +3,7 @@
 import { Router } from 'express';
 import { handleChatMessage, handleComparisonRequest, extractSmilesOnly } from '../handlers/chatHandler.js';
 import { getChatCompletion, extractChemicalWithLLM } from '../services/llmService.js';
-import { getPubChemInfoBySmiles } from '../services/pubchemService.js';
+import { getPubChemInfoBySmiles, getPubChem2DCoordinates } from '../services/pubchemService.js';
 import { getSmilesFromName } from '../services/pubchemService.js';
 import TitleGeneratorService from '../../title_generator/service.js'; // Import title service
 import { openai } from '../config/index.js'; // Import openai client
@@ -191,4 +191,21 @@ router.post('/pubchem-info', async (req, res) => {
         return res.status(500).json({ success: false, error: String(err) });
     }
 });
+
+// PubChem 2D koordinatlarını CID ile getir
+router.post('/pubchem-2d-coords', async (req, res) => {
+    const { cid } = req.body;
+    if (!cid) {
+        return res.status(400).json({ success: false, error: 'Missing `cid` in request body' });
+    }
+    try {
+        const coords = await getPubChem2DCoordinates(cid);
+        if (!coords) return res.json({ success: false, error: 'No 2D coordinates found in PubChem' });
+        return res.json({ success: true, ...coords });
+    } catch (err) {
+        console.error('PubChem 2D coords failed', err);
+        return res.status(500).json({ success: false, error: String(err) });
+    }
+});
+
 export default router;

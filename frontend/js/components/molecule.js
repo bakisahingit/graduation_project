@@ -175,28 +175,28 @@ export class MoleculeComponent {
         if (!smiles || typeof smiles !== 'string') {
             return false;
         }
-        
+
         // Temel SMILES doğrulama
         const smilesRegex = /^[A-Za-z0-9@+\-\[\]()=#\\\/%]+$/;
         if (!smilesRegex.test(smiles)) {
             return false;
         }
-        
+
         // Parantez ve köşeli parantez dengesini kontrol et
         let parenCount = 0;
         let bracketCount = 0;
-        
+
         for (let char of smiles) {
             if (char === '(') parenCount++;
             else if (char === ')') parenCount--;
             else if (char === '[') bracketCount++;
             else if (char === ']') bracketCount--;
-            
+
             if (parenCount < 0 || bracketCount < 0) {
                 return false;
             }
         }
-        
+
         return parenCount === 0 && bracketCount === 0;
     }
 
@@ -208,7 +208,7 @@ export class MoleculeComponent {
         const placeholder = DOMUtils.select('#molecule-placeholder');
         const canvas = this.canvas;
         const error = DOMUtils.select('#molecule-error');
-        
+
         // Ensure canvas resolution matches current CSS size before any draw
         if (this.drawer && typeof this.drawer._adjustCanvasForHiDPI === 'function') {
             this.drawer._adjustCanvasForHiDPI();
@@ -218,7 +218,7 @@ export class MoleculeComponent {
         if (placeholder) placeholder.style.display = 'none';
         if (canvas) canvas.style.display = 'none';
         if (error) error.style.display = 'none';
-        
+
         if (smiles) {
             if (this.validateSMILES(smiles)) {
                 if (this.drawer && this.drawer.parseAndDraw(smiles)) {
@@ -250,7 +250,7 @@ export class MoleculeComponent {
         const placeholder = DOMUtils.select('#molecule-placeholder');
         if (placeholder) {
             placeholder.style.display = 'flex';
-            
+
             if (smiles && isValid) {
                 placeholder.innerHTML = `
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -477,7 +477,7 @@ class MoleculeDrawer {
      * Eklenen hidrojeni gerçek atom listesine ekler ve bond oluşturur
      */
     _addImplicitHydrogens(graph) {
-        const valenceMap = { 'H':1, 'C':4, 'N':3, 'O':2, 'S':2, 'P':3, 'F':1, 'Cl':1, 'Br':1, 'I':1 };
+        const valenceMap = { 'H': 1, 'C': 4, 'N': 3, 'O': 2, 'S': 2, 'P': 3, 'F': 1, 'Cl': 1, 'Br': 1, 'I': 1 };
 
         // compute current bond counts
         const bondCount = new Array(graph.atoms.length).fill(0);
@@ -513,7 +513,7 @@ class MoleculeDrawer {
      * Eğer bir atomun valansı aşılıyorsa, atom.invalid = true olarak işaretle
      */
     _checkValence(graph) {
-        const valenceMap = { 'H':1, 'C':4, 'N':3, 'O':2, 'S':2, 'P':3, 'F':1, 'Cl':1, 'Br':1, 'I':1 };
+        const valenceMap = { 'H': 1, 'C': 4, 'N': 3, 'O': 2, 'S': 2, 'P': 3, 'F': 1, 'Cl': 1, 'Br': 1, 'I': 1 };
         const bondCount = new Array(graph.atoms.length).fill(0);
         graph.bonds.forEach(b => {
             const order = b.type === 'double' ? 2 : (b.type === 'triple' ? 3 : 1);
@@ -701,7 +701,7 @@ class MoleculeDrawer {
      */
     drawRing(centerX, centerY, radius, atoms, bonds) {
         const angleStep = (2 * Math.PI) / atoms.length;
-        
+
         // Atomları çiz
         atoms.forEach((atom, i) => {
             const angle = i * angleStep;
@@ -709,7 +709,7 @@ class MoleculeDrawer {
             const y = centerY + radius * Math.sin(angle);
             this.drawAtom(x, y, atom.symbol, atom.color);
         });
-        
+
         // Bağları çiz
         bonds.forEach((bond, i) => {
             const angle1 = i * angleStep;
@@ -820,6 +820,12 @@ class MoleculeDrawer {
             const a1 = graph.atoms[b.a];
             const a2 = graph.atoms[b.b];
             if (!a1 || !a2) return;
+
+            // For PubChem graphs, skip hydrogen bonds if showHydrogens is false
+            if (graph.isPubChem && !this.showHydrogens) {
+                if (a1.isHydrogen || a2.isHydrogen || a1.symbol === 'H' || a2.symbol === 'H') return;
+            }
+
             const x1 = this.centerX + (a1.x - this.centerX) * this.zoom + this.offsetX;
             const y1 = this.centerY + (a1.y - this.centerY) * this.zoom + this.offsetY;
             const x2 = this.centerX + (a2.x - this.centerX) * this.zoom + this.offsetX;
@@ -834,6 +840,11 @@ class MoleculeDrawer {
         });
 
         graph.atoms.forEach((atom, idx) => {
+            // For PubChem graphs, skip hydrogen atoms if showHydrogens is false
+            if (graph.isPubChem && !this.showHydrogens) {
+                if (atom.isHydrogen || atom.symbol === 'H') return;
+            }
+
             const color = this._atomColor(atom.symbol);
             const tx = this.centerX + (atom.x - this.centerX) * this.zoom + this.offsetX;
             const ty = this.centerY + (atom.y - this.centerY) * this.zoom + this.offsetY;
@@ -843,6 +854,136 @@ class MoleculeDrawer {
         });
 
         return true;
+    }
+
+    /**
+     * PubChem 2D koordinat verisinden molekül çiz
+     * @param {Object} data - { atoms: [{id, symbol, x, y}], bonds: [{from, to, order}] }
+     * @returns {boolean}
+     */
+    drawFromPubChemCoords(data) {
+        if (!data || !data.atoms || data.atoms.length === 0) return false;
+
+        this._adjustCanvasForHiDPI();
+        this.clear();
+
+        // Build graph structure from PubChem data
+        const graph = {
+            atoms: [],
+            bonds: [],
+            isPubChem: true
+        };
+
+        // Create ID to index mapping
+        const idToIndex = new Map();
+        data.atoms.forEach((atom, idx) => {
+            idToIndex.set(atom.id, idx);
+            graph.atoms.push({
+                id: atom.id,
+                symbol: atom.symbol,
+                x: atom.x,
+                y: atom.y,
+                _placed: true,
+                isHydrogen: atom.symbol === 'H'
+            });
+        });
+
+        // Convert bonds
+        data.bonds.forEach(bond => {
+            const aIdx = idToIndex.get(bond.from);
+            const bIdx = idToIndex.get(bond.to);
+            if (aIdx !== undefined && bIdx !== undefined) {
+                const orderMap = { 1: 'single', 2: 'double', 3: 'triple' };
+                graph.bonds.push({
+                    a: aIdx,
+                    b: bIdx,
+                    type: orderMap[bond.order] || 'single'
+                });
+            }
+        });
+
+        // Scale and center the molecule to fit canvas
+        this._fitPubChemToCanvas(graph);
+
+        // Save current graph for pan/zoom
+        this.currentGraph = graph;
+
+        // Draw bonds first (filter out hydrogen bonds if showHydrogens is false)
+        graph.bonds.forEach(b => {
+            const a1 = graph.atoms[b.a];
+            const a2 = graph.atoms[b.b];
+            if (!a1 || !a2) return;
+
+            // Skip bonds involving hydrogens if showHydrogens is false
+            if (!this.showHydrogens && (a1.isHydrogen || a2.isHydrogen)) return;
+
+            const x1 = this.centerX + (a1.x - this.centerX) * this.zoom + this.offsetX;
+            const y1 = this.centerY + (a1.y - this.centerY) * this.zoom + this.offsetY;
+            const x2 = this.centerX + (a2.x - this.centerX) * this.zoom + this.offsetX;
+            const y2 = this.centerY + (a2.y - this.centerY) * this.zoom + this.offsetY;
+            this.drawBond(x1, y1, x2, y2, b.type, '#81d4fa', {});
+        });
+
+        // Draw atoms on top (filter out hydrogens if showHydrogens is false)
+        graph.atoms.forEach((atom, idx) => {
+            // Skip hydrogen atoms if showHydrogens is false
+            if (!this.showHydrogens && atom.isHydrogen) return;
+
+            const color = this._atomColor(atom.symbol);
+            const tx = this.centerX + (atom.x - this.centerX) * this.zoom + this.offsetX;
+            const ty = this.centerY + (atom.y - this.centerY) * this.zoom + this.offsetY;
+            const subx = Math.round(tx * this._dpr) / this._dpr;
+            const suby = Math.round(ty * this._dpr) / this._dpr;
+            this.drawAtom(subx, suby, atom.symbol, color, { index: idx });
+        });
+
+        return true;
+    }
+
+    /**
+     * PubChem koordinatlarını canvas'a sığdır ve ölçekle
+     */
+    _fitPubChemToCanvas(graph) {
+        if (!graph || !graph.atoms || graph.atoms.length === 0) return;
+
+        // Find bounding box
+        const xs = graph.atoms.map(a => a.x);
+        const ys = graph.atoms.map(a => a.y);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+
+        const contentW = (maxX - minX) || 1;
+        const contentH = (maxY - minY) || 1;
+
+        // Available canvas space with padding
+        const availW = this.cssWidth - this.padding * 2;
+        const availH = this.cssHeight - this.padding * 2;
+
+        // Calculate scale to fit
+        const scaleX = availW / contentW;
+        const scaleY = availH / contentH;
+        const fitScale = Math.min(scaleX, scaleY, 60); // Cap at 60 to prevent oversized molecules
+
+        // Center point of molecule
+        const centerMolX = minX + contentW / 2;
+        const centerMolY = minY + contentH / 2;
+
+        // Transform atom positions to canvas coordinates
+        graph.atoms.forEach(a => {
+            a.x = this.centerX + (a.x - centerMolX) * fitScale;
+            a.y = this.centerY + (a.y - centerMolY) * fitScale;
+        });
+
+        // Update scale and reset pan
+        this.scale = 1;
+        this.zoom = 1;
+        this.targetZoom = 1;
+        this.offsetX = 0;
+        this.offsetY = 0;
+        this.targetOffsetX = 0;
+        this.targetOffsetY = 0;
     }
 
     /**
@@ -909,20 +1050,20 @@ class MoleculeDrawer {
         ectx.lineCap = 'round';
 
         if (type === 'single') {
-            ectx.beginPath(); ectx.moveTo(x1,y1); ectx.lineTo(x2,y2); ectx.stroke();
+            ectx.beginPath(); ectx.moveTo(x1, y1); ectx.lineTo(x2, y2); ectx.stroke();
         } else if (type === 'double') {
-            const dx = x2 - x1, dy = y2 - y1; const length = Math.sqrt(dx*dx+dy*dy)||1;
+            const dx = x2 - x1, dy = y2 - y1; const length = Math.sqrt(dx * dx + dy * dy) || 1;
             const perp = Math.max(2, Math.round(this.baseBondWidth * this.scale));
-            const px = -dy/length*perp, py = dx/length*perp;
-            ectx.beginPath(); ectx.moveTo(x1+px,y1+py); ectx.lineTo(x2+px,y2+py); ectx.stroke();
-            ectx.beginPath(); ectx.moveTo(x1-px,y1-py); ectx.lineTo(x2-px,y2-py); ectx.stroke();
+            const px = -dy / length * perp, py = dx / length * perp;
+            ectx.beginPath(); ectx.moveTo(x1 + px, y1 + py); ectx.lineTo(x2 + px, y2 + py); ectx.stroke();
+            ectx.beginPath(); ectx.moveTo(x1 - px, y1 - py); ectx.lineTo(x2 - px, y2 - py); ectx.stroke();
         } else if (type === 'triple') {
-            const dx = x2 - x1, dy = y2 - y1; const length = Math.sqrt(dx*dx+dy*dy)||1;
+            const dx = x2 - x1, dy = y2 - y1; const length = Math.sqrt(dx * dx + dy * dy) || 1;
             const perp = Math.max(2, Math.round(this.baseBondWidth * this.scale));
-            const px = -dy/length*perp, py = dx/length*perp;
-            ectx.beginPath(); ectx.moveTo(x1,y1); ectx.lineTo(x2,y2); ectx.stroke();
-            ectx.beginPath(); ectx.moveTo(x1+px,y1+py); ectx.lineTo(x2+px,y2+py); ectx.stroke();
-            ectx.beginPath(); ectx.moveTo(x1-px,y1-py); ectx.lineTo(x2-px,y2-py); ectx.stroke();
+            const px = -dy / length * perp, py = dx / length * perp;
+            ectx.beginPath(); ectx.moveTo(x1, y1); ectx.lineTo(x2, y2); ectx.stroke();
+            ectx.beginPath(); ectx.moveTo(x1 + px, y1 + py); ectx.lineTo(x2 + px, y2 + py); ectx.stroke();
+            ectx.beginPath(); ectx.moveTo(x1 - px, y1 - py); ectx.lineTo(x2 - px, y2 - py); ectx.stroke();
         }
 
         // stereo markers not drawn in export for simplicity
@@ -1283,27 +1424,27 @@ class MoleculeDrawer {
      */
     _animateToTarget() {
         if (this._animating) return;
-        
+
         this._animating = true;
         const animate = () => {
             const diff = 0.1;
             let changed = false;
-            
+
             if (Math.abs(this.zoom - this.targetZoom) > 0.01) {
                 this.zoom += (this.targetZoom - this.zoom) * diff;
                 changed = true;
             }
-            
+
             if (Math.abs(this.offsetX - this.targetOffsetX) > 0.01) {
                 this.offsetX += (this.targetOffsetX - this.offsetX) * diff;
                 changed = true;
             }
-            
+
             if (Math.abs(this.offsetY - this.targetOffsetY) > 0.01) {
                 this.offsetY += (this.targetOffsetY - this.offsetY) * diff;
                 changed = true;
             }
-            
+
             if (changed) {
                 this.redraw();
                 requestAnimationFrame(animate);
@@ -1311,7 +1452,7 @@ class MoleculeDrawer {
                 this._animating = false;
             }
         };
-        
+
         animate();
     }
 

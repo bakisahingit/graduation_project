@@ -285,6 +285,11 @@
     padding-top: var(--space-2);
 }
 
+/* Boş olduğunda gizle - içerik yokken boşluk oluşmasını önle */
+.message-actions:empty {
+    display: none;
+}
+
 .message-action-btn {
     background-color: var(--bg-glass);
     border: 1px solid var(--border-secondary);

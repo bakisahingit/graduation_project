@@ -11,6 +11,8 @@ import { ConversationService } from './services/conversation.js';
 import { ModelService } from './services/model.js';
 import { DOMUtils } from './utils/dom.js';
 import { HelperUtils } from './utils/helpers.js';
+import { config } from './config.js';
+
 
 class ChatApp {
     constructor() {
@@ -90,7 +92,7 @@ class ChatApp {
      */
     initializeTheme() {
         // Kaydedilmiş temayı yükle
-        const savedTheme = localStorage.getItem('admetgpt-theme') || 'dark';
+        const savedTheme = localStorage.getItem(config.storage.theme) || config.ui.defaultTheme;
         this.applyTheme(savedTheme);
 
         // Tema radio butonlarını dinle
@@ -98,7 +100,7 @@ class ChatApp {
             radio.addEventListener('change', (e) => {
                 const theme = e.target.value;
                 this.applyTheme(theme);
-                localStorage.setItem('admetgpt-theme', theme);
+                localStorage.setItem(config.storage.theme, theme);
             });
 
             // Mevcut temaya göre radio'yu işaretle
@@ -237,10 +239,10 @@ class ChatApp {
             const changeAdmetBtn = settingsModal.querySelector('#change-shortcut-admet');
             const resetAdmetBtn = settingsModal.querySelector('#reset-shortcut-admet');
 
-            // Defaults stored in localStorage keys
+            // Defaults stored in localStorage keys - config'den al
             const SHORTCUT_KEYS = {
-                molecule: 'shortcut_molecule',
-                admet: 'shortcut_admet'
+                molecule: config.storage.shortcutMolecule,
+                admet: config.storage.shortcutAdmet
             };
             // Karşılaştırma modali için etiket ekleme/silme event'leri
             const addMoleculeBtn = document.getElementById('add-molecule-btn');
@@ -270,8 +272,8 @@ class ChatApp {
             const loadShortcutsToUI = () => {
                 const m = DOMUtils.select('#shortcut-molecule-display');
                 const a = DOMUtils.select('#shortcut-admet-display');
-                const mv = window.localStorage.getItem(SHORTCUT_KEYS.molecule) || 'Alt+M';
-                const av = window.localStorage.getItem(SHORTCUT_KEYS.admet) || 'Alt+N';
+                const mv = window.localStorage.getItem(SHORTCUT_KEYS.molecule) || config.shortcuts.molecule;
+                const av = window.localStorage.getItem(SHORTCUT_KEYS.admet) || config.shortcuts.admet;
                 if (m) m.textContent = mv;
                 if (a) a.textContent = av;
                 // Also update the floating shortcuts mini UI (new structure: kbd[data-action])
@@ -395,8 +397,8 @@ class ChatApp {
         // Global kısayollar: dynamic from localStorage (defaults Alt+M / Alt+N)
         DOMUtils.on(document, 'keydown', (e) => {
             try {
-                const mv = window.localStorage.getItem('shortcut_molecule') || 'Alt+M';
-                const av = window.localStorage.getItem('shortcut_admet') || 'Alt+N';
+                const mv = window.localStorage.getItem(config.storage.shortcutMolecule) || config.shortcuts.molecule;
+                const av = window.localStorage.getItem(config.storage.shortcutAdmet) || config.shortcuts.admet;
 
                 const normalizeKey = (k) => {
                     if (!k) return k;
@@ -519,8 +521,11 @@ class ChatApp {
                         const smilesDisplay = document.getElementById('smiles-display');
                         if (smilesDisplay) smilesDisplay.textContent = data.smiles;
 
-                        // Update the molecule visualization
-                        this.updateMoleculeDisplay();
+                        // Show loading state in canvas area while waiting for PubChem 2D coords
+                        this._showMoleculeLoading();
+
+                        // Trigger PubChem panel load which will fetch 2D coordinates and draw
+                        this.loadPubChemPanel(data.smiles);
 
                         // Clear the input
                         moleculeQueryInput.value = '';
@@ -2910,6 +2915,40 @@ class ChatApp {
     }
 
     /**
+     * Molekül çizim alanında yükleniyor durumu göster
+     */
+    _showMoleculeLoading() {
+        const display = document.getElementById('molecule-display');
+        const canvas = document.getElementById('molecule-canvas');
+        const placeholder = document.getElementById('molecule-placeholder');
+        const error = document.getElementById('molecule-error');
+
+        // Hide all current content
+        if (canvas) canvas.style.display = 'none';
+        if (placeholder) placeholder.style.display = 'none';
+        if (error) error.style.display = 'none';
+
+        // Remove any existing loading or PubChem elements
+        if (display) {
+            const existingLoading = display.querySelector('.pubchem-loading');
+            if (existingLoading) existingLoading.remove();
+            const existingImg = display.querySelector('.pubchem-structure-img');
+            if (existingImg) existingImg.remove();
+            const existingLabel = display.querySelector('.structure-source-label');
+            if (existingLabel) existingLabel.remove();
+
+            // Show loading spinner
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'pubchem-loading';
+            loadingDiv.innerHTML = `
+                <div class="loading-spinner"></div>
+                <span>PubChem verileri yükleniyor...</span>
+            `;
+            display.appendChild(loadingDiv);
+        }
+    }
+
+    /**
      * Molekül bilgi panelinde PubChem verilerini render et
      */
     async loadPubChemPanel(smiles) {
@@ -2955,6 +2994,11 @@ class ChatApp {
             const atomCountElement = document.getElementById('info-atom-count');
             if (atomCountElement && typeof p.heavyAtomCount !== 'undefined') atomCountElement.textContent = String(p.heavyAtomCount);
 
+            // Fetch 2D coordinates and draw with our custom MoleculeDrawer
+            if (data.cid) {
+                this._drawWithPubChemCoords(data.cid);
+            }
+
             const desc = data.description ? `<div class="info-item"><span class="info-label">Açıklama:</span><span class="info-value">${DOMUtils.escapeHtml(data.description)}</span></div>` : '';
 
             // Update sticky header "PubChem'de aç" link
@@ -2986,6 +3030,120 @@ class ChatApp {
                 headerLink.href = `https://pubchem.ncbi.nlm.nih.gov/#query=${encodeURIComponent(smiles)}`;
                 headerLink.style.visibility = 'visible';
             }
+        }
+    }
+
+    /**
+     * PubChem 2D yapı görselini molekül panelinde göster
+     * @param {string} imageUrl - PubChem görsel URL'i
+     * @param {number} cid - PubChem CID
+     */
+    _displayPubChemStructureImage(imageUrl, cid) {
+        const display = document.getElementById('molecule-display');
+        if (!display) return;
+
+        const canvas = document.getElementById('molecule-canvas');
+        const placeholder = document.getElementById('molecule-placeholder');
+        const error = document.getElementById('molecule-error');
+
+        // Mevcut elementleri gizle
+        if (canvas) canvas.style.display = 'none';
+        if (placeholder) placeholder.style.display = 'none';
+        if (error) error.style.display = 'none';
+
+        // Mevcut PubChem görselini temizle
+        const existingImg = display.querySelector('.pubchem-structure-img');
+        if (existingImg) existingImg.remove();
+        const existingLabel = display.querySelector('.structure-source-label');
+        if (existingLabel) existingLabel.remove();
+
+        // Loading state oluştur
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'pubchem-loading';
+        loadingDiv.innerHTML = `
+            <div class="loading-spinner"></div>
+            <span>PubChem görseli yükleniyor...</span>
+        `;
+        display.appendChild(loadingDiv);
+
+        // Görsel elementi oluştur
+        const img = document.createElement('img');
+        img.className = 'pubchem-structure-img';
+        img.alt = `PubChem CID ${cid} 2D Structure`;
+        img.title = `PubChem CID ${cid}`;
+
+        img.onload = () => {
+            // Loading'i kaldır ve görseli göster
+            loadingDiv.remove();
+            display.appendChild(img);
+
+            // Kaynak etiketi ekle
+            const sourceLabel = document.createElement('div');
+            sourceLabel.className = 'structure-source-label';
+            sourceLabel.innerHTML = `<span>Kaynak: PubChem</span>`;
+            display.appendChild(sourceLabel);
+        };
+
+        img.onerror = () => {
+            // Görsel yüklenemezse canvas'a geri dön
+            loadingDiv.remove();
+            if (canvas) canvas.style.display = 'block';
+            console.warn('PubChem structure image could not be loaded, falling back to canvas');
+        };
+
+        // Görseli yükle
+        img.src = imageUrl;
+    }
+
+    /**
+     * PubChem 2D koordinatlarını çekerek kendi MoleculeDrawer sistemimizle çiz
+     * @param {number} cid - PubChem Compound ID
+     */
+    async _drawWithPubChemCoords(cid) {
+        const display = document.getElementById('molecule-display');
+        const canvas = document.getElementById('molecule-canvas');
+        const placeholder = document.getElementById('molecule-placeholder');
+        const error = document.getElementById('molecule-error');
+
+        // Remove any existing PubChem image elements
+        if (display) {
+            const existingImg = display.querySelector('.pubchem-structure-img');
+            if (existingImg) existingImg.remove();
+            const existingLabel = display.querySelector('.structure-source-label');
+            if (existingLabel) existingLabel.remove();
+            const existingLoading = display.querySelector('.pubchem-loading');
+            if (existingLoading) existingLoading.remove();
+        }
+
+        // Hide placeholder and error, show canvas
+        if (placeholder) placeholder.style.display = 'none';
+        if (error) error.style.display = 'none';
+        if (canvas) canvas.style.display = 'block';
+
+        try {
+            const res = await fetch('/api/chat/pubchem-2d-coords', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cid })
+            });
+            const data = await res.json();
+
+            if (data.success && this.molecule && this.molecule.drawer) {
+                // Use our custom MoleculeDrawer with PubChem coordinates
+                this.molecule.drawer.drawFromPubChemCoords(data);
+
+                // Add source label
+                if (display) {
+                    const sourceLabel = document.createElement('div');
+                    sourceLabel.className = 'structure-source-label';
+                    sourceLabel.innerHTML = `<span>Kaynak: PubChem (CID ${cid})</span>`;
+                    display.appendChild(sourceLabel);
+                }
+            } else {
+                console.warn('Failed to fetch PubChem 2D coords, falling back to SMILES parsing');
+            }
+        } catch (err) {
+            console.error('PubChem 2D coords fetch error:', err);
         }
     }
 

@@ -5,11 +5,10 @@ import time
 import threading
 import requests # Import requests
 
-# Import the analysis function (no longer directly used, but kept for context)
-# from admet.pipeline import run_analysis_pipeline
-from .pipeline import notify_backend # Import notify_backend directly
+# Import from lightweight module that doesn't load ADMET models
+from .notifications import notify_backend
 
-RABBITMQ_URL = os.environ.get('CELERY_BROKER_URL', 'amqp://user:password@rabbitmq:5672//')
+RABBITMQ_URL = os.environ.get('CELERY_BROKER_URL', 'amqp://user:password@localhost:5672/')
 TASK_QUEUE = 'admet_tasks'
 ADMET_API_URL = os.environ.get('ADMET_API_URL', 'http://localhost:8000') # URL for the FastAPI app
 
