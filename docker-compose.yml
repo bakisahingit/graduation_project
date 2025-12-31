@@ -44,7 +44,7 @@ services:
     # container_name: toxicity-admet # Replicas kullanırken container_name olmamalıdır.
     # YENİ EKLENEN KISIM: Worker sayısını buradan ayarlayabilirsin.
     deploy:
-      replicas: 4 # CPU çekirdek sayına göre bu sayıyı artırabilirsin (örn: 4)
+      replicas: 1 # CPU çekirdek sayına göre bu sayıyı artırabilirsin (örn: 4)
     environment:
       - PYTHONUNBUFFERED=1
       - CELERY_BROKER_URL=amqp://user:password@rabbitmq:5672/

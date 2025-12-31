@@ -33,6 +33,7 @@ COPY admet/ ./admet/
 
 # Copy the start script
 COPY admet/start.sh /app/start.sh
+RUN sed -i 's/\r$//' /app/start.sh
 
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8000

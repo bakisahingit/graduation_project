@@ -13,6 +13,14 @@ import redisClient from './src/services/redisService.js';
 import { getChatCompletion } from './src/services/llmService.js';
 import { formatAdmetReport } from './src/utils/formatters.js';
 import { admetContextPrompt } from './src/utils/constants.js';
+import rateLimit from 'express-rate-limit';
+
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
 
 
 async function processSingleAnalysis(sessionId, data, selected_parameters) {
@@ -31,7 +39,7 @@ async function processSingleAnalysis(sessionId, data, selected_parameters) {
     } catch (e) { console.error("Summary cache check failed:", e); }
 
     console.log(`Summary not cached for ${data.smiles} with params ${paramsKey}. Generating with LLM...`);
-    
+
     try {
         let admetReportText = `Molecule: ${data.moleculeName || 'N/A'}\nSMILES: ${data.smiles}\nOverall Risk Score: ${data.riskScore?.toFixed(1) || 'N/A'}\n\nPredictions:\n`;
         if (data.admetPredictions && Array.isArray(data.admetPredictions)) {
@@ -72,7 +80,7 @@ ${admetReportText}`;
 
     } catch (llmError) {
         console.error(`Background task LLM Error for session ${sessionId}:`, llmError);
-        notifyClient(sessionId, { status: 'error', output: 'An error occurred while summarizing the results with the AI model.'});
+        notifyClient(sessionId, { status: 'error', output: 'An error occurred while summarizing the results with the AI model.' });
     }
 }
 
@@ -89,7 +97,7 @@ async function processComparisonAnalysis(sessionId, finalBatch, properties) {
                 .filter(p => properties.includes(p.property))
                 .map(p => `- ${p.property}: ${p.prediction}`) // Corrected: Removed unnecessary backticks around property and prediction
                 .join('\n');
-            
+
             return `
 --- MOLECULE: ${res.data.moleculeName || res.identifier} ---
 SMILES: ${res.data.smiles}
@@ -121,10 +129,10 @@ ${dataSummary}`;
             { role: 'system', content: admetContextPrompt },
             { role: 'user', content: finalMessage.trim() }
         ];
-        
+
         const completion = await getChatCompletion(messages);
         let llmContent = completion.choices[0].message.content;
-		llmContent = llmContent.replace(/<\｜begin of sentence\｜>/g, '').trim();
+        llmContent = llmContent.replace(/<\｜begin of sentence\｜>/g, '').trim();
         notifyClient(sessionId, { status: 'success', output: llmContent, rawComparisonData: finalBatch });
 
     } catch (llmError) {
@@ -142,6 +150,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// Apply the rate limiting middleware to all requests
+app.use(limiter);
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
@@ -173,7 +185,7 @@ app.post('/api/task-complete', async (req, res) => {
 
         if (batchInfo.results.length >= batchInfo.total) {
             console.log(`All ${batchInfo.total} results received for comparison batch: ${sessionId}`);
-            
+
             const finalBatch = {
                 successfulResults: batchInfo.results.filter(r => r.status === 'success'),
                 failedResults: [...batchInfo.failedResolutions, ...batchInfo.results.filter(r => r.status !== 'success')]
