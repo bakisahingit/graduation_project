@@ -11,6 +11,12 @@ export class MoleculeComponent {
         this.ctx = null;
         this.drawer = null;
         this.isInitialized = false;
+        // 3D Viewer properties
+        this.viewer3D = null;
+        this.viewMode = '2D'; // '2D' or '3D'
+        this.style3D = 'stick'; // 'stick', 'sphere', 'ballstick'
+        this.currentSmiles = null;
+        this.currentCID = null;
     }
 
     /**
@@ -34,9 +40,227 @@ export class MoleculeComponent {
                 if (this.drawer.currentGraph) {
                     this.drawer.parseAndDrawFromGraph(this.drawer.currentGraph);
                 }
+                // Also resize 3D viewer if active
+                if (this.viewer3D && this.viewMode === '3D') {
+                    this.viewer3D.resize();
+                }
             });
+
+            // Initialize 3D viewer controls
+            this._init3DControls();
         }
     }
+
+    /**
+     * Initialize 3D viewer controls and event listeners
+     */
+    _init3DControls() {
+        // View mode toggle buttons
+        const btn2D = document.getElementById('view-mode-2d');
+        const btn3D = document.getElementById('view-mode-3d');
+        const styleSelector = document.getElementById('style-3d-selector');
+
+        if (btn2D) {
+            btn2D.addEventListener('click', () => this.setViewMode('2D'));
+        }
+        if (btn3D) {
+            btn3D.addEventListener('click', () => this.setViewMode('3D'));
+        }
+
+        // 3D style buttons
+        const styleBtns = document.querySelectorAll('.style-3d-btn');
+        styleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const style = btn.dataset.style;
+                this.setStyle3D(style);
+                // Update active state
+                styleBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+    }
+
+    /**
+     * Set view mode (2D or 3D)
+     */
+    setViewMode(mode) {
+        if (this.viewMode === mode) return;
+        this.viewMode = mode;
+
+        const btn2D = document.getElementById('view-mode-2d');
+        const btn3D = document.getElementById('view-mode-3d');
+        const canvas2D = document.getElementById('molecule-canvas');
+        const viewer3DContainer = document.getElementById('molecule-3d-viewer');
+        const styleSelector = document.getElementById('style-3d-selector');
+        const loading3D = document.getElementById('molecule-3d-loading');
+
+        // Update button states
+        btn2D?.classList.toggle('active', mode === '2D');
+        btn3D?.classList.toggle('active', mode === '3D');
+
+        if (mode === '3D') {
+            // Hide 2D canvas, show 3D container
+            if (canvas2D) canvas2D.style.display = 'none';
+            if (viewer3DContainer) viewer3DContainer.style.display = 'block';
+            if (styleSelector) styleSelector.style.display = 'flex';
+
+            // Initialize 3D viewer if not already done
+            if (!this.viewer3D) {
+                this._init3DViewer();
+            }
+
+            // Load current molecule in 3D
+            if (this.currentSmiles || this.currentCID) {
+                this._load3DMolecule();
+            }
+        } else {
+            // Show 2D canvas, hide 3D container
+            if (canvas2D && this.drawer?.currentGraph) {
+                canvas2D.style.display = 'block';
+            }
+            if (viewer3DContainer) viewer3DContainer.style.display = 'none';
+            if (styleSelector) styleSelector.style.display = 'none';
+            if (loading3D) loading3D.style.display = 'none';
+        }
+    }
+
+    /**
+     * Initialize 3Dmol.js viewer
+     */
+    _init3DViewer() {
+        const container = document.getElementById('molecule-3d-viewer');
+        if (!container || typeof $3Dmol === 'undefined') {
+            console.warn('3Dmol.js not loaded or container not found');
+            return;
+        }
+
+        // Ensure container has dimensions
+        container.style.width = '100%';
+        container.style.height = '100%';
+
+        // Create viewer with dark background and proper settings
+        this.viewer3D = $3Dmol.createViewer(container, {
+            backgroundColor: 0x0a0b0d,
+            antialias: true,
+            id: 'molecule-3d-canvas'
+        });
+
+        // Force resize after creation to match container
+        setTimeout(() => {
+            if (this.viewer3D) {
+                this.viewer3D.resize();
+                this.viewer3D.render();
+            }
+        }, 100);
+    }
+
+    /**
+     * Load molecule in 3D from PubChem
+     */
+    async _load3DMolecule() {
+        if (!this.viewer3D) {
+            this._init3DViewer();
+            // Wait a bit for viewer to initialize
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
+        if (!this.viewer3D) {
+            console.warn('3D viewer not available');
+            return;
+        }
+
+        const loading = document.getElementById('molecule-3d-loading');
+        if (loading) loading.style.display = 'flex';
+
+        try {
+            let sdfData = null;
+
+            // Try to get 3D structure from PubChem using CID
+            if (this.currentCID) {
+                const response = await fetch(
+                    `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${this.currentCID}/SDF?record_type_3d=display`
+                );
+                if (response.ok) {
+                    sdfData = await response.text();
+                }
+            }
+
+            // If no CID or failed, try SMILES conversion via PubChem
+            if (!sdfData && this.currentSmiles) {
+                // First get CID from SMILES
+                const cidResponse = await fetch(
+                    `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encodeURIComponent(this.currentSmiles)}/cids/JSON`
+                );
+                if (cidResponse.ok) {
+                    const cidData = await cidResponse.json();
+                    const cid = cidData?.IdentifierList?.CID?.[0];
+                    if (cid) {
+                        this.currentCID = cid; // Store CID for future use
+                        // Now get 3D SDF
+                        const sdfResponse = await fetch(
+                            `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/SDF?record_type_3d=display`
+                        );
+                        if (sdfResponse.ok) {
+                            sdfData = await sdfResponse.text();
+                        }
+                    }
+                }
+            }
+
+            if (sdfData) {
+                this.viewer3D.removeAllModels();
+                this.viewer3D.addModel(sdfData, 'sdf');
+                this._applyStyle3D();
+                this.viewer3D.zoomTo();
+                this.viewer3D.resize();
+                this.viewer3D.render();
+                console.log('3D molecule loaded successfully');
+            } else {
+                console.warn('Could not load 3D structure from PubChem');
+            }
+        } catch (error) {
+            console.error('Error loading 3D molecule:', error);
+        } finally {
+            if (loading) loading.style.display = 'none';
+        }
+    }
+
+    /**
+     * Set 3D visualization style
+     */
+    setStyle3D(style) {
+        this.style3D = style;
+        if (this.viewer3D && this.viewMode === '3D') {
+            this._applyStyle3D();
+        }
+    }
+
+    /**
+     * Apply current 3D style to viewer
+     */
+    _applyStyle3D() {
+        if (!this.viewer3D) return;
+
+        this.viewer3D.setStyle({}, {}); // Clear styles
+
+        switch (this.style3D) {
+            case 'stick':
+                this.viewer3D.setStyle({}, { stick: { radius: 0.15, colorscheme: 'Jmol' } });
+                break;
+            case 'sphere':
+                this.viewer3D.setStyle({}, { sphere: { scale: 1.0, colorscheme: 'Jmol' } });
+                break;
+            case 'ballstick':
+                this.viewer3D.setStyle({}, {
+                    stick: { radius: 0.1, colorscheme: 'Jmol' },
+                    sphere: { scale: 0.25, colorscheme: 'Jmol' }
+                });
+                break;
+        }
+
+        this.viewer3D.render();
+    }
+
 
     _attachCanvasInteractions() {
         if (!this.canvas) return;
@@ -203,11 +427,17 @@ export class MoleculeComponent {
     /**
      * Molekül görselleştirmesini güncelle
      * @param {string} smiles - SMILES string
+     * @param {number} cid - PubChem CID (optional)
      */
-    updateDisplay(smiles) {
+    updateDisplay(smiles, cid = null) {
         const placeholder = DOMUtils.select('#molecule-placeholder');
         const canvas = this.canvas;
         const error = DOMUtils.select('#molecule-error');
+        const viewer3D = document.getElementById('molecule-3d-viewer');
+
+        // Store current molecule info for 3D viewing
+        this.currentSmiles = smiles;
+        if (cid) this.currentCID = cid;
 
         // Ensure canvas resolution matches current CSS size before any draw
         if (this.drawer && typeof this.drawer._adjustCanvasForHiDPI === 'function') {
@@ -217,17 +447,24 @@ export class MoleculeComponent {
         // Tüm elementleri gizle
         if (placeholder) placeholder.style.display = 'none';
         if (canvas) canvas.style.display = 'none';
+        if (viewer3D) viewer3D.style.display = 'none';
         if (error) error.style.display = 'none';
 
         if (smiles) {
             if (this.validateSMILES(smiles)) {
                 if (this.drawer && this.drawer.parseAndDraw(smiles)) {
-                    if (canvas) {
-                        canvas.style.display = 'block';
-                        // After becoming visible, recompute size and redraw to fill container
-                        this.drawer._adjustCanvasForHiDPI();
-                        if (this.drawer.currentGraph) {
-                            this.drawer.parseAndDrawFromGraph(this.drawer.currentGraph);
+                    // Show appropriate view based on current mode
+                    if (this.viewMode === '3D') {
+                        if (viewer3D) viewer3D.style.display = 'block';
+                        this._load3DMolecule();
+                    } else {
+                        if (canvas) {
+                            canvas.style.display = 'block';
+                            // After becoming visible, recompute size and redraw to fill container
+                            this.drawer._adjustCanvasForHiDPI();
+                            if (this.drawer.currentGraph) {
+                                this.drawer.parseAndDrawFromGraph(this.drawer.currentGraph);
+                            }
                         }
                     }
                 } else {
@@ -815,16 +1052,16 @@ class MoleculeDrawer {
         this.ctx.fillStyle = 'rgba(26, 26, 26, 0.0)';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // draw bonds then atoms using current zoom/offset
+        // Use PubChem-style drawing if this is a PubChem graph
+        if (graph.isPubChem) {
+            return this._drawPubChemGraph(graph);
+        }
+
+        // draw bonds then atoms using current zoom/offset (regular style)
         graph.bonds.forEach(b => {
             const a1 = graph.atoms[b.a];
             const a2 = graph.atoms[b.b];
             if (!a1 || !a2) return;
-
-            // For PubChem graphs, skip hydrogen bonds if showHydrogens is false
-            if (graph.isPubChem && !this.showHydrogens) {
-                if (a1.isHydrogen || a2.isHydrogen || a1.symbol === 'H' || a2.symbol === 'H') return;
-            }
 
             const x1 = this.centerX + (a1.x - this.centerX) * this.zoom + this.offsetX;
             const y1 = this.centerY + (a1.y - this.centerY) * this.zoom + this.offsetY;
@@ -840,11 +1077,6 @@ class MoleculeDrawer {
         });
 
         graph.atoms.forEach((atom, idx) => {
-            // For PubChem graphs, skip hydrogen atoms if showHydrogens is false
-            if (graph.isPubChem && !this.showHydrogens) {
-                if (atom.isHydrogen || atom.symbol === 'H') return;
-            }
-
             const color = this._atomColor(atom.symbol);
             const tx = this.centerX + (atom.x - this.centerX) * this.zoom + this.offsetX;
             const ty = this.centerY + (atom.y - this.centerY) * this.zoom + this.offsetY;
@@ -855,6 +1087,65 @@ class MoleculeDrawer {
 
         return true;
     }
+
+    /**
+     * PubChem stilinde graph çiz (zoom/pan için)
+     */
+    _drawPubChemGraph(graph) {
+        // PubChem style colors - Carbon is lighter gray for visibility
+        const pubchemColors = {
+            'C': '#5a5a5a',   // Carbon - LIGHTER gray for visibility
+            'N': '#3050F8',
+            'O': '#FF0D0D',
+            'S': '#FFFF30',
+            'P': '#FF8000',
+            'F': '#90E050',
+            'Cl': '#1FF01F',
+            'Br': '#A62929',
+            'I': '#940094',
+            'H': '#808080',
+            'default': '#808080'
+        };
+
+        const getPubChemColor = (symbol) => pubchemColors[symbol] || pubchemColors['default'];
+
+        // Draw bonds - PubChem style with gradient colors
+        graph.bonds.forEach((b, bondIdx) => {
+            const a1 = graph.atoms[b.a];
+            const a2 = graph.atoms[b.b];
+            if (!a1 || !a2) return;
+
+            // Skip hydrogen bonds if showHydrogens is false
+            if (!this.showHydrogens && (a1.isHydrogen || a2.isHydrogen || a1.symbol === 'H' || a2.symbol === 'H')) return;
+
+            const x1 = this.centerX + (a1.x - this.centerX) * this.zoom + this.offsetX;
+            const y1 = this.centerY + (a1.y - this.centerY) * this.zoom + this.offsetY;
+            const x2 = this.centerX + (a2.x - this.centerX) * this.zoom + this.offsetX;
+            const y2 = this.centerY + (a2.y - this.centerY) * this.zoom + this.offsetY;
+
+            // Get colors for each atom
+            const color1 = getPubChemColor(a1.symbol);
+            const color2 = getPubChemColor(a2.symbol);
+
+            this._drawPubChemBond(x1, y1, x2, y2, b.type, color1, color2);
+        });
+
+        // Draw atoms - PubChem style (text only, no circles) - ALL ATOMS INCLUDING CARBON
+        graph.atoms.forEach((atom) => {
+            // Skip hydrogen atoms if showHydrogens is false
+            if (!this.showHydrogens && (atom.isHydrogen || atom.symbol === 'H')) return;
+
+            const color = getPubChemColor(atom.symbol);
+            const tx = this.centerX + (atom.x - this.centerX) * this.zoom + this.offsetX;
+            const ty = this.centerY + (atom.y - this.centerY) * this.zoom + this.offsetY;
+
+            this._drawPubChemAtom(tx, ty, atom.symbol, color);
+        });
+
+        return true;
+    }
+
+
 
     /**
      * PubChem 2D koordinat verisinden molekül çiz
@@ -908,8 +1199,27 @@ class MoleculeDrawer {
         // Save current graph for pan/zoom
         this.currentGraph = graph;
 
-        // Draw bonds first (filter out hydrogen bonds if showHydrogens is false)
-        graph.bonds.forEach(b => {
+        // PubChem style colors - Carbon is lighter gray for visibility
+        const pubchemColors = {
+            'C': '#5a5a5a',   // Carbon - LIGHTER gray for visibility
+            'N': '#3050F8',   // Nitrogen - blue
+            'O': '#FF0D0D',   // Oxygen - red
+            'S': '#FFFF30',   // Sulfur - yellow
+            'P': '#FF8000',   // Phosphorus - orange
+            'F': '#90E050',   // Fluorine - green
+            'Cl': '#1FF01F',  // Chlorine - bright green
+            'Br': '#A62929',  // Bromine - dark red
+            'I': '#940094',   // Iodine - purple
+            'H': '#808080',   // Hydrogen - gray
+            'default': '#808080'
+        };
+
+        const getPubChemColor = (symbol) => pubchemColors[symbol] || pubchemColors['default'];
+
+
+
+        // Draw bonds first - PubChem style with gradient colors
+        graph.bonds.forEach((b, bondIdx) => {
             const a1 = graph.atoms[b.a];
             const a2 = graph.atoms[b.b];
             if (!a1 || !a2) return;
@@ -921,23 +1231,197 @@ class MoleculeDrawer {
             const y1 = this.centerY + (a1.y - this.centerY) * this.zoom + this.offsetY;
             const x2 = this.centerX + (a2.x - this.centerX) * this.zoom + this.offsetX;
             const y2 = this.centerY + (a2.y - this.centerY) * this.zoom + this.offsetY;
-            this.drawBond(x1, y1, x2, y2, b.type, '#81d4fa', {});
+
+            // Get colors for each atom
+            const color1 = getPubChemColor(a1.symbol);
+            const color2 = getPubChemColor(a2.symbol);
+
+            this._drawPubChemBond(x1, y1, x2, y2, b.type, color1, color2);
         });
 
-        // Draw atoms on top (filter out hydrogens if showHydrogens is false)
+        // Draw atoms on top - PubChem style (just text, no circles) - ALL ATOMS INCLUDING CARBON
         graph.atoms.forEach((atom, idx) => {
             // Skip hydrogen atoms if showHydrogens is false
             if (!this.showHydrogens && atom.isHydrogen) return;
 
-            const color = this._atomColor(atom.symbol);
+            const color = getPubChemColor(atom.symbol);
             const tx = this.centerX + (atom.x - this.centerX) * this.zoom + this.offsetX;
             const ty = this.centerY + (atom.y - this.centerY) * this.zoom + this.offsetY;
-            const subx = Math.round(tx * this._dpr) / this._dpr;
-            const suby = Math.round(ty * this._dpr) / this._dpr;
-            this.drawAtom(subx, suby, atom.symbol, color, { index: idx });
+
+            this._drawPubChemAtom(tx, ty, atom.symbol, color);
         });
 
         return true;
+    }
+
+    /**
+     * PubChem stilinde bond çiz (her yarısı bağlanan atomun renginde, atomlara değmiyor)
+     * @param {number} x1, y1 - Atom 1 coordinates
+     * @param {number} x2, y2 - Atom 2 coordinates
+     * @param {string} type - Bond type (single, double, triple)
+     * @param {string} color1 - Color for atom 1 side
+     * @param {string} color2 - Color for atom 2 side
+     * @param {boolean} inRing - Whether this bond is part of a ring (affects double bond rendering)
+     */
+    _drawPubChemBond(x1, y1, x2, y2, type = 'single', color1 = '#5a5a5a', color2 = '#5a5a5a', inRing = false) {
+        this.ctx.save();
+
+        // Line thickness - slightly thicker for better visibility
+        const lineWidth = Math.max(1.8, 2.5 * (this.zoom || 1));
+        this.ctx.lineWidth = lineWidth;
+        this.ctx.lineCap = 'round';
+
+        // Calculate direction and length of the full bond
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const len = Math.sqrt(dx * dx + dy * dy);
+
+        // Gap from atom labels (don't touch atoms)
+        const gap = Math.max(8, 12 * (this.zoom || 1));
+        const gapRatio = len > 0 ? gap / len : 0;
+
+        // Shortened start and end points for the visible bond
+        const sx1 = x1 + dx * gapRatio;
+        const sy1 = y1 + dy * gapRatio;
+        const sx2 = x2 - dx * gapRatio;
+        const sy2 = y2 - dy * gapRatio;
+
+        // Calculate midpoint for two-color drawing of the visible bond
+        const midX = (sx1 + sx2) / 2;
+        const midY = (sy1 + sy2) / 2;
+
+        if (type === 'single') {
+            // First half - color1
+            this.ctx.strokeStyle = color1;
+            this.ctx.beginPath();
+            this.ctx.moveTo(sx1, sy1);
+            this.ctx.lineTo(midX, midY);
+            this.ctx.stroke();
+
+            // Second half - color2
+            this.ctx.strokeStyle = color2;
+            this.ctx.beginPath();
+            this.ctx.moveTo(midX, midY);
+            this.ctx.lineTo(sx2, sy2);
+            this.ctx.stroke();
+        } else if (type === 'double') {
+            // Double bond - two parallel lines with gap from atoms
+            const visLen = Math.sqrt((sx2 - sx1) * (sx2 - sx1) + (sy2 - sy1) * (sy2 - sy1));
+            const offset = Math.max(2.5, 3.5 * (this.zoom || 1));
+            const nx = -(sy2 - sy1) / visLen * offset;
+            const ny = (sx2 - sx1) / visLen * offset;
+
+            // Line 1 (offset +)
+            const mid1X = (sx1 + nx + sx2 + nx) / 2;
+            const mid1Y = (sy1 + ny + sy2 + ny) / 2;
+
+            this.ctx.strokeStyle = color1;
+            this.ctx.beginPath();
+            this.ctx.moveTo(sx1 + nx, sy1 + ny);
+            this.ctx.lineTo(mid1X, mid1Y);
+            this.ctx.stroke();
+
+            this.ctx.strokeStyle = color2;
+            this.ctx.beginPath();
+            this.ctx.moveTo(mid1X, mid1Y);
+            this.ctx.lineTo(sx2 + nx, sy2 + ny);
+            this.ctx.stroke();
+
+            // Line 2 (offset -)
+            const mid2X = (sx1 - nx + sx2 - nx) / 2;
+            const mid2Y = (sy1 - ny + sy2 - ny) / 2;
+
+            this.ctx.strokeStyle = color1;
+            this.ctx.beginPath();
+            this.ctx.moveTo(sx1 - nx, sy1 - ny);
+            this.ctx.lineTo(mid2X, mid2Y);
+            this.ctx.stroke();
+
+            this.ctx.strokeStyle = color2;
+            this.ctx.beginPath();
+            this.ctx.moveTo(mid2X, mid2Y);
+            this.ctx.lineTo(sx2 - nx, sy2 - ny);
+            this.ctx.stroke();
+        } else if (type === 'triple') {
+            // Triple bond - three parallel lines with gap from atoms
+            const visLen = Math.sqrt((sx2 - sx1) * (sx2 - sx1) + (sy2 - sy1) * (sy2 - sy1));
+            const offset = Math.max(3, 4 * (this.zoom || 1));
+            const nx = -(sy2 - sy1) / visLen * offset;
+            const ny = (sx2 - sx1) / visLen * offset;
+
+            // Center line
+            this.ctx.strokeStyle = color1;
+            this.ctx.beginPath();
+            this.ctx.moveTo(sx1, sy1);
+            this.ctx.lineTo(midX, midY);
+            this.ctx.stroke();
+
+            this.ctx.strokeStyle = color2;
+            this.ctx.beginPath();
+            this.ctx.moveTo(midX, midY);
+            this.ctx.lineTo(sx2, sy2);
+            this.ctx.stroke();
+
+            // Top line
+            const midTopX = (sx1 + nx + sx2 + nx) / 2;
+            const midTopY = (sy1 + ny + sy2 + ny) / 2;
+
+            this.ctx.strokeStyle = color1;
+            this.ctx.beginPath();
+            this.ctx.moveTo(sx1 + nx, sy1 + ny);
+            this.ctx.lineTo(midTopX, midTopY);
+            this.ctx.stroke();
+
+            this.ctx.strokeStyle = color2;
+            this.ctx.beginPath();
+            this.ctx.moveTo(midTopX, midTopY);
+            this.ctx.lineTo(sx2 + nx, sy2 + ny);
+            this.ctx.stroke();
+
+            // Bottom line
+            const midBotX = (sx1 - nx + sx2 - nx) / 2;
+            const midBotY = (sy1 - ny + sy2 - ny) / 2;
+
+            this.ctx.strokeStyle = color1;
+            this.ctx.beginPath();
+            this.ctx.moveTo(sx1 - nx, sy1 - ny);
+            this.ctx.lineTo(midBotX, midBotY);
+            this.ctx.stroke();
+
+            this.ctx.strokeStyle = color2;
+            this.ctx.beginPath();
+            this.ctx.moveTo(midBotX, midBotY);
+            this.ctx.lineTo(sx2 - nx, sy2 - ny);
+            this.ctx.stroke();
+        }
+
+        this.ctx.restore();
+    }
+
+    /**
+     * PubChem stilinde atom çiz (sadece element sembolü, daire yok)
+     */
+    _drawPubChemAtom(x, y, symbol, color) {
+        this.ctx.save();
+
+        // Background rect to cover bonds behind text
+        const fontSize = Math.max(14, Math.round(16 * (this.zoom || 1)));
+        this.ctx.font = `bold ${fontSize}px "Arial", sans-serif`;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+
+        const textWidth = this.ctx.measureText(symbol).width;
+        const padding = 3;
+
+        // Draw background to hide bond lines behind atom label
+        this.ctx.fillStyle = '#0a0b0d';  // Match canvas background
+        this.ctx.fillRect(x - textWidth / 2 - padding, y - fontSize / 2 - padding, textWidth + padding * 2, fontSize + padding * 2);
+
+        // Draw atom symbol
+        this.ctx.fillStyle = color;
+        this.ctx.fillText(symbol, x, y);
+
+        this.ctx.restore();
     }
 
     /**

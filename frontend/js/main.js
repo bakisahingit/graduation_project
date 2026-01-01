@@ -2996,6 +2996,11 @@ class ChatApp {
 
             // Fetch 2D coordinates and draw with our custom MoleculeDrawer
             if (data.cid) {
+                // Sync state with molecule component for 3D viewer
+                if (this.molecule) {
+                    this.molecule.currentSmiles = smiles;
+                    this.molecule.currentCID = data.cid;
+                }
                 this._drawWithPubChemCoords(data.cid);
             }
 
