@@ -12,6 +12,12 @@ import { ModelService } from './services/model.js';
 import { DOMUtils } from './utils/dom.js';
 import { HelperUtils } from './utils/helpers.js';
 import { config } from './config.js';
+import { ModalManager } from './managers/ModalManager.js';
+import { StateManager } from './managers/StateManager.js';
+import { EventManager } from './managers/EventManager.js';
+import { MessageHandler } from './handlers/MessageHandler.js';
+import { FormHandler } from './handlers/FormHandler.js';
+import { ToolHandler } from './handlers/ToolHandler.js';
 
 
 class ChatApp {
@@ -23,6 +29,15 @@ class ChatApp {
         this.conversation = new ConversationService();
         this.model = new ModelService();
 
+        // Initialize managers
+        this.state = new StateManager();
+        this.events = new EventManager();
+        this.modalManager = new ModalManager(this.ui, this.molecule);
+
+        // Initialize handlers (MessageHandler başlatılıyor)
+        this.messageHandler = null; // Constructor sonra init edilecek (activeTool'a ihtiyağı var)
+
+        // Legacy state (şimdilik backward compatibility için)
         this.isStreaming = false;
         this.userScrolledUp = false;
         this.currentStreamController = null;
@@ -56,6 +71,36 @@ class ChatApp {
     async init() {
         // DOM elementlerinin yüklenmesini bekle
         await this.waitForDOM();
+
+        // MessageHandler'ı şimdi initialize et (activeTool hazır)
+        this.messageHandler = new MessageHandler(
+            this.ui,
+            this.markdown,
+            this.conversation,
+            this.api,
+            () => this.activeTool,
+            () => this.getSelectedAdmetParameters()
+        );
+
+        // FormHandler'ı initialize et
+        this.formHandler = new FormHandler(
+            this.ui,
+            (text, model) => this.processMessage(text, model),
+            () => this.updateToolButtonState()
+        );
+
+        // ToolHandler'ı initialize et
+        this.toolHandler = new ToolHandler(
+            this.ui,
+            this.conversation,
+            this.api,
+            () => this.activeTool,
+            (tool) => { this.activeTool = tool; },
+            () => this.updateToolButtonState(),
+            () => this.closeAllToolsDropdowns(),
+            () => this.closeCompareModal(),
+            (sessionId, typingEl) => this.setupWebSocket(sessionId, typingEl)
+        );
 
         // Event listener'ları kur
         this.setupEventListeners();
@@ -432,7 +477,7 @@ class ChatApp {
 
                 if (matchCombo(e, mv)) {
                     e.preventDefault();
-                    this.openMoleculeModal();
+                    this.modalManager.openMolecule();
                     return;
                 }
 
@@ -445,7 +490,7 @@ class ChatApp {
                 // fallback to defaults on error
                 if (e.altKey && (e.key === 'm' || e.key === 'M')) {
                     e.preventDefault();
-                    this.openMoleculeModal();
+                    this.modalManager.openMolecule();
                 }
                 if (e.altKey && (e.key === 'n' || e.key === 'N')) {
                     e.preventDefault();
@@ -462,7 +507,7 @@ class ChatApp {
                 if (!target) return;
                 const action = target.dataset.action;
                 if (action === 'molecule') {
-                    this.openMoleculeModal();
+                    this.modalManager.openMolecule();
                 } else if (action === 'admet') {
                     this.handleAdmetTool();
                 }
@@ -473,13 +518,13 @@ class ChatApp {
 
         if (this.ui.elements.moleculeClose) {
             DOMUtils.on(this.ui.elements.moleculeClose, 'click', () => {
-                this.closeMoleculeModal();
+                this.modalManager.closeMolecule();
             });
         }
 
         if (this.ui.elements.moleculeOverlay) {
             DOMUtils.on(this.ui.elements.moleculeOverlay, 'click', () => {
-                this.closeMoleculeModal();
+                this.modalManager.closeMolecule();
             });
         }
 
@@ -609,13 +654,13 @@ class ChatApp {
 
         // Comparison Modal
         if (this.ui.elements.compareToolBtn) {
-            DOMUtils.on(this.ui.elements.compareToolBtn, 'click', () => this.openCompareModal());
+            DOMUtils.on(this.ui.elements.compareToolBtn, 'click', () => this.modalManager.openCompare());
         }
         if (this.ui.elements.compareClose) {
-            DOMUtils.on(this.ui.elements.compareClose, 'click', () => this.closeCompareModal());
+            DOMUtils.on(this.ui.elements.compareClose, 'click', () => this.modalManager.closeCompare());
         }
         if (this.ui.elements.compareOverlay) {
-            DOMUtils.on(this.ui.elements.compareOverlay, 'click', () => this.closeCompareModal());
+            DOMUtils.on(this.ui.elements.compareOverlay, 'click', () => this.modalManager.closeCompare());
         }
         if (this.ui.elements.runComparisonBtn) {
             DOMUtils.on(this.ui.elements.runComparisonBtn, 'click', () => this.handleComparisonSubmit());
@@ -623,18 +668,18 @@ class ChatApp {
 
 
         if (this.ui.elements.admetSettingsClose) {
-            DOMUtils.on(this.ui.elements.admetSettingsClose, 'click', () => this.closeAdmetSettingsModal());
+            DOMUtils.on(this.ui.elements.admetSettingsClose, 'click', () => this.modalManager.closeAdmetSettings());
         }
         if (this.ui.elements.admetSettingsOverlay) {
-            DOMUtils.on(this.ui.elements.admetSettingsOverlay, 'click', () => this.closeAdmetSettingsModal());
+            DOMUtils.on(this.ui.elements.admetSettingsOverlay, 'click', () => this.modalManager.closeAdmetSettings());
         }
         if (this.ui.elements.admetSettingsCancelBtn) {
-            DOMUtils.on(this.ui.elements.admetSettingsCancelBtn, 'click', () => this.closeAdmetSettingsModal());
+            DOMUtils.on(this.ui.elements.admetSettingsCancelBtn, 'click', () => this.modalManager.closeAdmetSettings());
         }
         if (this.ui.elements.saveAdmetSettingsBtn) {
             DOMUtils.on(this.ui.elements.saveAdmetSettingsBtn, 'click', () => {
                 this.activateAdmetTool();
-                this.closeAdmetSettingsModal();
+                this.modalManager.closeAdmetSettings();
             });
         }
 
@@ -735,38 +780,36 @@ class ChatApp {
 
         if (this.ui.elements.welcomeAdmetTool) {
             DOMUtils.on(this.ui.elements.welcomeAdmetTool, 'click', () => {
-                this.openAdmetSettingsModal();
+                this.modalManager.openAdmetSettings();
             });
         }
 
         if (this.ui.elements.chatAdmetTool) {
             DOMUtils.on(this.ui.elements.chatAdmetTool, 'click', () => {
-                this.openAdmetSettingsModal();
+                this.modalManager.openAdmetSettings();
             });
         }
 
         if (this.ui.elements.welcomeCompareTool) {
             DOMUtils.on(this.ui.elements.welcomeCompareTool, 'click', () => {
-                this.openCompareModal();
+                this.modalManager.openCompare();
             });
         }
 
         if (this.ui.elements.chatCompareTool) {
             DOMUtils.on(this.ui.elements.chatCompareTool, 'click', () => {
-                this.openCompareModal();
+                this.modalManager.openCompare();
             });
         }
 
         // Keyboard shortcuts
         DOMUtils.on(document, 'keydown', (e) => {
             if (e.key === 'Escape') {
-                if (this.ui.elements.settingsModal.classList.contains('open')) {
-                    this.closeSettingsModal();
-                } else if (this.ui.elements.moleculeModal.classList.contains('open')) {
-                    this.closeMoleculeModal();
-                } else if (this.ui.elements.compareModal.classList.contains('open')) {
-                    this.closeCompareModal();
-                } else if ((this.ui.elements.welcomeToolsDropdown && this.ui.elements.welcomeToolsDropdown.classList.contains('open')) ||
+                // Use modalManager to handle ESC key for all modals
+                this.modalManager.handleEscapeKey();
+
+                // Still handle tools dropdowns here (not modals)
+                if ((this.ui.elements.welcomeToolsDropdown && this.ui.elements.welcomeToolsDropdown.classList.contains('open')) ||
                     (this.ui.elements.chatToolsDropdown && this.ui.elements.chatToolsDropdown.classList.contains('open'))) {
                     this.closeAllToolsDropdowns();
                 }
@@ -964,179 +1007,42 @@ class ChatApp {
     }
 
     /**
-     * Mesaj işleme
+     * Mesaj işleme (wrapper - messageHandler kullanıyor)
      * @param {string} text - Mesaj metni
      * @param {string} model - Model
      */
     async processMessage(text, model) {
-        // Yeni konuşma oluştur (geçici başlık ile)
-        if (!this.conversation.currentConversationId) {
-            const conversation = this.conversation.createConversationWithTempTitle(text, model);
-            this.conversation.setCurrentConversation(conversation.id);
+        // MessageHandler'a delegate et
+        await this.messageHandler.processMessage(
+            text,
+            model,
+            (el) => this.renderAdmetChart(el),
+            (el) => this.addExportButtons(el),
+            (conversationId, newTitle, isLoading) => this.updateConversationTitleInUI(conversationId, newTitle, isLoading)
+        );
 
-            // Sidebar'da konuşmayı göster
-            this.renderConversationHistory();
+        // Sidebar'ı güncelle (conversation eklendiğinde)
+        this.renderConversationHistory();
 
-            // Başlık üretimini asenkron olarak başlat
-            this.conversation.onTitleUpdated = (conversationId, newTitle, isLoading) => {
-                this.updateConversationTitleInUI(conversationId, newTitle, isLoading);
-            };
-            this.conversation.updateConversationTitleAsync(conversation.id, text, model);
-        }
-
-        // Kullanıcı mesajını ekle
-        this.ui.appendMessage(text, 'user');
-
-        // Kullanıcı mesajını konuşmaya kaydet
-        this.conversation.updateConversation(this.conversation.currentConversationId, { role: 'user', content: text });
-
-        // Input'ları deaktif et
-        this.ui.setInputsEnabled(false, true);
-
-        // "Thinking" animasyonunu göster
-        const typingEl = this.ui.showThinkingIndicator();
-        await new Promise(resolve => setTimeout(resolve, 50));
-
-        this.isStreaming = true;
-        this.ui.setStreamingState(true);
-
-        try {
-            const controller = new AbortController();
-            this.ui.setAbortController(controller);
-
-            const currentConversation = this.conversation.getCurrentConversation();
-            const conversationHistoryForAPI = currentConversation ? currentConversation.messages : [];
-
-            // Get selected ADMET parameters if the tool is active
-            let admetProperties = null;
-            if (this.activeTool === 'admet') {
-                admetProperties = this.getSelectedAdmetParameters();
-            }
-
-            const data = await this.api.sendMessage(text, model, conversationHistoryForAPI, controller.signal, this.activeTool, admetProperties);
-
-            if (data.type === 'async') {
-                // ASENKRON GÖREV BAŞLADI
-                this.setupWebSocket(data.sessionId, typingEl);
-            } else {
-                // SENKRON (NORMAL) CEVAP
-                this.ui.removeThinkingIndicator(typingEl);
-
-                if (this.isStreaming) {
-                    const reply = HelperUtils.extractTextFromResponse(data) || 'Boş yanıt';
-                    this.conversation.updateConversation(this.conversation.currentConversationId, { role: 'bot', content: reply }, data.rawAdmetData);
-
-                    const botMessageContainer = this.ui.createBotMessage();
-                    const contentEl = botMessageContainer.querySelector('.message-content');
-                    await this.markdown.typeWriteMarkdown(contentEl, reply, 0.1, () => this.ui.smartScroll());
-
-                    if (data.rawAdmetData) {
-                        const scriptEl = DOMUtils.create('script', { type: 'application/json', id: 'admet-raw-data', textContent: JSON.stringify(data.rawAdmetData) });
-                        botMessageContainer.appendChild(scriptEl);
-                    }
-
-                    this.markdown.applySyntaxHighlighting(contentEl);
-                    this.markdown.addCopyButtons(contentEl);
-                    this.renderAdmetChart(contentEl);
-                    this.addExportButtons(botMessageContainer);
-                }
-                // Senkron akış için durumu sıfırla
-                this.isStreaming = false;
-                this.ui.setStreamingState(false);
-                this.ui.setAbortController(null);
-                this.ui.setInputsEnabled(true);
-            }
-        } catch (err) {
-            this.ui.removeThinkingIndicator(typingEl);
-            // AbortError'u veya özel "Request aborted" mesajını daha zarif bir şekilde işle
-            if (err.name === 'AbortError' || err.message === 'Request aborted') {
-                console.log('Request was aborted by the user.');
-                // İsteğe bağlı: kullanıcıya isteğin iptal edildiğini bildiren bir mesaj göster
-                this.ui.appendMessage('İstek iptal edildi.', 'bot');
-            } else {
-                console.error('An error occurred:', err);
-                this.ui.appendMessage('Sunucu hatası: ' + String(err), 'bot');
-            }
-            // Hata durumunda durumu sıfırla
-            this.isStreaming = false;
-            this.ui.setStreamingState(false);
-            this.ui.setAbortController(null);
-            this.ui.setInputsEnabled(true);
-        }
+        // Legacy state'i senkronize tut
+        this.isStreaming = this.messageHandler.isStreaming;
     }
+    /**
+     * WebSocket setup (wrapper - messageHandler kullanıyor)
+     * @param {string} sessionId - Session ID
+     * @param {Element} placeholderEl - Placeholder element
+     */
     setupWebSocket(sessionId, placeholderEl) {
-        const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${proto}//${window.location.host}?sessionId=${sessionId}`;
-        const ws = new WebSocket(wsUrl);
-
-        ws.onopen = () => {
-            console.log(`WebSocket connection opened for session: ${sessionId}`);
-        };
-
-        ws.onmessage = async (event) => {
-            console.log(`WebSocket message received for session: ${sessionId}`, event.data);
-            const result = JSON.parse(event.data);
-
-            const botMessageContainer = this.ui.createBotMessage();
-            placeholderEl.replaceWith(botMessageContainer);
-            const contentEl = botMessageContainer.querySelector('.message-content');
-
-            if (result.status === 'success') {
-                const reply = result.output || 'Analiz tamamlandı ancak sonuç boş.';
-                const rawData = result.rawAdmetData || result.rawComparisonData;
-                this.conversation.updateConversation(this.conversation.currentConversationId, { role: 'bot', content: reply }, rawData);
-
-                await this.markdown.typeWriteMarkdown(contentEl, reply, 0.1, () => this.ui.smartScroll());
-
-                // Hem tekli analiz hem de karşılaştırma sonuçlarını kontrol et
-                if (rawData) {
-                    const scriptEl = DOMUtils.create('script', {
-                        type: 'application/json',
-                        id: 'admet-raw-data', // ID hep aynı kalmalı
-                        textContent: JSON.stringify(rawData)
-                    });
-                    botMessageContainer.appendChild(scriptEl);
-                }
-
-                this.markdown.applySyntaxHighlighting(contentEl);
-                this.markdown.addCopyButtons(contentEl);
-                this.renderAdmetChart(contentEl);
-                this.addExportButtons(botMessageContainer);
-
-            } else {
-                const errorMessage = result.output || 'Analiz sırasında bilinmeyen bir hata oluştu.';
-                this.conversation.updateConversation(this.conversation.currentConversationId, { role: 'bot', content: errorMessage });
-                contentEl.innerHTML = this.markdown.renderToHtml(`**Hata:** ${errorMessage}`);
-            }
-
-            ws.close();
-        };
-
-        ws.onerror = (error) => {
-            console.error(`WebSocket error for session: ${sessionId}`, error);
-            this.ui.removeThinkingIndicator(placeholderEl);
-            this.ui.appendMessage('Sonuçlar alınırken bir bağlantı hatası oluştu.', 'bot');
-            this.isStreaming = false;
-            this.ui.setStreamingState(false);
-            this.ui.setAbortController(null);
-            this.ui.setInputsEnabled(true);
-        };
-
-        ws.onclose = () => {
-            console.log(`WebSocket connection closed for session: ${sessionId}`);
-            this.isStreaming = false;
-            this.ui.setStreamingState(false);
-            this.ui.setAbortController(null);
-            this.ui.setInputsEnabled(true);
-        };
-
-        if (this.ui.abortController) {
-            this.ui.abortController.signal.addEventListener('abort', () => {
-                console.log('User aborted, closing WebSocket.');
-                ws.close();
-            });
-        }
+        // MessageHandler'a delegate et
+        this.messageHandler.setupWebSocket(
+            sessionId,
+            placeholderEl,
+            (el) => this.renderAdmetChart(el),
+            (el) => this.addExportButtons(el)
+        );
     }
+
+
     /**
      * Karşılaştırma işleme
      * @param {string[]} molecules - Molekül listesi
@@ -2161,36 +2067,24 @@ class ChatApp {
     }
 
     /**
-     * Settings modal aç
+     * Settings modal aç (wrapper for modalManager)
      */
     openSettingsModal() {
-        if (!this.ui.elements.settingsModal) {
-            return;
-        }
-
-        DOMUtils.addClass(this.ui.elements.settingsModal, 'open');
-        this.populateModelsList();
-
-        // Event delegation için models list'e click listener ekle
-        this.setupModelsListEventDelegation();
-
-        // Arama özelliğini kur
-        this.setupModelsSearch();
+        this.modalManager.openSettings(() => {
+            this.populateModelsList();
+            this.setupModelsListEventDelegation();
+            this.setupModelsSearch();
+        });
     }
 
     /**
-     * Settings modal kapat
+     * Settings modal kapat (wrapper for modalManager)
      */
     closeSettingsModal() {
-        if (!this.ui.elements.settingsModal) return;
-
-        DOMUtils.removeClass(this.ui.elements.settingsModal, 'open');
-
-        // Event delegation listener'ını kaldır
-        this.removeModelsListEventDelegation();
-
-        // Arama özelliğini temizle
-        this.removeModelsSearch();
+        this.modalManager.closeSettings(() => {
+            this.removeModelsListEventDelegation();
+            this.removeModelsSearch();
+        });
     }
 
     /**
@@ -2448,79 +2342,45 @@ class ChatApp {
     }
 
     /**
-     * Molecule modal aç
+     * Molecule modal aç (wrapper - artık modalManager kullanıyor)
      */
     openMoleculeModal() {
-        if (!this.ui.elements.moleculeModal) {
-            return;
-        }
-
-        DOMUtils.addClass(this.ui.elements.moleculeModal, 'open');
-
-        if (this.ui.elements.smilesInput) {
-            this.ui.elements.smilesInput.focus();
-        }
-
-        // Molekül çizim sistemini başlat
-        if (!this.molecule.isInitialized) {
-            this.molecule.initialize();
-        }
+        this.modalManager.openMolecule();
     }
 
     /**
-     * Molecule modal kapat
+     * Molecule modal kapat (wrapper - artık modalManager kullanıyor)
      */
     closeMoleculeModal() {
-        if (!this.ui.elements.moleculeModal) return;
-
-        DOMUtils.removeClass(this.ui.elements.moleculeModal, 'open');
+        this.modalManager.closeMolecule();
     }
 
     /**
-     * Compare modal aç
+     * Compare modal aç (wrapper - artık modalManager kullanıyor)
      */
     openCompareModal() {
-        if (!this.ui.elements.compareModal) return;
-        DOMUtils.addClass(this.ui.elements.compareModal, 'open');
-        this.ui.elements.compareInput.focus();
+        this.modalManager.openCompare();
     }
 
     /**
-     * Compare modal kapat
+     * Compare modal kapat (wrapper - artık modalManager kullanıyor)
      */
     closeCompareModal() {
-        if (!this.ui.elements.compareModal) return;
-
-        // Kapanış animasyonunu tetikle
-        DOMUtils.addClass(this.ui.elements.compareModal, 'closing');
-
-        // Animasyon bittikten sonra modal'ı kaldır
-        setTimeout(() => {
-            DOMUtils.removeClass(this.ui.elements.compareModal, 'open');
-            DOMUtils.removeClass(this.ui.elements.compareModal, 'closing');
-        }, 300); // CSS'teki animasyon süresiyle aynı olmalı
+        this.modalManager.closeCompare();
     }
 
     /**
-     * ADMET settings modal aç
+     * ADMET settings modal aç (wrapper - artık modalManager kullanıyor)
      */
     openAdmetSettingsModal() {
-        if (!this.ui.elements.admetSettingsModal) return;
-        DOMUtils.addClass(this.ui.elements.admetSettingsModal, 'open');
+        this.modalManager.openAdmetSettings();
     }
 
     /**
-     * ADMET settings modal kapat
+     * ADMET settings modal kapat (wrapper - artık modalManager kullanıyor)
      */
     closeAdmetSettingsModal() {
-        if (!this.ui.elements.admetSettingsModal) return;
-
-        DOMUtils.addClass(this.ui.elements.admetSettingsModal, 'closing');
-
-        setTimeout(() => {
-            DOMUtils.removeClass(this.ui.elements.admetSettingsModal, 'open');
-            DOMUtils.removeClass(this.ui.elements.admetSettingsModal, 'closing');
-        }, 300);
+        this.modalManager.closeAdmetSettings();
     }
 
     /**

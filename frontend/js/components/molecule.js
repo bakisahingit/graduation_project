@@ -319,9 +319,14 @@ export class MoleculeComponent {
             this.drawer._startAnimation();
         });
 
-        // Hover handling for tooltip (and highlight)
+        // Hover handling for tooltip (and highlight) - OPTIMIZED with throttle
+        let lastHoveredIndex = null;
+        let hoverThrottleTimer = null;
+        const HOVER_THROTTLE_MS = 50; // Throttle hover updates to max 20fps
+
         this.canvas.addEventListener('mousemove', (e) => {
             if (isDragging) return;
+
             const rect = this.canvas.getBoundingClientRect();
             const mx = e.clientX - rect.left;
             const my = e.clientY - rect.top;
@@ -339,25 +344,36 @@ export class MoleculeComponent {
                 }
             }
 
+            const foundIndex = found ? found.index : null;
+
+            // Always update tooltip position (cheap operation)
             if (found) {
                 tooltip.classList.add('visible');
                 tooltip.textContent = `${found.symbol}` + (found.implicit ? ' (H implicit)' : '') + (found.index !== undefined ? ` — idx:${found.index}` : '');
                 tooltip.style.left = (e.clientX + 12) + 'px';
                 tooltip.style.top = (e.clientY + 12) + 'px';
-
-                // set hover flag on graph atom and redraw
-                if (this.drawer.currentGraph && typeof found.index === 'number') {
-                    this.drawer.currentGraph.atoms.forEach(a => a._hover = false);
-                    const ga = this.drawer.currentGraph.atoms[found.index];
-                    if (ga) ga._hover = true;
-                    this.drawer.parseAndDrawFromGraph(this.drawer.currentGraph);
-                }
             } else {
                 tooltip.classList.remove('visible');
-                if (this.drawer.currentGraph) {
-                    this.drawer.currentGraph.atoms.forEach(a => a._hover = false);
-                    this.drawer.parseAndDrawFromGraph(this.drawer.currentGraph);
-                }
+            }
+
+            // Only redraw if hover state actually changed (expensive operation)
+            if (foundIndex !== lastHoveredIndex) {
+                lastHoveredIndex = foundIndex;
+
+                // Throttle the redraw
+                if (hoverThrottleTimer) return;
+                hoverThrottleTimer = setTimeout(() => {
+                    hoverThrottleTimer = null;
+
+                    if (this.drawer.currentGraph) {
+                        this.drawer.currentGraph.atoms.forEach(a => a._hover = false);
+                        if (foundIndex !== null && typeof foundIndex === 'number') {
+                            const ga = this.drawer.currentGraph.atoms[foundIndex];
+                            if (ga) ga._hover = true;
+                        }
+                        this.drawer.parseAndDrawFromGraph(this.drawer.currentGraph);
+                    }
+                }, HOVER_THROTTLE_MS);
             }
         });
 
