@@ -1,13 +1,19 @@
 /**
- * CSS Reset
- * Temel CSS sıfırlama ve normalize
+ * CSS Reset - Gemini Style
+ * Modern reset with Gemini-compatible defaults
  */
 
 * {
     box-sizing: border-box;
 }
 
-html, body {
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body {
     height: 100%;
     margin: 0;
     padding: 0;
@@ -16,18 +22,25 @@ html, body {
 
 body {
     font-family: var(--font-family);
-    background: var(--bg-primary);
-    color: var(--accent);
+    background: var(--bg);
+    color: var(--text-primary);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 
 /* Typography */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     margin: 0;
     font-weight: var(--font-semibold);
-    line-height: 1.2;
+    line-height: 1.3;
+    color: var(--text-primary);
 }
 
 p {
@@ -35,10 +48,14 @@ p {
 }
 
 /* Form elements */
-input, textarea, select, button {
+input,
+textarea,
+select,
+button {
     font-family: inherit;
     font-size: inherit;
     line-height: inherit;
+    color: inherit;
 }
 
 button {
@@ -48,14 +65,16 @@ button {
     padding: 0;
 }
 
-input, textarea {
+input,
+textarea {
     border: none;
     outline: none;
     background: transparent;
 }
 
 /* Lists */
-ul, ol {
+ul,
+ol {
     margin: 0;
     padding: 0;
     list-style: none;
@@ -63,8 +82,13 @@ ul, ol {
 
 /* Links */
 a {
-    color: inherit;
+    color: var(--primary);
     text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+a:hover {
+    color: var(--primary-light);
 }
 
 /* Images */
@@ -90,46 +114,63 @@ table {
     outline-offset: 2px;
 }
 
-/* Scrollbar styles */
+/* ========================================
+   SCROLLBAR STYLES
+   ======================================== */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--gray-950);
-    border-radius: var(--radius-sm);
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--gray-800);
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border-primary);
-    transition: var(--transition-normal);
+    background: var(--gray-600);
+    border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--gray-700);
-}
-
-::-webkit-scrollbar-thumb:active {
-    background: var(--primary);
+    background: var(--gray-500);
 }
 
 /* Firefox scrollbar */
 * {
     scrollbar-width: thin;
-    scrollbar-color: var(--gray-800) var(--gray-950);
+    scrollbar-color: var(--gray-600) transparent;
 }
 
-/* Selection */
+/* ========================================
+   SELECTION
+   ======================================== */
 ::selection {
     background: var(--primary);
-    color: white;
+    color: #000;
 }
 
 ::-moz-selection {
     background: var(--primary);
-    color: white;
+    color: #000;
 }
 
+/* ========================================
+   UTILITIES
+   ======================================== */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

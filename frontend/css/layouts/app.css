@@ -1,6 +1,6 @@
 /**
- * App Layout
- * Ana uygulama düzeni
+ * App Layout - Gemini Style
+ * Clean, centered layout with modern aesthetics
  */
 
 .app-root {
@@ -8,6 +8,7 @@
     height: 100%;
     display: flex;
     overflow: hidden;
+    background: var(--bg);
 }
 
 /* Main content area */
@@ -15,62 +16,62 @@
     flex: 1;
     height: 100%;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    background: var(--bg);
+    position: relative;
 }
 
-/* Welcome Screen */
+/* ========================================
+   WELCOME SCREEN
+   ======================================== */
 .welcome-screen {
     width: 100%;
     height: 100%;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding: var(--space-6);
 }
 
 .welcome-content {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-6);
+    gap: var(--space-8);
     text-align: center;
     width: 100%;
-    max-width: 1800px;
+    max-width: 720px;
 }
 
 .welcome-title {
-    font-size: 3rem;
+    font-size: var(--text-3xl);
     font-weight: var(--font-bold);
-    /* Logo gradient: Green (#00C896) to Blue (#0075FF) */
-    background: linear-gradient(135deg, #00C896 0%, #00A87A 30%, #0088CC 70%, #0075FF 100%);
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 50%, #c58af9 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    /* Glow effect - Optimized for performance */
-    /* Replaced 3x drop-shadow filter with text-shadow (much cheaper) */
-    text-shadow:
-        0 0 20px rgba(0, 200, 150, 0.5),
-        0 0 40px rgba(0, 117, 255, 0.3);
-
-    /* Hardware acceleration for text rendering */
-    transform: translateZ(0);
-    will-change: opacity;
-    letter-spacing: 2px;
+    letter-spacing: -0.5px;
 }
 
 .welcome-subtitle {
-    color: var(--gray-300);
+    color: var(--text-tertiary);
     font-size: var(--text-lg);
-    margin-top: -8px;
+    margin-top: calc(var(--space-4) * -1);
+    font-weight: var(--font-normal);
 }
 
 .welcome-sections {
     display: flex;
     justify-content: center;
     width: 100%;
+    margin-top: var(--space-4);
 }
 
+/* Quick start cards - minimal style */
 .quick-start-plain {
     background: transparent;
     border: none;
@@ -78,37 +79,11 @@
     position: relative;
 }
 
-/* vertical center line between the two columns */
-.quick-start-plain::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 50%;
-    width: 2px;
-    transform: translateX(-50%);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.18) 50%, rgba(255, 255, 255, 0) 100%);
-    pointer-events: none;
-}
-
-/* horizontal center line between the two rows */
-.quick-start-plain::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 50%;
-    height: 2px;
-    transform: translateY(-50%);
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.18) 50%, rgba(255, 255, 255, 0) 100%);
-    pointer-events: none;
-}
-
 .quick-start-plain .card-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-3);
-    max-width: 720px;
+    max-width: 600px;
 }
 
 .quick-start-plain .card {
@@ -117,25 +92,35 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    background: transparent;
-    border: none;
-    padding: 12px 10px;
-    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-xl);
+    padding: var(--space-5) var(--space-4);
+    gap: var(--space-2);
     cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.quick-start-plain .card:hover {
+    background: var(--surface-hover);
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
 }
 
 .quick-start-plain .card .card-title {
-    font-size: 1rem;
-    color: var(--gray-100);
-    font-weight: var(--font-semibold);
+    font-size: var(--text-base);
+    color: var(--text-primary);
+    font-weight: var(--font-medium);
 }
 
 .quick-start-plain .card .card-desc {
-    color: var(--gray-400);
-    font-size: 0.9rem;
+    color: var(--text-tertiary);
+    font-size: var(--text-sm);
     margin: 0;
+    line-height: 1.4;
 }
 
+/* General card styles */
 .card-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -143,168 +128,99 @@
 }
 
 .card {
-    background: var(--bg-glass);
-    border: 1px solid var(--border-secondary);
+    background: var(--surface);
+    border: 1px solid var(--border-primary);
     border-radius: var(--radius-xl);
-    padding: var(--space-3);
+    padding: var(--space-4);
     text-align: left;
     cursor: pointer;
-    transition: var(--transition-normal);
-    position: relative;
-    /* Ensure glow pseudo-element is positioned relative to card */
-    z-index: 1;
-}
-
-/* Gradient Glow on Hover - "Unified Whole" Effect */
-.card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: inherit;
-    filter: blur(20px);
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    transform: translateZ(0);
-}
-
-/* 
- * 4 cards form a continuous 135deg gradient (Green #00C896 -> Blue #0075FF)
- * Card 1 (Top-Left): Pure Green
- * Card 2 (Top-Right): Green-Teal
- * Card 3 (Bottom-Left): Teal-Blue
- * Card 4 (Bottom-Right): Pure Blue
- */
-
-/* Card 1: Start of gradient (Top-Left) */
-.card-grid .card:nth-child(1)::before {
-    background: linear-gradient(135deg, #00C896, #00B4AA);
-}
-
-/* Card 2: Mid-Start (Top-Right) */
-.card-grid .card:nth-child(2)::before {
-    background: linear-gradient(135deg, #00B4AA, #009BD0);
-}
-
-/* Card 3: Mid-End (Bottom-Left) */
-.card-grid .card:nth-child(3)::before {
-    background: linear-gradient(135deg, #009BD0, #0082E5);
-}
-
-/* Card 4: End of gradient (Bottom-Right) */
-.card-grid .card:nth-child(4)::before {
-    background: linear-gradient(135deg, #0082E5, #0075FF);
+    transition: all var(--transition-normal);
 }
 
 .card:hover {
-    background: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.1);
-    transform: translateY(-2px);
-}
-
-.card:hover::before {
-    opacity: 0.25;
-    /* Subtle glow intensity */
+    background: var(--surface-hover);
+    border-color: var(--border-hover);
 }
 
 .card .card-title {
-    color: var(--gray-100);
-    font-weight: var(--font-semibold);
-    margin-bottom: 4px;
+    color: var(--text-primary);
+    font-weight: var(--font-medium);
+    margin-bottom: var(--space-1);
 }
 
 .card .card-desc {
-    color: var(--gray-400);
+    color: var(--text-tertiary);
     font-size: var(--text-sm);
 }
 
-.shortcuts {
-    position: sticky;
-    top: 24px;
-}
-
-.shortcuts-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: grid;
-    gap: 8px;
-}
-
-.shortcuts-list kbd {
-    background: var(--gray-900);
-    border: 1px solid var(--border-secondary);
-    border-bottom-width: 2px;
-    border-radius: 6px;
-    padding: 2px 6px;
-    font-family: var(--font-family-mono);
-    font-size: 12px;
-    color: var(--gray-200);
-}
-
+/* Empty state */
 .empty-state {
-    color: var(--gray-400);
+    color: var(--text-muted);
     font-size: var(--text-sm);
 }
 
 /* Floating compact shortcuts (top-right) */
 .shortcuts-floating {
     position: absolute;
-    top: 20px;
-    right: 24px;
-    z-index: 1200;
+    top: var(--space-5);
+    right: var(--space-6);
+    z-index: 100;
 }
 
 .shortcuts-mini {
-    background: rgba(15, 17, 19, 0.9);
-    color: var(--gray-200);
-    border: 1px solid var(--border-secondary);
-    border-radius: 12px;
-    padding: 8px 10px;
+    background: var(--surface);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3);
     min-width: 140px;
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-md);
 }
 
 .shortcuts-mini-title {
-    font-size: 12px;
-    color: var(--gray-300);
-    font-weight: var(--font-semibold);
-    margin-bottom: 6px;
+    font-size: var(--text-xs);
+    color: var(--text-tertiary);
+    font-weight: var(--font-medium);
+    margin-bottom: var(--space-2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .shortcuts-mini-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--space-2);
 }
 
 .shortcut-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: var(--space-3);
 }
 
 .shortcut-desc {
-    color: var(--gray-500);
-    font-size: 12px;
-    font-weight: 400;
-    /* less prominent */
-    opacity: 0.7;
+    color: var(--text-tertiary);
+    font-size: var(--text-xs);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 160px;
-    /* limit title width */
+    max-width: 120px;
 }
 
 .shortcut-key kbd {
-    font-size: 12px;
-    padding: 4px 6px;
-    border-radius: 6px;
+    font-size: 11px;
+    padding: 3px 6px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+    font-family: var(--font-family-mono);
 }
 
-/* Chat Interface */
+/* ========================================
+   CHAT INTERFACE
+   ======================================== */
 .chat-interface {
     width: 100%;
     height: 100%;
@@ -317,78 +233,100 @@
     flex: 1;
     display: flex;
     justify-content: center;
-    padding: var(--space-5);
+    padding: var(--space-6);
+    padding-bottom: 0;
     overflow: hidden;
     min-height: 0;
 }
 
 .messages {
-    width: 70%;
+    width: 100%;
     max-width: 800px;
     height: 100%;
-    padding: var(--space-5);
-    border-radius: var(--radius-2xl);
-    background: var(--bg-secondary);
-    backdrop-filter: blur(calc(var(--glass-blur) - 2px));
+    padding: var(--space-4);
     overflow-y: auto;
     overflow-x: hidden;
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--space-4);
     min-height: 0;
 }
 
+/* Custom scrollbar for messages */
+.messages::-webkit-scrollbar {
+    width: 8px;
+}
+
+.messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.messages::-webkit-scrollbar-thumb {
+    background: var(--gray-600);
+    border-radius: 4px;
+}
+
+.messages::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-500);
+}
+
 .input-container {
-    padding: var(--space-5);
+    padding: var(--space-4) var(--space-6) var(--space-6);
     display: flex;
     justify-content: center;
     background: transparent;
-    border-top: none;
     flex-shrink: 0;
     overflow: visible;
     position: relative;
 }
 
-.input-container::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--border-secondary), transparent);
-}
-
-/* Responsive Design */
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
 @media (max-width: 768px) {
-    .main-content {
-        height: calc(100% - 200px);
-    }
-
-    .welcome-title {
-        font-size: 1.6rem;
-    }
-
-    .welcome-content {
-        max-width: 95%;
-    }
-
-    .messages {
-        width: 95%;
+    .welcome-screen {
         padding: var(--space-4);
     }
 
-    /* hide diagonal and plus on small screens */
-    .quick-start-plain::before,
-    .quick-start-plain::after {
+    .welcome-content {
+        gap: var(--space-6);
+    }
+
+    .welcome-title {
+        font-size: var(--text-2xl);
+    }
+
+    .welcome-subtitle {
+        font-size: var(--text-base);
+    }
+
+    .quick-start-plain .card-grid {
+        grid-template-columns: 1fr;
+        max-width: 100%;
+    }
+
+    .messages {
+        width: 100%;
+        padding: var(--space-3);
+    }
+
+    .messages-container {
+        padding: var(--space-4);
+        padding-bottom: 0;
+    }
+
+    .input-container {
+        padding: var(--space-3) var(--space-4) var(--space-4);
+    }
+
+    .shortcuts-floating {
         display: none;
     }
 }
 
 @media (max-width: 520px) {
     .welcome-title {
-        font-size: 1.4rem;
+        font-size: var(--text-xl);
     }
 
     .welcome-content {
@@ -396,6 +334,6 @@
     }
 
     .messages {
-        padding: var(--space-3);
+        padding: var(--space-2);
     }
 }

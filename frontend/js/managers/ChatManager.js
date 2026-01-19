@@ -183,6 +183,31 @@ export class ChatManager {
             const currentConversation = this.conversation.getCurrentConversation();
             const conversationHistoryForAPI = currentConversation ? currentConversation.messages : [];
 
+            // -------------------------------------------------------------------------
+            // AUTO-TOOL DETECTION (SMART ROUTING)
+            // -------------------------------------------------------------------------
+            if (!this.activeTool) {
+                const lowerText = text.toLowerCase();
+
+                // 1. Check specific Pharmacy Tools
+                if (lowerText.includes('etkileşim') || lowerText.includes('interaction')) {
+                    this.app.ui.showToast('İlaç Etkileşim Modülü Açılıyor... 💊', 'info');
+                    // Open the specific modal instead of generic chat analysis
+                    if (window.openPharmacyModal) {
+                        window.openPharmacyModal('interaction');
+                        // Prevent default chat sending if we just want to open the tool? 
+                        // Or maybe send it anyway? The user likely expects the CHAT to answer too.
+                        // Let's keep sending message but ALSO open the tool.
+                    }
+                }
+                // 2. Fallback to ADMET for general toxicity
+                else if (['toksisite', 'güvenli', 'yan etki', 'zararlı', 'toxic', 'safe'].some(k => lowerText.includes(k))) {
+                    this.activeTool = 'admet';
+                    this.app.ui.showToast('Otomatik Analiz Modu Aktif 🧬', 'info');
+                    console.log("Auto-switching to ADMET tool based on keywords.");
+                }
+            }
+
             // Get selected ADMET parameters if the tool is active
             let admetProperties = null;
             if (this.activeTool === 'admet') {
@@ -191,6 +216,40 @@ export class ChatManager {
 
             // Prepare content (include files)
             let contextContent = text;
+
+            // -------------------------------------------------------------------------
+            // PATIENT CONTEXT INJECTION (CLEAN SYSTEM CONTEXT)
+            // -------------------------------------------------------------------------
+            if (this.app.patientManager && this.app.patientManager.currentPatient) {
+                const p = this.app.patientManager.currentPatient;
+
+                // 1. UI FEEDBACK
+                this.app.ui.showToast(`Hasta Bağlamı: ${p.name}`, 'info');
+
+                // 2. PREPARE DATA
+                const conditions = Array.isArray(p.conditions) ? p.conditions.join(', ') : (p.conditions || 'Yok');
+                const meds = Array.isArray(p.medications) ? p.medications.join(', ') : (p.medications || 'Yok');
+
+                // 3. CLEAN CONTEXT BLOCK
+                // We provide the context distinctly from the user's query.
+                const contextBlock = `
+[SYSTEM CONTEXT: ACTIVE PATIENT PROFILE]
+The user is asking on behalf of this patient:
+- Name: ${p.name}
+- Age: ${p.age || 'Unknown'}
+- Gender: ${p.gender || 'Unknown'}
+- Medical Conditions: ${conditions}
+- Current Medications: ${meds}
+Important: Frame your answer specifically for this patient's profile.
+[END CONTEXT]
+
+`;
+                contextContent = contextBlock + text;
+            }
+
+            // -------------------------------------------------------------------------
+            // FILE ATTACHMENTS
+            // -------------------------------------------------------------------------
             if (this.activeFiles && this.activeFiles.length > 0) {
                 for (const file of this.activeFiles) {
                     try {
@@ -230,8 +289,8 @@ export class ChatManager {
                     this.markdown.applySyntaxHighlighting(contentEl);
                     this.markdown.addCopyButtons(contentEl);
 
-                    if (this.app.moleculeManager) {
-                        this.renderAdmetChart(contentEl);
+                    if (this.app.molecule) {
+                        this.renderAdmetChart(contentEl, data.rawAdmetData);
                         this.addExportButtons(botMessageContainer);
                     }
                 }
@@ -313,7 +372,7 @@ export class ChatManager {
 
                 this.markdown.applySyntaxHighlighting(contentEl);
                 this.markdown.addCopyButtons(contentEl);
-                this.renderAdmetChart(contentEl);
+                this.renderAdmetChart(contentEl, rawData);
                 this.addExportButtons(botMessageContainer);
 
             } else {
@@ -381,6 +440,56 @@ export class ChatManager {
 
             item.appendChild(titleSpan);
 
+            // Action Buttons
+            const actionsDiv = DOMUtils.create('div', { className: 'history-item-actions' });
+
+            // Rename Button
+            const renameBtn = DOMUtils.create('button', {
+                className: 'history-action-btn rename',
+                title: 'Yeniden Adlandır'
+            });
+            renameBtn.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            `;
+            DOMUtils.on(renameBtn, 'click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Trigger rename logic (reusing existing context menu logic or dispatching event)
+                // For now, let's open the context menu at this location or implement direct rename
+                // Using context menu logic for consistency:
+                this.app.ui.showContextMenu(e.clientX, e.clientY, chat.id, !!chat.pinned);
+            });
+
+            // Delete Button
+            const deleteBtn = DOMUtils.create('button', {
+                className: 'history-action-btn delete',
+                title: 'Sil'
+            });
+            deleteBtn.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <polyline points="3,6 5,6 21,6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            `;
+            DOMUtils.on(deleteBtn, 'click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (confirm('Bu sohbeti silmek istediğinize emin misiniz?')) {
+                    this.conversation.deleteConversation(chat.id);
+                    if (this.conversation.currentConversationId === chat.id) {
+                        this.app.ui.switchToWelcomeMode();
+                    }
+                    this.renderConversationHistory();
+                }
+            });
+
+            actionsDiv.appendChild(renameBtn);
+            actionsDiv.appendChild(deleteBtn);
+            item.appendChild(actionsDiv);
+
             DOMUtils.on(item, 'click', (e) => {
                 e.preventDefault();
                 this.loadConversation(chat.id);
@@ -427,7 +536,7 @@ export class ChatManager {
                     if (msg.admetData) {
                         const scriptEl = DOMUtils.create('script', { type: 'application/json', id: 'admet-raw-data', textContent: JSON.stringify(msg.admetData) });
                         botMsg.appendChild(scriptEl);
-                        this.renderAdmetChart(contentEl);
+                        this.renderAdmetChart(contentEl, msg.admetData);
                         this.addExportButtons(botMsg);
                     }
 
@@ -449,29 +558,96 @@ export class ChatManager {
         return Array.from(checkboxes).map(cb => cb.value);
     }
 
-    renderAdmetChart(messageElement) {
-        const dataScript = messageElement.querySelector('#admet-radar-chart-data');
-        const canvas = messageElement.querySelector('#admet-radar-chart');
-
-        if (!dataScript || !canvas) {
-            return;
+    renderAdmetChart(messageElement, rawData) {
+        // If rawData is not provided, try to find it in the DOM
+        if (!rawData) {
+            const scriptEl = messageElement.parentElement.querySelector('#admet-raw-data');
+            if (scriptEl) {
+                try {
+                    rawData = JSON.parse(scriptEl.textContent);
+                } catch (e) {
+                    console.error("Failed to parse ADMET data from DOM:", e);
+                    return;
+                }
+            } else {
+                return;
+            }
         }
 
-        try {
-            const chartData = JSON.parse(dataScript.textContent);
-            const ctx = canvas.getContext('2d');
+        // Check if we have valid ADMET predictions
+        if (!rawData || !rawData.admetPredictions) return;
 
+        // Container for the chart
+        const chartContainer = DOMUtils.create('div', { className: 'admet-chart-container' });
+        // Style fits the glass theme
+        chartContainer.style.marginTop = '20px';
+        chartContainer.style.padding = '15px';
+        chartContainer.style.background = 'rgba(255, 255, 255, 0.03)';
+        chartContainer.style.borderRadius = '12px';
+        chartContainer.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+        chartContainer.style.height = '300px';
+
+        const canvas = DOMUtils.create('canvas', { id: 'admet-radar-chart' });
+        chartContainer.appendChild(canvas);
+        messageElement.appendChild(chartContainer);
+
+        // Transform data for Radar Chart
+        // Normalized values should be calculated. 
+        // For this demo, we assume we want to visualize some key properties.
+        // We'll normalize roughly based on typical ranges for visualization.
+        const propertiesOfInterest = [
+            { key: 'logP', label: 'LogP', min: -2, max: 6, ideal: 3 },
+            { key: 'logS', label: 'Solubility', min: -6, max: 0, ideal: -2 },
+            { key: 'mw', label: 'MW', min: 100, max: 600, ideal: 350 },
+            { key: 'tpsa', label: 'TPSA', min: 0, max: 160, ideal: 80 },
+            { key: 'qed', label: 'QED', min: 0, max: 1, ideal: 0.8 },
+            { key: 'synthesizability', label: 'Synth', min: 1, max: 10, ideal: 8 } // Custom scale
+        ];
+
+        // Mapping from raw data keys to our chart
+        // Note: Raw data keys depend on the backend model. We'll try to match loosely.
+        const dataset = [];
+        const labels = [];
+
+        // Helper to find prediction
+        const findVal = (key) => {
+            const p = rawData.admetPredictions.find(x => x.property.toLowerCase().includes(key.toLowerCase()));
+            if (!p) return null;
+            // Extract number
+            const match = p.prediction.match(/-?[\d\.]+/);
+            return match ? parseFloat(match[0]) : null;
+        };
+
+        propertiesOfInterest.forEach(prop => {
+            const val = findVal(prop.key);
+            if (val !== null) {
+                labels.push(prop.label);
+                // Normalize to 0-1 range for Radar
+                let norm = (val - prop.min) / (prop.max - prop.min);
+                if (norm < 0) norm = 0;
+                if (norm > 1) norm = 1;
+                dataset.push(norm);
+            }
+        });
+
+        if (dataset.length < 3) return; // Not enough data for a radar chart
+
+        try {
+            const ctx = canvas.getContext('2d');
             new Chart(ctx, {
                 type: 'radar',
                 data: {
-                    labels: chartData.labels,
+                    labels: labels,
                     datasets: [{
-                        label: 'Risk Profile (0=low, 1=high)',
-                        data: chartData.values,
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1,
-                        pointBackgroundColor: 'rgba(255, 99, 132, 1)'
+                        label: 'ADMET Profile (Normalized)',
+                        data: dataset,
+                        backgroundColor: 'rgba(6, 182, 212, 0.2)', // Cyan transparent
+                        borderColor: '#06b6d4', // Cyan solid
+                        borderWidth: 2,
+                        pointBackgroundColor: '#22d3ee',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#06b6d4'
                     }]
                 },
                 options: {
@@ -479,17 +655,31 @@ export class ChatManager {
                     maintainAspectRatio: false,
                     scales: {
                         r: {
-                            angleLines: { color: 'rgba(255, 255, 255, 0.2)' },
-                            grid: { color: 'rgba(255, 255, 255, 0.2)' },
-                            pointLabels: { color: 'rgba(255, 255, 255, 0.7)', font: { size: 12 } },
-                            ticks: {
+                            angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            pointLabels: {
                                 color: 'rgba(255, 255, 255, 0.7)',
-                                backdropColor: 'rgba(0, 0, 0, 0.5)',
-                                stepSize: 0.2, max: 1, min: 0
+                                font: { size: 11, family: 'Inter' }
+                            },
+                            ticks: {
+                                display: false, // Hide numeric ticks for cleaner look
+                                backdropColor: 'transparent'
                             }
                         }
                     },
-                    plugins: { legend: { labels: { color: 'rgba(255, 255, 255, 0.7)' } } }
+                    plugins: {
+                        legend: {
+                            display: false // Hide legend for single dataset
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => {
+                                    // Show original value if possible? Hard with normalized data.
+                                    return `Score: ${(context.raw * 100).toFixed(0)}%`;
+                                }
+                            }
+                        }
+                    }
                 }
             });
         } catch (e) {

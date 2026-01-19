@@ -31,6 +31,9 @@ services:
       - REDIS_URL=redis://redis:6379
       # Python worker'ı backend'e bu servis adıyla ulaşacak
       - ADMET_BACKEND_URL=http://backend:3000
+    volumes:
+      - ./frontend:/app/frontend
+      - ./backend:/app/backend
     depends_on:
       - rabbitmq
       - redis

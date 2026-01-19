@@ -39,6 +39,7 @@ export class UIComponent {
 
             // Sidebar elementleri
             sidebar: DOMUtils.select('#sidebar'),
+            sidebarToggle: DOMUtils.select('#sidebar-toggle'),
             newChatBtn: DOMUtils.select('#new-chat-btn'),
             settingsBtn: DOMUtils.select('#settings-btn'),
             // Sidebar model select moved to input wrapper
@@ -225,17 +226,27 @@ export class UIComponent {
      * @returns {Element}
      */
     createBotMessage() {
+        // Main container
         const el = DOMUtils.create('div', {
             className: 'message bot',
         });
 
-        // Add a container for message-specific actions (e.g., export, copy)
-        const actionsEl = DOMUtils.create('div', { className: 'message-actions' });
-        el.appendChild(actionsEl);
+        // 1. Avatar (Removed per user request)
+        // const avatar = DOMUtils.create('div', { className: 'message-avatar' });
+        // el.appendChild(avatar);
 
-        // Add a container for the actual content
+        // 2. Body Wrapper (Content + Actions)
+        const body = DOMUtils.create('div', { className: 'message-body' });
+
+        // Actions (Placed ABOVE content per user request)
+        const actionsEl = DOMUtils.create('div', { className: 'message-actions' });
+        body.appendChild(actionsEl);
+
+        // Content
         const contentEl = DOMUtils.create('div', { className: 'message-content' });
-        el.appendChild(contentEl);
+        body.appendChild(contentEl);
+
+        el.appendChild(body);
 
         this.elements.messagesEl.appendChild(el);
         this.smartScroll();
@@ -413,7 +424,14 @@ export class UIComponent {
     showThinkingIndicator() {
         const typingEl = DOMUtils.create('div', {
             className: 'message typing',
-            innerHTML: '<span>Düşünüyor</span><div class="thinking-dots"><span></span><span></span><span></span></div>'
+            innerHTML: `
+                <div class="thinking-content">
+                    <div class="thinking-spark-icon">
+                        <img src="assets/logo.svg" alt="Thinking" class="thinking-logo">
+                    </div>
+                    <span class="thinking-text">Düşünüyor</span>
+                </div>
+            `
         });
         this.elements.messagesEl.appendChild(typingEl);
         this.smartScroll();

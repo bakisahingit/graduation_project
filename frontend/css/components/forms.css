@@ -1,107 +1,96 @@
 /**
- * Form Components
- * Form bileşenleri
+ * Form Components - Gemini Style
+ * Modern pill-shaped input with clean aesthetics
  */
 
-/* Input wrapper */
+/* ========================================
+   INPUT WRAPPER (Pill Style)
+   ======================================== */
 .input-wrapper,
 .welcome-input-wrapper {
-    width: 70%;
+    width: 100%;
     max-width: 800px;
-    /* local gaps: form-divider for actions/standard dividers, chips-divider for chip-related spacing */
-    --form-divider-gap: 4px;
-    --chips-divider-gap: 6px;
-    padding: var(--space-1) var(--space-3);
-    border-radius: var(--radius-2xl);
-    background: var(--bg-secondary);
-    backdrop-filter: blur(calc(var(--glass-blur) - 2px));
-    -webkit-backdrop-filter: blur(calc(var(--glass-blur) - 2px));
-    box-shadow: var(--shadow-lg), inset 0 1px 0 var(--gray-950);
-    /* More visible border */
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: var(--space-3) var(--space-5);
+    border-radius: var(--radius-3xl);
+    background: var(--surface);
+    border: 1px solid var(--border-primary);
     display: flex;
     flex-direction: column;
     gap: 0;
-    transition: var(--transition-slow);
-    scroll-margin-top: 20px;
-    scroll-behavior: smooth;
+    transition: all var(--transition-normal);
+    box-shadow: var(--shadow-sm);
 }
 
-/* Ensure molecule query wrapper uses the same look as the welcome input wrapper */
+.input-wrapper:focus-within,
+.welcome-input-wrapper:focus-within {
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-md);
+}
+
+/* Molecule query wrapper */
 #molecule-query-form.welcome-input-wrapper {
-    background: var(--bg-secondary);
-    backdrop-filter: blur(calc(var(--glass-blur) - 2px));
-    -webkit-backdrop-filter: blur(calc(var(--glass-blur) - 2px));
-    box-shadow: var(--shadow-lg), inset 0 1px 0 var(--gray-950);
-    border: 1px solid var(--border-secondary);
-    padding: var(--space-1) var(--space-3);
+    background: var(--surface);
+    border: 1px solid var(--border-primary);
+    padding: var(--space-2) var(--space-4);
     border-radius: var(--radius-2xl);
 }
 
-/* Make molecule query wider and center it within the modal */
 .smiles-input-section .welcome-input-wrapper {
     width: 90%;
     max-width: 980px;
     margin: 0 auto;
-    /* center horizontally */
 }
 
-/* ADMET tool aktif olduğunda input wrapper border rengi */
+/* ADMET active state */
 .input-wrapper.admet-active,
 .welcome-input-wrapper.admet-active {
-    border-color: rgba(227, 130, 248, 0.5);
-    box-shadow: var(--shadow-lg), inset 0 1px 0 var(--gray-950), 0 0 0 1px rgba(227, 130, 248, 0.2);
+    border-color: rgba(197, 138, 249, 0.4);
 }
 
-
-/* Input area */
+/* ========================================
+   INPUT AREA
+   ======================================== */
 .input-area {
     width: 100%;
     padding: var(--space-1) 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    /* vertically center textarea between dividers */
 }
 
 /* File chips container */
 .file-chips {
     display: none;
-    /* hidden until JS enables when files exist */
     flex-wrap: wrap;
-    gap: 6px;
-    margin: var(--chips-divider-gap) 0;
-    /* chips ile divider arasına kontrollü boşluk ver */
+    gap: var(--space-2);
+    margin: var(--space-2) 0;
 }
 
-/* chips-divider: hidden by default; only show when chips exist */
+/* chips-divider: hidden by default */
 .chips-divider {
     display: none;
-    margin: var(--chips-divider-gap) 0;
-    /* chips için daha geniş boşluk */
+    margin: var(--space-2) 0;
 }
 
 /* Single file chip */
 .file-chip {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: var(--bg-glass);
-    border: 1px solid var(--border-secondary);
-    color: var(--gray-200);
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-pill);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    color: var(--text-secondary);
     font-size: var(--text-xs);
     max-width: 150px;
-    /* limit chip width so long names truncate */
     min-width: 0;
-    /* allow children to shrink */
 }
 
 .file-chip .file-ext {
-    color: var(--gray-500);
+    color: var(--text-muted);
     flex-shrink: 0;
-    margin-right: 6px;
+    margin-right: var(--space-1);
 }
 
 .file-chip .file-name {
@@ -111,11 +100,6 @@
     display: block;
     flex: 1 1 auto;
     min-width: 0;
-    /* necessary for flex children to truncate */
-}
-
-.file-chip .file-ext {
-    color: var(--gray-500);
 }
 
 .file-chip .remove-chip {
@@ -125,38 +109,33 @@
     width: 18px;
     height: 18px;
     flex: 0 0 18px;
-    /* prevent shrinking when chip is narrow */
     min-width: 18px;
     min-height: 18px;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     background: transparent;
-    border: 1px solid transparent;
-    color: var(--gray-400);
+    border: none;
+    color: var(--text-muted);
     cursor: pointer;
     padding: 0;
-    /* ensure shape stays circular */
+    transition: all var(--transition-fast);
 }
 
 .file-chip .remove-chip:hover {
-    background: var(--bg-glass-hover);
-    border-color: rgba(255, 80, 80, 0.98);
-    color: rgba(255, 80, 80, 0.98);
-}
-
-.file-chip .remove-chip:focus {
-    outline: none;
+    background: var(--error-surface);
+    color: var(--error);
 }
 
 /* Input divider */
 .input-divider {
     width: 100%;
     height: 1px;
-    background: linear-gradient(90deg, transparent, var(--border-secondary), transparent);
-    margin: var(--form-divider-gap) 0;
-    /* eşit boşluk: form değişkeninden al */
+    background: var(--border-primary);
+    margin: var(--space-2) 0;
 }
 
-/* Input actions */
+/* ========================================
+   INPUT ACTIONS
+   ======================================== */
 .input-actions {
     display: flex;
     align-items: center;
@@ -164,96 +143,67 @@
     gap: var(--space-2);
     padding: var(--space-1) 0 0 0;
     position: relative;
-    /* ensure top divider and actions have symmetric spacing */
-    margin-top: var(--form-divider-gap);
+    width: 100%;
 }
 
-/* Left button group */
 .input-actions .left-buttons {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: var(--space-1);
 }
 
-/* Right button group */
 .input-actions .right-buttons {
     display: flex;
     align-items: center;
     gap: var(--space-2);
+    margin-left: auto;
 }
 
-/* Add dropdown */
-/* Add dropdown artık ortak panel sistemi kullanıyor - panels.css'de tanımlı */
+/* ========================================
+   ADD DROPDOWN
+   ======================================== */
 .add-dropdown {
-    /* Ortak panel container stilleri panels.css'de */
     position: absolute;
     bottom: 100%;
     left: 0;
     margin-bottom: var(--space-2);
 }
 
-/* Add options artık ortak panel sistemi kullanıyor - panels.css'de tanımlı */
-
 .add-option svg {
-    /* Ortak panel item icon stilleri panels.css'de */
     width: 16px;
     height: 16px;
 }
 
-/* Molekül çizme butonu için özel hover efekti */
+/* Molecule draw button hover */
 .add-option[id*="molecule-draw"]:hover:not(:disabled) {
-    background: var(--bg-glass-hover);
-    border-color: rgba(76, 175, 80, 0.3);
-    color: var(--secondary-light);
+    background: var(--surface-hover);
+    color: var(--success);
 }
 
-/* Tools dropdown artık ortak panel sistemi kullanıyor - panels.css'de tanımlı */
-.tools-dropdown {
-    /* Ortak panel container stilleri panels.css'de */
-    position: absolute;
-    bottom: 100%;
-    left: 0;
-    margin-bottom: var(--space-2);
-}
-
-/* Tools butonunu relative yap ki dropdown ona göre konumlanabilsin */
+/* ========================================
+   TOOLS DROPDOWN
+   ======================================== */
 .tools-btn {
     position: relative;
 }
 
-/* Tools dropdown'ı tools butonunun tam altında konumlandır */
-.tools-btn+.tools-dropdown {
-    position: absolute;
-    bottom: 100%;
-    left: 40px;
-    /* Tools butonunun sol kenarı hizası */
-    margin-bottom: var(--space-2);
-}
-
-/* Tools dropdown artık ortak panel sistemi kullanıyor - panels.css'de tanımlı */
-
-/* AdMet tool için özel hover efekti - mor renk */
+/* AdMet tool hover - purple */
 .tool-option[id*="admet"]:hover:not(:disabled) {
-    background: var(--bg-glass-hover);
-    border-color: rgba(227, 130, 248, 0.3);
-    color: rgb(227, 130, 248);
+    background: var(--surface-hover);
+    color: #c58af9;
 }
 
 .tool-option:active:not(:disabled) {
-    background: var(--bg-glass-hover);
-    border-color: rgba(255, 255, 255, 0.15);
     transform: scale(0.98);
 }
 
 .tool-option:focus-visible {
-    outline: 2px solid rgba(255, 255, 255, 0.3);
+    outline: 2px solid var(--border-focus);
     outline-offset: 2px;
 }
 
 .tool-option:disabled {
-    background: transparent;
-    border-color: transparent;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--text-muted);
     cursor: not-allowed;
 }
 
@@ -261,10 +211,12 @@
     width: 20px;
     height: 20px;
     flex-shrink: 0;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all var(--transition-fast);
 }
 
-/* Model Selector Input */
+/* ========================================
+   MODEL SELECTOR (Input Bar)
+   ======================================== */
 .model-selector-input {
     position: relative;
     display: flex;
@@ -273,41 +225,37 @@
 
 .custom-select-input {
     position: relative;
-    width: 200px;
-    max-width: 200px;
+    width: 180px;
+    max-width: 180px;
 }
 
 .select-trigger-input {
     background: transparent;
-    color: var(--accent);
+    color: var(--text-secondary);
     border: 1px solid transparent;
     padding: var(--space-1) var(--space-2);
     border-radius: var(--radius-lg);
     font-size: var(--text-sm);
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all var(--transition-normal);
     display: flex;
     align-items: center;
     gap: var(--space-1);
     justify-content: space-between;
     white-space: nowrap;
-    width: 200px;
-    max-width: 200px;
+    width: 180px;
+    max-width: 180px;
     height: 32px;
 }
 
 .select-trigger-input:hover {
-    background: var(--bg-glass);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: var(--gray-100);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+    background: var(--surface-hover);
+    color: var(--text-primary);
 }
 
 .select-trigger-input.active {
-    background: var(--bg-glass-hover);
-    border-color: rgba(255, 255, 255, 0.3);
-    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+    background: var(--surface-hover);
+    color: var(--text-primary);
 }
 
 .select-value-input {
@@ -325,26 +273,25 @@
     width: 12px;
     height: 12px;
     flex-shrink: 0;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--transition-normal);
+    opacity: 0.6;
 }
 
 .select-trigger-input.active .select-arrow-input {
     transform: rotate(180deg);
 }
 
-/* Chat ekranında ok yönü - başta yukarı bakacak */
+/* Chat arrow direction fix */
 .chat-interface .select-arrow-input {
     transform: rotate(180deg);
 }
 
-/* Chat ekranında açık olduğunda ok aşağı bakacak */
 .chat-interface .select-trigger-input.active .select-arrow-input {
     transform: rotate(0deg);
 }
 
-/* Model dropdown artık ortak panel sistemi kullanıyor - panels.css'de tanımlı */
+/* Model dropdown */
 .select-options-input {
-    /* Ortak panel container stilleri panels.css'de */
     position: absolute;
     top: 100%;
     left: 0;
@@ -355,9 +302,13 @@
     overflow-x: hidden;
 }
 
-/* Model dropdown open durumu artık ortak panel sistemi kullanıyor - panels.css'de tanımlı */
+.select-options-input.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
 
-/* Chat ekranında yukarı açılma için özel stil */
+/* Upward opening dropdown */
 .select-options-input.open-upward {
     position: absolute;
     top: auto;
@@ -366,7 +317,7 @@
     right: 0;
     margin-top: 0;
     margin-bottom: var(--space-1);
-    transform: translateY(-10px);
+    transform: translateY(-8px);
     z-index: 10000;
 }
 
@@ -376,36 +327,34 @@
     transform: translateY(0);
 }
 
-/* Scroll bar styling for select options */
+/* Scrollbar styling */
 .select-options-input::-webkit-scrollbar {
     width: 6px;
 }
 
 .select-options-input::-webkit-scrollbar-track {
     background: transparent;
-    border-radius: 3px;
 }
 
 .select-options-input::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--gray-600);
     border-radius: 3px;
-    transition: background 0.2s ease;
 }
 
 .select-options-input::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: var(--gray-500);
 }
 
-/* Model dropdown option artık ortak panel sistemi kullanıyor - panels.css'de tanımlı */
+/* Model option */
 .select-option-input {
     padding: var(--space-2) var(--space-3);
 }
 
-/* Model Ekle Butonu */
+/* Add Model Button */
 .select-add-model {
-    border-top: 1px solid var(--border-secondary);
+    border-top: 1px solid var(--border-primary);
     padding: var(--space-1);
-    background: rgba(15, 17, 19, 0.98);
+    background: var(--surface);
     border-radius: 0 0 var(--radius-xl) var(--radius-xl);
     position: sticky;
     bottom: 0;
@@ -414,14 +363,14 @@
 
 .select-add-model-btn {
     background: transparent;
-    border: 1px solid transparent;
-    color: var(--accent);
+    border: none;
+    color: var(--primary);
     padding: var(--space-1) var(--space-2);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     font-size: var(--text-xs);
     font-weight: var(--font-medium);
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all var(--transition-normal);
     display: flex;
     align-items: center;
     gap: var(--space-1);
@@ -431,48 +380,39 @@
 }
 
 .select-add-model-btn:hover:not(:disabled) {
-    background: var(--bg-glass-hover);
-    border-color: rgba(79, 195, 247, 0.3);
-    color: var(--primary-light);
-}
-
-.select-add-model-btn:active:not(:disabled) {
-    background: var(--bg-glass);
-    border-color: rgba(79, 195, 247, 0.4);
-    transform: scale(0.98);
+    background: var(--primary-surface);
 }
 
 .select-add-model-btn svg {
     width: 12px;
     height: 12px;
     flex-shrink: 0;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Textarea */
+/* ========================================
+   TEXTAREA
+   ======================================== */
 .input-wrapper textarea,
 .welcome-input-wrapper textarea {
     width: 100%;
     border: 0;
     outline: none;
-    padding: 6px 10px;
+    padding: var(--space-2) var(--space-1);
     font-size: var(--text-base);
-    color: var(--accent);
+    color: var(--text-primary);
     background: transparent;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     resize: none;
-    min-height: 30px;
-    max-height: 120px;
-    overflow-y: hidden;
+    min-height: 28px;
+    max-height: 200px;
+    overflow-y: auto;
     font-family: inherit;
-    line-height: 1.3;
-    scroll-margin-top: 20px;
-    scroll-behavior: smooth;
+    line-height: 1.5;
 }
 
 .input-wrapper textarea::placeholder,
 .welcome-input-wrapper textarea::placeholder {
-    color: var(--gray-500);
+    color: var(--text-muted);
 }
 
 /* Textarea scrollbar */
@@ -483,37 +423,32 @@
 
 .input-wrapper textarea::-webkit-scrollbar-track,
 .welcome-input-wrapper textarea::-webkit-scrollbar-track {
-    background: var(--gray-900);
-    border-radius: 3px;
+    background: transparent;
 }
 
 .input-wrapper textarea::-webkit-scrollbar-thumb,
 .welcome-input-wrapper textarea::-webkit-scrollbar-thumb {
-    background: var(--gray-700);
+    background: var(--gray-600);
     border-radius: 3px;
 }
 
-.input-wrapper textarea::-webkit-scrollbar-thumb:hover,
-.welcome-input-wrapper textarea::-webkit-scrollbar-thumb:hover {
-    background: var(--gray-500);
-}
-
-/* Custom select */
+/* ========================================
+   SIDEBAR CUSTOM SELECT
+   ======================================== */
 .custom-select-sidebar {
     position: relative;
     width: 100%;
 }
 
 .select-trigger-sidebar {
-    background: var(--gray-950);
-    color: var(--accent);
-    border: 1px solid var(--border-secondary);
-    padding: 10px 14px;
+    background: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-primary);
+    padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-xl);
-    backdrop-filter: blur(calc(var(--glass-blur) - 2px));
-    font-size: var(--text-md);
+    font-size: var(--text-base);
     cursor: pointer;
-    transition: var(--transition-normal);
+    transition: all var(--transition-normal);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -522,15 +457,13 @@
 }
 
 .select-trigger-sidebar:hover {
-    background: var(--gray-900);
-    border-color: var(--border-accent);
-    transform: translateY(-1px);
+    background: var(--surface-hover);
+    border-color: var(--border-hover);
 }
 
 .select-trigger-sidebar.active {
-    background: var(--gray-900);
+    background: var(--surface-hover);
     border-color: var(--border-focus);
-    box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.1);
 }
 
 .select-value-sidebar {
@@ -540,7 +473,7 @@
 }
 
 .select-arrow-sidebar {
-    color: var(--gray-400);
+    color: var(--text-tertiary);
     transition: transform var(--transition-normal);
 }
 
@@ -553,18 +486,17 @@
     top: 100%;
     left: 0;
     right: 0;
-    background: rgba(26, 26, 26, 0.95);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--border-secondary);
+    background: var(--surface);
+    border: 1px solid var(--border-primary);
     border-radius: var(--radius-xl);
-    margin-top: 4px;
+    margin-top: var(--space-1);
     overflow: hidden;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-10px);
-    transition: var(--transition-normal);
+    transform: translateY(-8px);
+    transition: all var(--transition-normal);
     z-index: var(--z-dropdown);
-    box-shadow: var(--shadow-xl);
+    box-shadow: var(--shadow-dropdown);
     display: flex;
     flex-direction: column;
     max-height: 300px;
@@ -578,10 +510,10 @@
 
 .select-option-sidebar {
     padding: var(--space-3) var(--space-4);
-    color: var(--accent);
+    color: var(--text-primary);
     cursor: pointer;
-    transition: var(--transition-normal);
-    border-bottom: 1px solid var(--border-primary);
+    transition: background var(--transition-fast);
+    border-bottom: 1px solid var(--border-secondary);
     font-size: var(--text-base);
 }
 
@@ -590,12 +522,11 @@
 }
 
 .select-option-sidebar:hover {
-    background: rgba(79, 195, 247, 0.2);
-    color: var(--primary-light);
+    background: var(--surface-hover);
 }
 
 .select-option-sidebar.selected {
-    background: rgba(79, 195, 247, 0.3);
+    background: var(--primary-surface);
     color: var(--primary);
     font-weight: var(--font-medium);
 }
@@ -610,9 +541,9 @@
     padding: var(--space-3) var(--space-4);
     color: var(--primary);
     cursor: pointer;
-    transition: var(--transition-normal);
-    border-top: 1px solid var(--border-secondary);
-    background: rgba(79, 195, 247, 0.05);
+    transition: background var(--transition-fast);
+    border-top: 1px solid var(--border-primary);
+    background: var(--surface);
     display: flex;
     align-items: center;
     gap: var(--space-2);
@@ -622,8 +553,7 @@
 }
 
 .add-model-option:hover {
-    background: rgba(79, 195, 247, 0.15);
-    color: var(--primary-light);
+    background: var(--primary-surface);
 }
 
 /* Select scrollbar */
@@ -632,81 +562,63 @@
 }
 
 .select-options-scroll::-webkit-scrollbar-track {
-    background: var(--gray-950);
-    border-radius: 2px;
+    background: transparent;
 }
 
 .select-options-scroll::-webkit-scrollbar-thumb {
-    background: var(--gray-800);
+    background: var(--gray-600);
     border-radius: 2px;
-}
-
-.select-options-scroll::-webkit-scrollbar-thumb:hover {
-    background: var(--gray-700);
 }
 
 /* SMILES textarea */
 .smiles-textarea {
-    background: var(--gray-950);
-    border: 1px solid var(--border-secondary);
-    color: var(--accent);
+    background: var(--surface);
+    border: 1px solid var(--border-primary);
+    color: var(--text-primary);
     padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-lg);
-    font-size: var(--text-md);
+    font-size: var(--text-base);
     font-family: var(--font-family-mono);
     resize: vertical;
     min-height: 80px;
-    transition: var(--transition-normal);
+    transition: all var(--transition-normal);
 }
 
 .smiles-textarea:focus {
     outline: none;
-    border-color: rgba(76, 175, 80, 0.5);
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
-    background: var(--gray-900);
+    border-color: var(--border-focus);
+    background: var(--surface-hover);
 }
 
 .smiles-textarea::placeholder {
-    color: var(--gray-600);
+    color: var(--text-muted);
 }
 
-/* Responsive form adjustments */
+/* ========================================
+   RESPONSIVE
+   ======================================== */
 @media (max-width: 768px) {
 
     .input-wrapper,
     .welcome-input-wrapper {
-        width: 95%;
-        padding: var(--space-1) var(--space-2);
+        width: 100%;
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-2xl);
     }
 
     .input-wrapper textarea,
     .welcome-input-wrapper textarea {
-        font-size: var(--text-md);
-        padding: 6px 10px;
+        font-size: var(--text-base);
     }
 
-    .input-actions {
-        gap: var(--space-2);
+    .custom-select-input {
+        width: 140px;
+        max-width: 140px;
     }
 
-    .add-dropdown {
-        min-width: 180px;
-        margin-bottom: var(--space-1);
-    }
-
-    .add-option {
-        padding: var(--space-2) var(--space-3);
-        font-size: var(--text-xs);
-    }
-
-    .tools-dropdown {
-        min-width: 180px;
-        margin-bottom: var(--space-1);
-    }
-
-    .tool-option {
-        padding: var(--space-2) var(--space-3);
-        font-size: var(--text-xs);
+    .select-trigger-input {
+        width: 140px;
+        max-width: 140px;
     }
 }
 
@@ -714,85 +626,19 @@
 
     .input-wrapper,
     .welcome-input-wrapper {
-        padding: 4px var(--space-3);
-    }
-
-    .input-wrapper textarea,
-    .welcome-input-wrapper textarea {
-        font-size: var(--text-base);
-        padding: 4px 8px;
-    }
-
-    .add-dropdown {
-        min-width: 160px;
-    }
-
-    .add-option {
         padding: var(--space-2);
-        font-size: var(--text-xs);
-        gap: var(--space-1);
-    }
-
-    .add-option svg {
-        width: 14px;
-        height: 14px;
-    }
-
-    .tools-dropdown {
-        min-width: 160px;
-    }
-
-    .tool-option {
-        padding: var(--space-2);
-        font-size: var(--text-xs);
-        gap: var(--space-1);
-    }
-
-    .tool-option-icon {
-        width: 22px;
-        height: 22px;
-    }
-
-    .select-trigger-input {
-        padding: var(--space-1);
-        font-size: var(--text-xs);
-        width: 120px;
-        max-width: 120px;
-        height: 28px;
+        border-radius: var(--radius-xl);
     }
 
     .custom-select-input {
-        width: 120px;
-        max-width: 120px;
+        width: 110px;
+        max-width: 110px;
     }
 
-    .select-arrow-input {
-        width: 10px;
-        height: 10px;
-    }
-
-    .select-options-input {
-        min-width: 120px;
-        max-height: 150px;
-    }
-
-    .select-option-input {
-        padding: var(--space-1) var(--space-2);
+    .select-trigger-input {
+        width: 110px;
+        max-width: 110px;
+        height: 28px;
         font-size: var(--text-xs);
-    }
-
-    .select-add-model {
-        padding: var(--space-1);
-    }
-
-    .select-add-model-btn {
-        padding: var(--space-1);
-        font-size: var(--text-xs);
-        gap: var(--space-1);
-    }
-
-    .select-add-model-btn svg {
-        width: 10px;
-        height: 10px;
     }
 }

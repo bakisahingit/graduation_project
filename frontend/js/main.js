@@ -6,30 +6,37 @@
 import { UIComponent } from './components/ui.js';
 import { MarkdownComponent } from './components/markdown.js';
 import { MoleculeComponent } from './components/molecule.js';
+import pharmacyModals from './components/pharmacyModals.js'; // Revert to default import
 import { ApiService } from './services/api.js';
 import { ConversationService } from './services/conversation.js';
 import { ModelService } from './services/model.js';
 import { DOMUtils } from './utils/dom.js';
 import { HelperUtils } from './utils/helpers.js';
 import { config } from './config.js';
+import { PatientManager } from './managers/PatientManager.js';
+import { ChatManager } from './managers/ChatManager.js';
 
-
-class ChatApp {
+class ChatApp { // Reverted to ChatApp to match footer instantiation
     constructor() {
+        // Initialize Utils & Services
         this.ui = new UIComponent();
-        this.markdown = new MarkdownComponent();
-        this.molecule = new MoleculeComponent();
         this.api = new ApiService();
         this.conversation = new ConversationService();
         this.model = new ModelService();
 
-        this.isStreaming = false;
-        this.userScrolledUp = false;
-        this.currentStreamController = null;
-        this.activeTool = null; // Aktif tool (null, 'admet', vs.)
-        // Keep track of last PubChem-loaded SMILES to avoid redundant fetches
-        this._lastPubChemSmiles = null;
+        // Initialize Components
+        this.markdown = new MarkdownComponent();
+        this.molecule = new MoleculeComponent();
+        this.pharmacyModals = pharmacyModals;
 
+        // Initialize Managers
+        this.chat = new ChatManager(this, this.api, this.conversation, this.markdown);
+        this.patientManager = new PatientManager(this);
+
+        this.isStreaming = false;
+        this.activeTool = null;
+
+        // Start initialization
         this.init();
     }
 
@@ -62,6 +69,11 @@ class ChatApp {
 
         // UI event listener'ları kur
         this.ui.setupEventListeners();
+
+        // Managers initializations that need DOM
+        if (this.patientManager) {
+            this.patientManager.init();
+        }
 
         // File chips UI başlangıçta gizli olsun
         this.initializeFileChipsUI();
@@ -193,6 +205,13 @@ class ChatApp {
 
         // Sidebar custom select
         this.setupSidebarCustomSelect();
+
+        // Sidebar Toggle
+        if (this.ui.elements.sidebarToggle) {
+            DOMUtils.on(this.ui.elements.sidebarToggle, 'click', () => {
+                this.ui.elements.sidebar.classList.toggle('collapsed');
+            });
+        }
 
         // Settings modal
         if (this.ui.elements.settingsBtn) {

@@ -1,322 +1,287 @@
 /**
- * History Components
- * Konuşma geçmişi bileşenleri
+ * History Components - Gemini Style
+ * Clean conversation history items
  */
 
-/* History item artık ortak panel sistemi kullanıyor - panels.css'de tanımlı */
+/* ========================================
+   HISTORY ITEM
+   ======================================== */
 .history-item {
-    /* Ortak panel sistemi stilleri panels.css'de */
-    margin: 0 2px;
-    position: relative;
-    box-sizing: border-box;
-    /* Scroll bar için sağ taraftan yer bırak - padding ile */
-    padding-right: 8px;
-}
-
-/* History item active durumu - panels.css'deki active stiliyle uyumlu */
-.history-item.active {
-    background: rgba(79,195,247,0.1) !important;
-    border-color: rgba(79,195,247,0.3) !important;
-}
-
-.history-item.active .history-item-title {
-    color: var(--primary) !important;
-}
-
-/* Pinned mesajlar için de aynı active stili */
-#pinned-list .history-item.active {
-    background: rgba(79,195,247,0.1) !important;
-    border-color: rgba(79,195,247,0.3) !important;
-}
-
-#pinned-list .history-item.active .history-item-title {
-    color: var(--primary) !important;
-}
-
-.history-item-title {
-    color: var(--accent);
-    font-size: var(--text-base);
-    font-weight: var(--font-normal);
-    margin-bottom: 3px;
-    line-height: 1.2;
-    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-lg);
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all var(--transition-normal);
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+    border: 1px solid transparent;
+    position: relative;
+}
+
+.history-item:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+}
+
+.history-item.active {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+    border-color: var(--border-primary);
+}
+
+/* Pinned indicator */
+.history-item.pinned::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 4px;
+    background: var(--primary);
+    border-radius: var(--radius-full);
+}
+
+.history-item.pinned {
+    padding-left: var(--space-4);
+}
+
+/* History item icon */
+.history-item-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--text-muted);
+}
+
+.history-item:hover .history-item-icon {
+    color: var(--text-secondary);
+}
+
+/* History item title */
+.history-item-title {
     flex: 1;
-    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-/* Loading durumu için çok bulanık stil */
-.history-item-title.loading {
-    color: rgba(255, 255, 255, 0.3);
-    font-style: italic;
-    position: relative;
-    filter: blur(1.5px);
-    opacity: 0.6;
-    background: linear-gradient(90deg, 
-        rgba(255, 255, 255, 0.1) 0%, 
-        rgba(255, 255, 255, 0.3) 50%, 
-        rgba(255, 255, 255, 0.1) 100%);
-    background-size: 200% 100%;
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: shimmer 2s infinite;
+/* History item edit input - hidden by default */
+.history-item-edit {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background: var(--surface);
+    border: 1px solid var(--border-focus);
+    border-radius: var(--radius-md);
+    padding: var(--space-2);
+    font-size: inherit;
+    color: var(--text-primary);
 }
 
-@keyframes shimmer {
-    0% {
-        background-position: -200% 0;
-    }
-    100% {
-        background-position: 200% 0;
-    }
+.history-item-edit.editing {
+    display: block;
 }
 
+/* History item actions */
+.history-item-actions {
+    display: none;
+    align-items: center;
+    gap: 2px;
+    margin-right: calc(var(--space-1) * -1);
+}
 
+.history-item:hover .history-item-actions {
+    display: flex;
+}
+
+/* History item menu button (three dots) */
 .history-item-menu {
-    position: relative;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: var(--radius-full);
     background: transparent;
     border: none;
-    width: 24px;
-    height: 24px;
-    border-radius: 4px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all var(--transition-fast);
     opacity: 0;
-    transition: var(--transition-normal);
+    visibility: hidden;
     flex-shrink: 0;
 }
 
-.ellipsis-icon {
+.history-item-menu .ellipsis-icon {
     width: 16px;
     height: 16px;
-    filter: brightness(0) saturate(100%) invert(60%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
-    transition: var(--transition-normal);
 }
 
 .history-item:hover .history-item-menu {
     opacity: 1;
+    visibility: visible;
 }
 
 .history-item-menu:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--surface-hover);
 }
 
-.history-item-menu:hover .ellipsis-icon {
-    filter: brightness(0) saturate(100%) invert(80%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
-}
 
-.history-item-menu.active {
-    background: rgba(255, 255, 255, 0.1);
-    opacity: 1 !important;
-}
-
-.history-item-menu.active .ellipsis-icon {
-    filter: brightness(0) saturate(100%) invert(80%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
-}
-
-.history-item.menu-active .history-item-menu {
-    opacity: 1;
-}
-
-/* Context menu açıkken arka plandaki hover efektlerini devre dışı bırak */
-body.menu-open .history-item:not(.menu-active):hover {
-    background: transparent !important;
-}
-
-body.menu-open .history-item:not(.menu-active):hover .history-item-menu {
-    opacity: 0 !important;
-}
-
-body.menu-open .history-item:not(.menu-active):hover .history-item-menu:hover {
-    background: transparent !important;
-}
-
-body.menu-open .history-item:not(.menu-active):hover .history-item-menu:hover .ellipsis-icon {
-    filter: brightness(0) saturate(100%) invert(60%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%) !important;
-}
-
-/* Context Menu */
-.conversation-menu {
-    position: fixed;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-lg);
+.history-action-btn {
+    width: 28px;
+    height: 28px;
     padding: 0;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    z-index: 9999;
-    opacity: 0;
-    visibility: hidden;
-    transform: scale(0.95);
-    transition: all var(--transition-normal);
-    min-width: 140px;
-    backdrop-filter: blur(8px);
-}
-
-.conversation-menu.show {
-    opacity: 1;
-    visibility: visible;
-    transform: scale(1);
-}
-
-.menu-item {
+    border-radius: var(--radius-full);
     background: transparent;
-    border: 1px solid transparent;
-    color: var(--accent);
-    padding: var(--space-3) var(--space-4);
-    border-radius: var(--radius-lg);
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
+    border: none;
+    color: #ffffff !important;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    text-align: left;
-    width: 100%;
-    justify-content: flex-start;
-}
-
-.menu-item:hover:not(:disabled) {
-    background: var(--bg-glass-hover);
-    border-color: rgba(255,255,255,0.1);
-    color: var(--gray-100);
-}
-
-.menu-item:active:not(:disabled) {
-    background: var(--bg-glass-hover);
-    border-color: rgba(255,255,255,0.15);
-    transform: scale(0.98);
-}
-
-.menu-item.delete:hover:not(:disabled) {
-    background: var(--bg-glass-hover);
-    border-color: rgba(255,107,107,0.3);
-    color: var(--error);
-}
-
-.menu-icon {
-    width: 16px;
-    height: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.menu-icon svg {
-    width: 16px;
-    height: 16px;
-    color: currentColor;
-}
-
-.menu-text {
-    font-weight: var(--font-normal);
-}
-
-/* Inline editing styles */
-.history-item-edit {
-    display: none;
-    width: 100%;
-    background: transparent;
-    border: none;
-    padding: 0;
-    margin: 0;
-    color: var(--accent);
-    font-size: var(--text-base);
-    font-weight: var(--font-normal);
-    line-height: 1.2;
-    outline: none;
-    resize: none;
-    overflow: hidden;
-    height: calc(var(--text-base) * 1.2 + 3px);
-    vertical-align: middle;
-    position: relative;
-    top: 0;
-}
-
-.history-item.editing {
-    background: rgba(255, 255, 255, 0.05);
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    min-height: auto;
-    height: auto;
-    outline: 1px solid rgba(79, 195, 247, 0.3);
-    outline-offset: -1px;
-}
-
-.history-item.editing .history-item-title {
-    display: none;
-}
-
-.history-item.editing .history-item-edit {
-    display: block;
-}
-
-.history-item.editing .history-item-menu {
+    transition: all var(--transition-fast);
     opacity: 0;
-    pointer-events: none;
+    visibility: hidden;
 }
 
-/* SCROLLBAR - Estetik ve şeffaf tasarım */
-
-/* Tüm history list elementleri için scrollbar stilleri */
-.history-list,
-#history-list,
-#pinned-list {
-    /* Firefox için */
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+.history-action-btn svg,
+.history-action-btn img,
+.history-action-btn i {
+    width: 14px !important;
+    height: 14px !important;
+    color: #ffffff !important;
+    fill: #ffffff !important;
+    stroke: #ffffff !important;
+    filter: brightness(0) invert(1) !important;
+    opacity: 1 !important;
 }
 
-/* WebKit tabanlı tarayıcılar için */
-.history-list::-webkit-scrollbar,
-#history-list::-webkit-scrollbar,
-#pinned-list::-webkit-scrollbar {
-    width: 8px;
-    background: transparent;
+.history-item:hover .history-action-btn {
+    opacity: 1;
+    visibility: visible;
 }
 
-.history-list::-webkit-scrollbar-track,
-#history-list::-webkit-scrollbar-track,
-#pinned-list::-webkit-scrollbar-track {
-    background: transparent;
-    border: none;
-    border-radius: 0;
+.history-action-btn:hover {
+    background-color: var(--surface-hover);
+    color: var(--text-primary);
 }
 
-.history-list::-webkit-scrollbar-thumb,
-#history-list::-webkit-scrollbar-thumb,
-#pinned-list::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    border: none;
-    transition: background-color 0.2s ease;
+
+
+.history-action-btn.delete:hover {
+    background: var(--error-surface);
+    color: var(--error);
 }
 
-.history-list::-webkit-scrollbar-thumb:hover,
-#history-list::-webkit-scrollbar-thumb:hover,
-#pinned-list::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.35);
+.history-action-btn svg,
+.history-action-btn img,
+.history-action-btn i {
+    width: 14px;
+    height: 14px;
+    color: #ffffff !important;
+    fill: none !important;
+    /* SVG path stroke kullanıyor, fill değil */
+    stroke: #ffffff !important;
+    opacity: 1 !important;
 }
 
-/* Yukarı ve aşağı butonlarını tamamen kaldır */
-.history-list::-webkit-scrollbar-button,
-#history-list::-webkit-scrollbar-button,
-#pinned-list::-webkit-scrollbar-button {
-    display: none;
-    width: 0;
-    height: 0;
+.history-action-btn svg path {
+    stroke: currentColor !important;
 }
 
-/* Scrollbar köşelerini temizle */
-.history-list::-webkit-scrollbar-corner,
-#history-list::-webkit-scrollbar-corner,
-#pinned-list::-webkit-scrollbar-corner {
-    background: transparent;
+/* ========================================
+   HISTORY DATE SEPARATOR
+   ======================================== */
+.history-date-separator {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    padding: var(--space-3) var(--space-3) var(--space-1);
+    font-weight: var(--font-medium);
+}
+
+/* ========================================
+   EMPTY HISTORY STATE
+   ======================================== */
+.history-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-8) var(--space-4);
+    text-align: center;
+}
+
+.history-empty-icon {
+    width: 48px;
+    height: 48px;
+    color: var(--text-muted);
+    margin-bottom: var(--space-3);
+    opacity: 0.5;
+}
+
+.history-empty-text {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+/* ========================================
+   SEARCH BAR (if in sidebar)
+   ======================================== */
+.history-search {
+    margin-bottom: var(--space-3);
+}
+
+.history-search-input {
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    background: var(--surface);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    transition: all var(--transition-normal);
+}
+
+.history-search-input:focus {
+    outline: none;
+    border-color: var(--border-focus);
+}
+
+.history-search-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 768px) {
+    .history-item {
+        padding: var(--space-2);
+        font-size: var(--text-xs);
+        border-radius: var(--radius-md);
+    }
+
+    .history-item-icon {
+        width: 14px;
+        height: 14px;
+    }
+
+    .history-action-btn {
+        width: 20px;
+        height: 20px;
+    }
+
+    .history-action-btn svg {
+        width: 12px;
+        height: 12px;
+    }
 }

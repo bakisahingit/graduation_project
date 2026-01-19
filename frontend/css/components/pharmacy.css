@@ -1,0 +1,647 @@
+/**
+ * Pharmacy Components - Gemini Style
+ * Clean pharmacy tools styling
+ */
+
+/* ========================================
+   PHARMACY TOOLS DROPDOWN
+   ======================================== */
+.pharmacy-tools-panel {
+    position: absolute;
+    bottom: calc(100% + var(--space-2));
+    left: 0;
+    background: var(--surface);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-xl);
+    padding: var(--space-2);
+    min-width: 280px;
+    display: none;
+    box-shadow: var(--shadow-dropdown);
+    z-index: 100;
+}
+
+.pharmacy-tools-panel.show {
+    display: block;
+    animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.pharmacy-tool-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-lg);
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+    transition: all var(--transition-fast);
+}
+
+.pharmacy-tool-btn:hover {
+    background: var(--surface-hover);
+}
+
+.pharmacy-tool-btn .tool-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    flex-shrink: 0;
+}
+
+.pharmacy-tool-btn .tool-icon.interaction {
+    background: var(--error-surface);
+    color: var(--error);
+}
+
+.pharmacy-tool-btn .tool-icon.pregnancy {
+    background: rgba(236, 72, 153, 0.12);
+    color: #ec4899;
+}
+
+.pharmacy-tool-btn .tool-icon.dose {
+    background: var(--info-surface);
+    color: var(--info);
+}
+
+.pharmacy-tool-btn .tool-icon.patient {
+    background: var(--success-surface);
+    color: var(--success);
+}
+
+.pharmacy-tool-btn .tool-info {
+    flex: 1;
+}
+
+.pharmacy-tool-btn .tool-name {
+    font-weight: var(--font-medium);
+    font-size: var(--text-sm);
+}
+
+.pharmacy-tool-btn .tool-desc {
+    font-size: var(--text-xs);
+    color: var(--text-tertiary);
+    margin-top: 2px;
+}
+
+/* ========================================
+   PHARMACY MODALS
+   ======================================== */
+.pharmacy-modal {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal);
+    display: none;
+}
+
+.pharmacy-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pharmacy-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--modal-overlay);
+    backdrop-filter: blur(4px);
+}
+
+.pharmacy-modal-content {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-2xl);
+    width: 90%;
+    max-width: 600px;
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: modalIn 0.25s ease;
+    box-shadow: var(--shadow-xl);
+}
+
+@keyframes modalIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.pharmacy-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-5) var(--space-6);
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.pharmacy-modal-header h2 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--text-primary);
+}
+
+.pharmacy-modal-close {
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.pharmacy-modal-close:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+}
+
+.pharmacy-modal-body {
+    padding: var(--space-6);
+    overflow-y: auto;
+    flex: 1;
+}
+
+.pharmacy-modal-footer {
+    padding: var(--space-4) var(--space-6);
+    border-top: 1px solid var(--border-primary);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+}
+
+/* ========================================
+   FORM ELEMENTS
+   ======================================== */
+.pharmacy-form-group {
+    margin-bottom: var(--space-5);
+}
+
+.pharmacy-form-group label {
+    display: block;
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    margin-bottom: var(--space-2);
+    color: var(--text-primary);
+}
+
+.pharmacy-input {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    transition: all var(--transition-normal);
+}
+
+.pharmacy-input:focus {
+    outline: none;
+    border-color: var(--border-focus);
+    background: var(--surface);
+}
+
+.pharmacy-input::placeholder {
+    color: var(--text-muted);
+}
+
+.pharmacy-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239aa0a6' stroke-width='2'%3E%3Cpolyline points='6,9 12,15 18,9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--space-3) center;
+    padding-right: var(--space-10);
+}
+
+/* ========================================
+   DRUG TAGS
+   ======================================== */
+.drug-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+    min-height: 40px;
+    padding: var(--space-2);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-lg);
+    border: 1px dashed var(--border-primary);
+}
+
+.drug-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    background: var(--primary);
+    color: #000;
+    border-radius: var(--radius-pill);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    animation: tagIn 0.2s ease;
+}
+
+@keyframes tagIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.drug-tag-remove {
+    background: rgba(0, 0, 0, 0.2);
+    border: none;
+    color: #000;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: background var(--transition-fast);
+}
+
+.drug-tag-remove:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+/* ========================================
+   RESULTS
+   ======================================== */
+.pharmacy-results {
+    margin-top: var(--space-6);
+}
+
+.pharmacy-result-card {
+    background: var(--surface);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    margin-bottom: var(--space-3);
+}
+
+.pharmacy-result-card.severity-contraindicated {
+    border-left: 4px solid var(--error);
+    background: var(--error-surface);
+}
+
+.pharmacy-result-card.severity-serious {
+    border-left: 4px solid var(--warning);
+    background: var(--warning-surface);
+}
+
+.pharmacy-result-card.severity-moderate {
+    border-left: 4px solid var(--info);
+    background: var(--info-surface);
+}
+
+.pharmacy-result-card.severity-minor {
+    border-left: 4px solid var(--success);
+}
+
+.result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-2);
+}
+
+.result-drugs {
+    font-weight: var(--font-semibold);
+    font-size: var(--text-base);
+    color: var(--text-primary);
+}
+
+.result-severity {
+    font-size: var(--text-xs);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-pill);
+    font-weight: var(--font-medium);
+    text-transform: uppercase;
+}
+
+.severity-contraindicated .result-severity {
+    background: var(--error);
+    color: #000;
+}
+
+.severity-serious .result-severity {
+    background: var(--warning);
+    color: #000;
+}
+
+.severity-moderate .result-severity {
+    background: var(--info);
+    color: #000;
+}
+
+.severity-minor .result-severity {
+    background: var(--success);
+    color: #000;
+}
+
+.result-mechanism {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+}
+
+.result-action {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    padding: var(--space-2) var(--space-3);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+/* ========================================
+   PREGNANCY RESULTS
+   ======================================== */
+.pregnancy-category {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-weight: var(--font-bold);
+    font-size: var(--text-lg);
+    margin-right: var(--space-3);
+}
+
+.pregnancy-category.cat-A,
+.pregnancy-category.cat-B {
+    background: var(--success);
+    color: #000;
+}
+
+.pregnancy-category.cat-C {
+    background: var(--warning);
+    color: #000;
+}
+
+.pregnancy-category.cat-D {
+    background: #f97316;
+    color: #000;
+}
+
+.pregnancy-category.cat-X {
+    background: var(--error);
+    color: #000;
+}
+
+.pregnancy-category.cat-N {
+    background: var(--gray-500);
+    color: #000;
+}
+
+/* ========================================
+   DOSE CALCULATOR
+   ======================================== */
+.dose-result {
+    text-align: center;
+    padding: var(--space-6);
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border-radius: var(--radius-xl);
+    color: #000;
+    margin-top: var(--space-5);
+}
+
+.dose-value {
+    font-size: var(--text-3xl);
+    font-weight: var(--font-bold);
+    margin-bottom: var(--space-1);
+}
+
+.dose-unit {
+    font-size: var(--text-base);
+    opacity: 0.8;
+}
+
+.dose-frequency {
+    margin-top: var(--space-3);
+    font-size: var(--text-sm);
+    opacity: 0.8;
+}
+
+.dose-formula {
+    margin-top: var(--space-4);
+    font-size: var(--text-sm);
+    padding: var(--space-2) var(--space-4);
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius-md);
+    display: inline-block;
+}
+
+/* ========================================
+   SUMMARY CARDS
+   ======================================== */
+.summary-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-4);
+}
+
+.summary-card.risk-critical {
+    background: var(--error-surface);
+    border: 1px solid var(--error);
+}
+
+.summary-card.risk-high {
+    background: var(--warning-surface);
+    border: 1px solid var(--warning);
+}
+
+.summary-card.risk-moderate {
+    background: var(--info-surface);
+    border: 1px solid var(--info);
+}
+
+.summary-card.risk-low {
+    background: var(--success-surface);
+    border: 1px solid var(--success);
+}
+
+.summary-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-xl);
+    flex-shrink: 0;
+}
+
+.risk-critical .summary-icon {
+    background: var(--error);
+}
+
+.risk-high .summary-icon {
+    background: var(--warning);
+}
+
+.risk-moderate .summary-icon {
+    background: var(--info);
+}
+
+.risk-low .summary-icon {
+    background: var(--success);
+}
+
+.summary-text {
+    flex: 1;
+}
+
+.summary-title {
+    font-weight: var(--font-semibold);
+    font-size: var(--text-base);
+    margin-bottom: var(--space-1);
+    color: var(--text-primary);
+}
+
+.summary-description {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+/* ========================================
+   BUTTONS
+   ======================================== */
+.pharmacy-btn {
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-lg);
+    font-weight: var(--font-medium);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    border: none;
+}
+
+.pharmacy-btn-primary {
+    background: var(--primary);
+    color: #000;
+}
+
+.pharmacy-btn-primary:hover {
+    background: var(--primary-light);
+}
+
+.pharmacy-btn-secondary {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+    border: 1px solid var(--border-primary);
+}
+
+.pharmacy-btn-secondary:hover {
+    background: var(--surface-active);
+}
+
+/* ========================================
+   LOADING
+   ======================================== */
+.pharmacy-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    padding: var(--space-10);
+    color: var(--text-tertiary);
+}
+
+.pharmacy-spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--border-primary);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ========================================
+   EMPTY STATE
+   ======================================== */
+.pharmacy-empty {
+    text-align: center;
+    padding: var(--space-10);
+    color: var(--text-muted);
+}
+
+.pharmacy-empty-icon {
+    font-size: 48px;
+    margin-bottom: var(--space-4);
+    opacity: 0.4;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 640px) {
+    .pharmacy-modal-content {
+        width: 95%;
+        max-height: 90vh;
+        border-radius: var(--radius-xl);
+    }
+
+    .pharmacy-modal-header {
+        padding: var(--space-4);
+    }
+
+    .pharmacy-modal-body {
+        padding: var(--space-4);
+    }
+
+    .pharmacy-modal-footer {
+        padding: var(--space-3) var(--space-4);
+    }
+
+    .pharmacy-tool-btn {
+        padding: var(--space-2) var(--space-3);
+    }
+}

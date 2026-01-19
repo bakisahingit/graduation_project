@@ -7,6 +7,9 @@ import http from 'http';
 import { fileURLToPath } from 'url';
 import { config } from './src/config/index.js';
 import chatRoutes from './src/routes/chatRoutes.js';
+import authRoutes from './src/routes/authRoutes.js';
+import pharmacyRoutes from './src/routes/pharmacyRoutes.js';
+import patientRoutes from './src/routes/patientRoutes.js';
 import { connectQueue } from './src/services/queueService.js';
 import { createWebSocketServer, notifyClient } from './src/services/notificationService.js';
 import redisClient from './src/services/redisService.js';
@@ -17,10 +20,22 @@ import rateLimit from 'express-rate-limit';
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per 15 minutes
+    max: 500, // Artırıldı: 500 requests per 15 minutes
     standardHeaders: true,
     legacyHeaders: false,
-    validate: false, // Required for reverse proxy (Azure Container Apps)
+    validate: false,
+    // Statik dosyaları rate limit'ten hariç tut
+    skip: (req) => {
+        const path = req.path.toLowerCase();
+        return path.endsWith('.js') ||
+            path.endsWith('.css') ||
+            path.endsWith('.png') ||
+            path.endsWith('.jpg') ||
+            path.endsWith('.svg') ||
+            path.endsWith('.ico') ||
+            path.endsWith('.woff') ||
+            path.endsWith('.woff2');
+    }
 });
 
 
@@ -165,6 +180,9 @@ app.use(express.static(path.join(__dirname, '..', 'frontend')));
 connectQueue();
 
 app.use('/api/chat', chatRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/pharmacy', pharmacyRoutes);
+app.use('/api/patients', patientRoutes);
 
 // Worker'dan gelen görev tamamlama bildirimlerini işleyen endpoint
 app.post('/api/task-complete', async (req, res) => {
