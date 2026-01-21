@@ -1,114 +1,146 @@
 /**
- * Aurora Background Effect
- * Creates soft, blurred glowing orbs for atmospheric depth
+ * Aurora Effects - Gemini Style
+ * Subtle, minimal background effects (optional)
  */
 
-/* Aurora glow base styles */
+/* ========================================
+   AURORA GLOW (Disabled by default)
+   These effects are kept minimal for Gemini's clean look
+   ======================================== */
 .aurora-glow {
     position: fixed;
-    border-radius: 50%;
     pointer-events: none;
-    z-index: 0;
-    /* Removed expensive blur filter in favor of gradient softness */
-    /* filter: blur(150px); */
-    opacity: 0.15;
-    mix-blend-mode: screen;
-    /* Force GPU acceleration */
-    transform: translate3d(0, 0, 0);
-    will-change: transform;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0;
+    z-index: -1;
+    transition: opacity 1s ease;
 }
 
-/* Green/Turquoise Spectrum matching logo start - Top Left */
+/* Enable subtle aurora on hover over main content (optional) */
+.main-content:hover~.aurora-glow {
+    opacity: 0.03;
+}
+
 .aurora-glow-1 {
-    width: 800px;
-    height: 800px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
     top: -200px;
-    left: -200px;
-    /* Simulate blur with gradient stops */
-    background: radial-gradient(circle,
-            rgba(0, 200, 150, 0.4) 0%,
-            /* Center */
-            rgba(0, 168, 122, 0.2) 30%,
-            /* Middle */
-            rgba(0, 136, 204, 0.05) 60%,
-            /* Edge */
-            transparent 70%);
-    /* Fade out */
+    right: -100px;
 }
 
-/* Blue Spectrum matching logo end - Bottom Right */
 .aurora-glow-2 {
-    width: 900px;
-    height: 900px;
-    bottom: -300px;
-    right: -300px;
-    /* Simulate blur with gradient stops */
-    background: radial-gradient(circle,
-            rgba(0, 117, 255, 0.35) 0%,
-            /* Center */
-            rgba(0, 136, 204, 0.15) 30%,
-            /* Middle */
-            rgba(0, 168, 122, 0.05) 60%,
-            /* Edge */
-            transparent 70%);
-    /* Fade out */
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, #c58af9 0%, transparent 70%);
+    bottom: -150px;
+    left: -100px;
 }
 
-/* Ensure app content stays above aurora */
-.app-root {
+/* ========================================
+   ALTERNATIVE: Gradient Background (Disabled)
+   Uncomment if you want a subtle gradient background
+   ======================================== */
+/*
+.main-content::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        ellipse at top right,
+        rgba(138, 180, 248, 0.03) 0%,
+        transparent 50%
+    );
+    pointer-events: none;
+    z-index: -1;
+}
+*/
+
+/* ========================================
+   ANIMATED SHIMMER (For loading states)
+   ======================================== */
+.shimmer {
     position: relative;
-    z-index: 10;
+    overflow: hidden;
+    background: var(--surface);
 }
 
-/* Light theme - hide or soften aurora effect */
-[data-theme="light"] .aurora-glow {
-    opacity: 0.08;
-    filter: blur(150px);
+.shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.03) 50%,
+            transparent 100%);
+    transform: translateX(-100%);
+    animation: shimmer 1.5s infinite;
 }
 
-[data-theme="light"] .aurora-glow-1 {
-    background: radial-gradient(circle,
-            rgba(0, 200, 150, 0.5) 0%,
-            rgba(0, 168, 122, 0.3) 40%,
-            transparent 70%);
-}
-
-[data-theme="light"] .aurora-glow-2 {
-    background: radial-gradient(circle,
-            rgba(0, 117, 255, 0.4) 0%,
-            rgba(0, 136, 204, 0.2) 40%,
-            transparent 70%);
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .aurora-glow-1 {
-        width: 400px;
-        height: 400px;
-        top: -100px;
-        left: -100px;
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
     }
 
-    .aurora-glow-2 {
-        width: 450px;
-        height: 450px;
-        bottom: -120px;
-        right: -120px;
+    100% {
+        transform: translateX(100%);
     }
 }
 
-@media (max-width: 520px) {
-    .aurora-glow {
-        opacity: 0.18;
+/* ========================================
+   PULSE ANIMATION
+   ======================================== */
+.pulse {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
     }
 
-    .aurora-glow-1 {
-        width: 300px;
-        height: 300px;
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* ========================================
+   FADE IN ANIMATION
+   ======================================== */
+.fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
     }
 
-    .aurora-glow-2 {
-        width: 350px;
-        height: 350px;
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========================================
+   SCALE IN ANIMATION
+   ======================================== */
+.scale-in {
+    animation: scaleIn 0.2s ease-out forwards;
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
     }
 }

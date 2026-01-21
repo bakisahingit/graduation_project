@@ -9,7 +9,7 @@
 import { randomUUID } from 'crypto';
 import { sendTaskToQueue } from '../services/queueService.js';
 import redisClient from '../services/redisService.js';
-import { extractChemicalWithLLM, translateWithLLM, getChatCompletion } from '../services/llmService.js';
+import { extractChemicalWithLLM, translateWithLLM, getChatCompletion, detectIntentWithLLM } from '../services/llmService.js';
 import { getSmilesFromName } from '../services/pubchemService.js';
 import { mainSystemPrompt, admetContextPrompt } from '../utils/constants.js';
 import { formatAdmetReport } from '../utils/formatters.js';
@@ -211,6 +211,35 @@ async function handleComparisonRequest(molecules, model, properties) {
 export async function handleChatMessage(message, conversationHistory, tools, model = null) {
     if (tools.active === 'admet' || tools.active === 'ADMET') {
         return handleAdmetTool(message, model, tools.properties);
+    }
+
+    // Auto-Tool Detection Logic
+    if ((!tools.active || tools.active === 'chat') && message.trim().length > 3) {
+        console.log("No specific tool selected. Attempting auto-detection...");
+        const detectionResult = await detectIntentWithLLM(message, model);
+
+        if (detectionResult.confidence > 0.8) {
+            console.log(`🤖 Auto-detected tool: ${detectionResult.tool} (Confidence: ${detectionResult.confidence})`);
+
+            if (detectionResult.tool === 'admet') {
+                return handleAdmetTool(message, model, tools.properties);
+            } else if (detectionResult.tool === 'comparison') {
+                // For comparison, we need to handle extraction differently or pass raw message
+                // handleComparisonRequest expects an array of identifiers.
+                // We can extract entities from the detection result if available, or regex.
+                const entities = detectionResult.extracted_entities || [];
+                if (entities.length >= 2) {
+                    return handleComparisonRequest(entities, model, tools.properties);
+                } else {
+                    console.log("Comparison detected but not enough entities found. Falling back to chat.");
+                }
+            } else if (detectionResult.tool === 'pharmacy') {
+                // Future implementation for pharmacy tool
+                console.log("Pharmacy tool detected but not yet auto-routable via this handler. Continuing with chat...");
+            }
+        } else {
+            console.log(`Auto-detection confidence low (${detectionResult.confidence}) or chat detected. Staying in chat mode.`);
+        }
     }
 
     // Varsayılan olarak AdmetGPT ana system prompt'unu kullan

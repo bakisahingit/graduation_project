@@ -8,7 +8,7 @@
 // - Gemma modelleri için system mesajı user mesajına birleştiriliyor.
 
 import { openai, config, resolveModel, cacheConfig, retryConfig } from '../config/index.js';
-import { entityExtractionPrompt, translationPrompt } from '../utils/constants.js';
+import { entityExtractionPrompt, translationPrompt, toolDetectionPrompt } from '../utils/constants.js';
 import redisClient from './redisService.js';
 
 const LLM_CACHE_TTL_SECONDS = cacheConfig.llmTtlSeconds;
@@ -123,6 +123,80 @@ export async function extractChemicalWithLLM(userMessage, model = null) {
     } catch (error) {
         console.error("LLM-based extraction failed after retries:", error);
         return { type: 'none', value: null };
+    }
+}
+
+export async function detectIntentWithLLM(userMessage, model = null) {
+    console.log("Detecting user intent with LLM...");
+    const selectedModel = resolveModel(model);
+
+    // Cache key for intent detection
+    const cacheKey = `llm_intent:${userMessage.trim().toLowerCase()}`;
+
+    try {
+        const cachedIntent = await redisClient.get(cacheKey);
+        if (cachedIntent) {
+            console.log(`✅ Cache hit for intent detection: "${userMessage}"`);
+            return JSON.parse(cachedIntent);
+        }
+    } catch (e) {
+        console.error("Intent cache check failed:", e);
+    }
+
+    const originalMessages = [
+        { role: 'system', content: toolDetectionPrompt },
+        { role: 'user', content: userMessage }
+    ];
+    const preparedMessages = prepareMessagesForModel(originalMessages, selectedModel);
+
+    const requestOptions = {
+        model: selectedModel,
+        messages: preparedMessages,
+        temperature: 0,
+        max_tokens: 100, // Slightly more tokens for potential entities
+    };
+
+    if (!isGemmaModel(selectedModel)) {
+        requestOptions.response_format = { type: "json_object" };
+    }
+
+    const apiCall = () => openai.chat.completions.create(requestOptions);
+
+    try {
+        const completion = await withRetry(apiCall);
+
+        if (completion.error) {
+            throw new Error(`OpenAI API returned an error: ${completion.error.message}`);
+        }
+
+        const rawResponse = completion.choices[0].message.content;
+        console.log("Raw intent detection response:", rawResponse);
+
+        let result;
+        try {
+            const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) {
+                // If not JSON, default to chat
+                console.warn("No JSON found in intent response, defaulting to chat");
+                return { tool: 'chat', confidence: 0 };
+            }
+            result = JSON.parse(jsonMatch[0]);
+        } catch (e) {
+            console.error("Failed to parse intent JSON:", e);
+            return { tool: 'chat', confidence: 0 };
+        }
+
+        // Cache the result short term (e.g. 1 hour)
+        try {
+            await redisClient.set(cacheKey, JSON.stringify(result), { EX: 3600 });
+        } catch (e) {
+            console.error("Intent cache set failed:", e);
+        }
+
+        return result;
+    } catch (error) {
+        console.error("Intent detection failed:", error);
+        return { tool: 'chat', confidence: 0 }; // Fail safe to chat
     }
 }
 

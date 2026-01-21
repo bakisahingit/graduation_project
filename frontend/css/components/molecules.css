@@ -1,19 +1,22 @@
-/* Molecule component styles */
+/**
+ * Molecule Components - Gemini Style
+ * Clean molecule viewer with modern aesthetics
+ */
 
-/* Modal Layout */
+/* ========================================
+   MOLECULE MODAL
+   ======================================== */
 .molecule-modal {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1000;
+    inset: 0;
+    z-index: var(--z-modal);
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: var(--space-4);
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    transition: all var(--transition-normal);
 }
 
 .molecule-modal.open {
@@ -23,152 +26,193 @@
 
 .molecule-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, var(--modal-overlay-opacity, 0.7));
+    inset: 0;
+    background: var(--modal-overlay);
+    backdrop-filter: blur(4px);
 }
 
 .molecule-content {
     position: relative;
-    width: 90%;
-    max-width: 1000px;
-    height: 80vh;
-    background: linear-gradient(135deg, #0f1113 0%, #151517 100%);
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    width: 95%;
+    max-width: 1100px;
+    height: 85vh;
+    max-height: 85vh;
+    background: var(--surface);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-xl);
     overflow: hidden;
-    transform: scale(0.95);
-    transition: transform 0.3s ease;
+    transform: scale(0.95) translateY(10px);
+    transition: transform var(--transition-normal);
     display: flex;
     flex-direction: column;
 }
 
 .molecule-modal.open .molecule-content {
-    transform: scale(1);
+    transform: scale(1) translateY(0);
 }
 
-/* ======================== */
-/* GLASSMORPHISM EFFECTS    */
-/* ======================== */
+/* ========================================
+   MOLECULE HEADER
+   ======================================== */
+.molecule-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--border-primary);
+    flex-shrink: 0;
+}
 
-.molecule-content {
-    position: relative;
-    width: 90%;
-    max-width: 1000px;
-    height: 80vh;
-    /* Glassmorphism background */
-    background: rgba(15, 17, 19, 0.75);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border-radius: 20px;
-    /* Neon glow border */
-    border: 1px solid rgba(26, 188, 156, 0.25);
-    box-shadow:
-        0 0 40px rgba(26, 188, 156, 0.12),
-        0 0 80px rgba(99, 102, 241, 0.08),
-        0 25px 60px rgba(0, 0, 0, 0.6),
-        inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    overflow: hidden;
-    transform: scale(0.95);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        box-shadow 0.3s ease,
-        border-color 0.3s ease;
+.molecule-header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.molecule-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-surface);
+    border-radius: var(--radius-lg);
+    color: var(--primary);
+}
+
+.molecule-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.molecule-title-section {
     display: flex;
     flex-direction: column;
+    gap: 2px;
 }
 
-.molecule-content:hover {
-    border-color: rgba(26, 188, 156, 0.4);
-    box-shadow:
-        0 0 60px rgba(26, 188, 156, 0.18),
-        0 0 100px rgba(99, 102, 241, 0.12),
-        0 30px 70px rgba(0, 0, 0, 0.7),
-        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+.molecule-title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin: 0;
 }
 
-/* ======================== */
-/* VIEW MODE TOGGLE (2D/3D) */
-/* ======================== */
+.molecule-subtitle {
+    font-size: var(--text-sm);
+    color: var(--text-tertiary);
+    margin: 0;
+}
 
+.molecule-close {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--text-tertiary);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-normal);
+}
+
+.molecule-close:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+}
+
+.molecule-close svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ========================================
+   MOLECULE BODY
+   ======================================== */
+.molecule-body {
+    flex: 1;
+    padding: var(--space-4);
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-height: 0;
+}
+
+.molecule-main-content {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: var(--space-4);
+    flex: 1;
+    min-height: 0;
+}
+
+/* ========================================
+   VIEW MODE TOGGLE (2D/3D)
+   ======================================== */
 .view-mode-toggle {
     position: absolute;
-    top: 12px;
-    left: 12px;
+    top: var(--space-3);
+    left: var(--space-3);
     display: flex;
-    gap: 4px;
+    gap: 2px;
     z-index: 20;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(8px);
-    border-radius: 10px;
-    padding: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--surface);
+    border-radius: var(--radius-pill);
+    padding: 3px;
+    border: 1px solid var(--border-primary);
+    box-shadow: var(--shadow-sm);
 }
 
 .view-mode-btn {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
     background: transparent;
     border: none;
-    border-radius: 8px;
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 12px;
-    font-weight: 600;
+    border-radius: var(--radius-pill);
+    color: var(--text-tertiary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all var(--transition-normal);
 }
 
-.view-mode-btn:hover {
-    color: rgba(255, 255, 255, 0.9);
-    background: rgba(255, 255, 255, 0.08);
+.view-mode-btn:hover:not(.active) {
+    color: var(--text-primary);
+    background: var(--surface-hover);
 }
 
 .view-mode-btn.active {
-    background: linear-gradient(135deg, rgba(26, 188, 156, 0.3), rgba(99, 102, 241, 0.2));
-    color: #ffffff;
-    box-shadow: 0 0 20px rgba(26, 188, 156, 0.3);
+    background: var(--primary-surface);
+    color: var(--primary);
 }
 
 .view-mode-btn svg {
-    opacity: 0.8;
+    width: 14px;
+    height: 14px;
 }
 
-.view-mode-btn.active svg {
-    opacity: 1;
-}
-
-/* ======================== */
-/* 3D STYLE SELECTOR        */
-/* ======================== */
-
+/* ========================================
+   3D STYLE SELECTOR
+   ======================================== */
 .style-3d-selector {
     position: absolute;
-    top: 12px;
-    left: 180px;
+    top: var(--space-3);
+    left: 160px;
     display: flex;
-    gap: 4px;
+    gap: 2px;
     z-index: 20;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(8px);
-    border-radius: 10px;
-    padding: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-4px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 3px;
+    border: 1px solid var(--border-primary);
+    box-shadow: var(--shadow-sm);
 }
 
 .style-3d-btn {
@@ -179,225 +223,39 @@
     height: 32px;
     background: transparent;
     border: none;
-    border-radius: 6px;
-    color: rgba(255, 255, 255, 0.6);
+    border-radius: var(--radius-md);
+    color: var(--text-tertiary);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-normal);
 }
 
-.style-3d-btn:hover {
-    color: rgba(255, 255, 255, 0.9);
-    background: rgba(255, 255, 255, 0.1);
+.style-3d-btn:hover:not(.active) {
+    color: var(--text-primary);
+    background: var(--surface-hover);
 }
 
 .style-3d-btn.active {
-    background: rgba(139, 92, 246, 0.4);
-    color: #ffffff;
-    box-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
+    background: var(--primary-surface);
+    color: var(--primary);
 }
 
-/* ======================== */
-/* 3D VIEWER CONTAINER      */
-/* ======================== */
-
-.molecule-3d-viewer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 12px;
-    background: radial-gradient(ellipse at center, #1a1c1e 0%, #0a0b0d 100%);
-    z-index: 5;
-}
-
-.molecule-3d-loading {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+/* ========================================
+   MOLECULE PANEL (Display area)
+   ======================================== */
+.molecule-panel {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-primary);
+    overflow: hidden;
+    position: relative;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 14px;
-    z-index: 15;
+    min-height: 0;
 }
-
-.loading-spinner-3d {
-    width: 40px;
-    height: 40px;
-    border: 3px solid rgba(26, 188, 156, 0.2);
-    border-top-color: #1abc9c;
-    border-radius: 50%;
-    animation: spin3d 0.8s linear infinite;
-}
-
-@keyframes spin3d {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* ======================== */
-/* GLASSMORPHISM PANEL      */
-/* ======================== */
 
 .molecule-panel.glassmorphism {
-    background: rgba(10, 11, 13, 0.6);
-    backdrop-filter: blur(16px) saturate(150%);
-    -webkit-backdrop-filter: blur(16px) saturate(150%);
-    border: 1px solid rgba(26, 188, 156, 0.12);
-    border-radius: 16px;
-    box-shadow:
-        0 0 30px rgba(26, 188, 156, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.03);
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.molecule-panel.glassmorphism::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg,
-            transparent,
-            rgba(26, 188, 156, 0.4),
-            rgba(139, 92, 246, 0.3),
-            transparent);
-    z-index: 1;
-}
-
-.molecule-panel.glassmorphism:hover {
-    border-color: rgba(26, 188, 156, 0.25);
-    box-shadow:
-        0 0 45px rgba(26, 188, 156, 0.12),
-        inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-
-/* Header */
-.molecule-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%);
-}
-
-.molecule-header-left {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.molecule-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, #16a085 0%, #1abc9c 100%);
-    border-radius: 10px;
-    color: white;
-}
-
-.molecule-title-section {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.molecule-title {
-    font-size: 20px;
-    font-weight: 600;
-    color: #ffffff;
-    margin: 0;
-}
-
-.molecule-subtitle {
-    font-size: 14px;
-    color: #a0a0a0;
-    margin: 0;
-}
-
-.molecule-close {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    color: #a0a0a0;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.molecule-close:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-/* Body */
-.molecule-body {
-    padding: 16px;
-    flex: 1;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.molecule-main-content {
-    display: grid;
-    grid-template-columns: 1fr 260px;
-    grid-template-rows: 1fr;
-    gap: 16px;
-    flex: 1;
-    min-height: 0;
-}
-
-/* Align the smiles input section with the molecule main grid so the
-   input wrapper lines up exactly with the molecule panel (left column). */
-.smiles-input-section {
-    display: grid;
-    grid-template-columns: 1fr 260px;
-    gap: 16px;
-    padding: 12px;
-    /* keep some breathing room like the panel */
-    align-items: center;
-}
-
-/* Make the input wrapper span the full content width (both columns)
-   so its right edge aligns with the molecule info panel's right border. */
-.smiles-input-section .welcome-input-wrapper {
-    grid-column: 1 / -1;
-    /* span both columns */
-    width: 100%;
-    max-width: none;
-    margin: 0;
-    /* remove auto centering to align flush with panel edges */
-}
-
-/* Molecule Panel */
-.molecule-panel {
-    background: linear-gradient(135deg, #0a0b0d 0%, #111214 100%);
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    overflow: hidden;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
 }
 
 .molecule-display {
@@ -407,12 +265,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: transparent;
-    /* let the panel's background show through */
-    border-radius: 12px;
-    /* match panel corners */
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-lg);
     overflow: hidden;
-    /* clip canvas/glow to panel corners */
 }
 
 #molecule-canvas {
@@ -427,50 +282,98 @@
     cursor: grabbing;
 }
 
+/* ========================================
+   3D VIEWER
+   ======================================== */
+.molecule-3d-viewer {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-lg);
+    background: var(--bg-tertiary);
+    z-index: 5;
+}
+
+.molecule-3d-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+    color: var(--text-tertiary);
+    font-size: var(--text-sm);
+    z-index: 15;
+}
+
+.loading-spinner-3d {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-primary);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin3d 0.8s linear infinite;
+}
+
+@keyframes spin3d {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ========================================
+   PLACEHOLDER
+   ======================================== */
 #molecule-placeholder {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    color: #a0a0a0;
+    gap: var(--space-3);
+    color: var(--text-tertiary);
     text-align: center;
-    padding: 40px;
+    padding: var(--space-10);
 }
 
 #molecule-placeholder svg {
-    opacity: 0.6;
+    opacity: 0.5;
+    color: var(--text-muted);
 }
 
 #molecule-placeholder p {
     margin: 0;
-    font-size: 16px;
+    font-size: var(--text-base);
 }
 
 .placeholder-hint {
-    font-size: 14px !important;
-    color: #707070 !important;
+    font-size: var(--text-sm) !important;
+    color: var(--text-muted) !important;
 }
 
+/* ========================================
+   ERROR STATE
+   ======================================== */
 #molecule-error {
     display: none;
     align-items: center;
     justify-content: center;
-    color: #ff6b6b;
-    background: rgba(255, 107, 107, 0.1);
-    border: 1px solid rgba(255, 107, 107, 0.2);
-    border-radius: 8px;
-    padding: 20px;
-    margin: 20px;
+    gap: var(--space-3);
+    color: var(--error);
+    background: var(--error-surface);
+    border: 1px solid rgba(242, 139, 130, 0.3);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    margin: var(--space-4);
 }
 
 #molecule-error svg {
-    margin-right: 12px;
     flex-shrink: 0;
 }
 
-/* PubChem Structure Image - Dark Theme Optimized */
-/* Interactive 2D Wrapper for Pan/Zoom */
+/* ========================================
+   PUBCHEM STRUCTURE
+   ======================================== */
 .molecule-2d-interactive {
     width: 100%;
     height: 100%;
@@ -480,29 +383,27 @@
     overflow: hidden;
     cursor: grab;
     position: relative;
-    border-radius: 12px;
-    /* Hint text */
+    border-radius: var(--radius-lg);
 }
 
 .molecule-2d-interactive:active {
     cursor: grabbing;
 }
 
-/* Hint text on hover */
 .molecule-2d-interactive::after {
     content: 'Scroll: Yakınlaştır | Sürükle: Kaydır | Çift tık: Sıfırla';
     position: absolute;
-    bottom: 40px;
+    bottom: var(--space-10);
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(4px);
-    padding: 6px 12px;
-    border-radius: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border-primary);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-md);
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--text-tertiary);
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--transition-normal);
     pointer-events: none;
     white-space: nowrap;
     z-index: 10;
@@ -518,19 +419,12 @@
     width: auto;
     height: auto;
     object-fit: contain;
-    /* CSS filter to invert colors for dark theme while preserving hue */
     filter: invert(1) hue-rotate(180deg);
-    /* Smooth transitions for transform */
-    transition: box-shadow 0.3s ease;
+    transition: box-shadow var(--transition-normal);
     transform-origin: center center;
     user-select: none;
     -webkit-user-drag: none;
-    /* Subtle glow effect */
-    border-radius: 8px;
-}
-
-.pubchem-structure-img:hover {
-    box-shadow: 0 0 40px rgba(26, 188, 156, 0.2);
+    border-radius: var(--radius-md);
 }
 
 .pubchem-loading {
@@ -538,113 +432,64 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    color: #a0a0a0;
-    font-size: 14px;
+    gap: var(--space-3);
+    color: var(--text-tertiary);
+    font-size: var(--text-sm);
 }
 
 .pubchem-loading .loading-spinner {
     width: 32px;
     height: 32px;
-    border: 3px solid rgba(26, 188, 156, 0.2);
-    border-top-color: #1abc9c;
+    border: 3px solid var(--border-primary);
+    border-top-color: var(--primary);
     border-radius: 50%;
-    animation: pubchem-spin 0.8s linear infinite;
-}
-
-@keyframes pubchem-spin {
-    to {
-        transform: rotate(360deg);
-    }
+    animation: spin3d 0.8s linear infinite;
 }
 
 .structure-source-label {
     position: absolute;
-    bottom: 8px;
-    right: 8px;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    padding: 4px 8px;
+    bottom: var(--space-2);
+    right: var(--space-2);
+    background: var(--surface);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    padding: var(--space-1) var(--space-2);
     font-size: 11px;
-    color: #1abc9c;
+    color: var(--primary);
     z-index: 10;
 }
 
-/* Molecule Controls */
-.molecule-controls {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    display: flex;
-    gap: 8px;
-}
-
-.molecule-zoom-controls {
-    display: flex;
-    gap: 8px;
-}
-
-.control-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    background: rgba(0, 0, 0, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    color: #ffffff;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    backdrop-filter: blur(8px);
-}
-
-.control-btn:hover {
-    background: rgba(0, 0, 0, 0.8);
-    border-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-1px);
-}
-
-.control-btn:active {
-    transform: translateY(0);
-}
-
-/* SMILES Overlay */
+/* ========================================
+   SMILES OVERLAY
+   ======================================== */
 .molecule-smiles-overlay {
     position: absolute;
-    bottom: 8px;
-    left: 8px;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(2px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 6px;
-    padding: 6px 10px;
-    max-width: calc(100% - 16px);
+    bottom: var(--space-2);
+    left: var(--space-2);
+    background: var(--surface);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    padding: var(--space-1) var(--space-2);
+    max-width: calc(100% - var(--space-4));
     z-index: 10;
-    opacity: 0.8;
-    transition: opacity 0.2s ease;
 }
 
-.molecule-smiles-overlay:hover {
-    opacity: 1;
-    background: rgba(0, 0, 0, 0.6);
+.molecule-smiles-overlay.top-left {
+    bottom: auto;
+    top: var(--space-2);
 }
 
 .smiles-overlay-label {
-    font-size: 9px;
-    color: #b0b0b0;
-    margin-bottom: 1px;
-    font-weight: 500;
+    font-size: 10px;
+    color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.3px;
 }
 
 .smiles-overlay-value {
     font-size: 11px;
-    color: #ffffff;
-    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-primary);
+    font-family: var(--font-family-mono);
     word-break: break-all;
     line-height: 1.2;
     max-width: 180px;
@@ -653,45 +498,39 @@
     white-space: nowrap;
 }
 
-/* Zoom Overlay */
+/* ========================================
+   ZOOM OVERLAY
+   ======================================== */
 .molecule-zoom-overlay {
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: var(--space-2);
+    right: var(--space-2);
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
     z-index: 10;
 }
 
 .zoom-btn {
-    width: 24px;
-    height: 24px;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(2px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 4px;
-    color: #ffffff;
+    width: 28px;
+    height: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
-    opacity: 0.8;
+    transition: all var(--transition-normal);
 }
 
 .zoom-btn:hover {
-    opacity: 1;
-    background: rgba(0, 0, 0, 0.6);
-    border-color: rgba(255, 255, 255, 0.25);
-    transform: scale(1.05);
+    background: var(--surface-hover);
+    color: var(--text-primary);
 }
 
-.zoom-btn:active {
-    transform: scale(0.95);
-}
-
-/* H toggle switch */
+/* H Toggle Switch */
 .h-toggle {
     position: relative;
     display: inline-block;
@@ -708,14 +547,10 @@
 .h-toggle-slider {
     position: absolute;
     cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(255, 255, 255, 0.08);
-    transition: .2s;
-    border-radius: 12px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    inset: 0;
+    background: var(--surface-hover);
+    transition: var(--transition-normal);
+    border-radius: var(--radius-pill);
 }
 
 .h-toggle-slider:before {
@@ -725,22 +560,23 @@
     width: 16px;
     left: 2px;
     top: 2px;
-    background-color: #ffffff;
+    background: var(--text-tertiary);
     border-radius: 50%;
-    transition: .2s;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    transition: var(--transition-normal);
 }
 
 .h-toggle input:checked+.h-toggle-slider {
-    background-color: rgba(26, 188, 156, 0.18);
+    background: var(--primary-surface);
 }
 
 .h-toggle input:checked+.h-toggle-slider:before {
     transform: translateX(20px);
-    background-color: #1abc9c;
+    background: var(--primary);
 }
 
-/* Sidebar */
+/* ========================================
+   MOLECULE SIDEBAR (Info Panel)
+   ======================================== */
 .molecule-sidebar {
     display: flex;
     flex-direction: column;
@@ -748,106 +584,73 @@
     min-height: 0;
 }
 
-/* Info Panel - Glassmorphism */
 .molecule-info-panel {
-    background: rgba(10, 11, 13, 0.5);
-    backdrop-filter: blur(16px) saturate(140%);
-    -webkit-backdrop-filter: blur(16px) saturate(140%);
-    border: 1px solid rgba(139, 92, 246, 0.12);
-    border-radius: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-xl);
     padding: 0;
     height: 100%;
     display: flex;
     flex-direction: column;
-    position: relative;
-    box-shadow:
-        0 0 25px rgba(139, 92, 246, 0.06),
-        inset 0 1px 0 rgba(255, 255, 255, 0.03);
-    transition: all 0.3s ease;
+    overflow: hidden;
 }
-
-.molecule-info-panel::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg,
-            transparent,
-            rgba(139, 92, 246, 0.4),
-            rgba(26, 188, 156, 0.3),
-            transparent);
-    z-index: 1;
-}
-
-.molecule-info-panel:hover {
-    border-color: rgba(139, 92, 246, 0.22);
-    box-shadow:
-        0 0 35px rgba(139, 92, 246, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
 
 .molecule-info-panel .info-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    padding: 12px 16px 8px 16px;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border-primary);
 }
 
 .info-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #ffffff;
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
     margin: 0;
 }
 
 .info-open-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
-    font-size: 12px;
-    color: #1abc9c;
-    background: rgba(26, 188, 156, 0.12);
-    border: 1px solid rgba(26, 188, 156, 0.28);
-    border-radius: 8px;
+    font-size: var(--text-xs);
+    color: var(--primary);
     text-decoration: none;
-    white-space: nowrap;
-    visibility: hidden;
+    transition: color var(--transition-fast);
 }
 
 .info-open-btn:hover {
-    background: rgba(26, 188, 156, 0.2);
-    border-color: rgba(26, 188, 156, 0.45);
+    color: var(--primary-light);
+    text-decoration: underline;
+}
+
+.info-divider {
+    margin: 0;
 }
 
 .info-content {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
     flex: 1;
-    padding: 12px 16px 16px 16px;
-    overflow: auto;
-    min-height: 0;
+    padding: var(--space-3) var(--space-4);
+    overflow-y: auto;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
 }
 
-/* Divider under info header matching input-divider style */
-.info-divider {
-    width: calc(100% - 32px);
-    margin: 0 16px 8px 16px;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+.info-content::-webkit-scrollbar {
+    width: 4px;
 }
 
+.info-content::-webkit-scrollbar-thumb {
+    background: var(--gray-600);
+    border-radius: 2px;
+}
+
+/* Info items */
 .info-item {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    align-items: flex-start;
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--border-secondary);
 }
 
 .info-item:last-child {
@@ -855,265 +658,138 @@
 }
 
 .info-label {
-    font-size: 14px;
-    color: #a0a0a0;
-    font-weight: 500;
+    color: var(--text-tertiary);
+    font-size: var(--text-xs);
 }
 
 .info-value {
-    font-size: 14px;
-    color: #ffffff;
-    font-weight: 600;
-    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    text-align: right;
+    max-width: 60%;
+    word-break: break-word;
 }
 
-/* Examples */
-.molecule-examples {
-    background: linear-gradient(135deg, #0a0b0d 0%, #111214 100%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    padding: 16px;
-}
-
-.examples-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #ffffff;
-    margin: 0 0 16px 0;
-}
-
-.examples-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px;
-}
-
-.example-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    color: #ffffff;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-align: left;
-}
-
-.example-btn:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.15);
-    transform: translateY(-1px);
-}
-
-.example-name {
-    font-size: 14px;
-    font-weight: 500;
-    color: #ffffff;
-    margin-bottom: 4px;
-}
-
-.example-smiles {
-    font-size: 12px;
-    color: #a0a0a0;
-    font-family: 'JetBrains Mono', monospace;
-}
-
-/* Input Section */
+/* ========================================
+   SMILES INPUT SECTION
+   ======================================== */
 .smiles-input-section {
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    padding: 0;
-    flex-shrink: 0;
-    margin-top: 0;
-}
-
-.input-header {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: var(--space-4);
+    padding: var(--space-3);
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
 }
 
-.smiles-label {
-    font-size: 16px;
-    font-weight: 600;
-    color: #ffffff;
+.smiles-input-section .welcome-input-wrapper {
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: none;
     margin: 0;
 }
 
-.input-actions {
+/* ========================================
+   MOLECULE CONTROLS
+   ======================================== */
+.molecule-controls {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
     display: flex;
-    gap: 8px;
+    gap: var(--space-2);
 }
 
-.action-btn {
+.molecule-zoom-controls {
     display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 6px 10px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    color: #a0a0a0;
-    font-size: 11px;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    gap: var(--space-2);
 }
 
-.action-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-.action-btn.secondary {
-    background: rgba(22, 160, 133, 0.1);
-    border-color: rgba(22, 160, 133, 0.3);
-    color: #1abc9c;
-}
-
-.action-btn.secondary:hover {
-    background: rgba(22, 160, 133, 0.2);
-    border-color: rgba(22, 160, 133, 0.5);
-    color: #16a085;
-}
-
-.smiles-textarea {
-    width: 100%;
-    min-height: 60px;
-    padding: 10px 12px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    color: #ffffff;
-    font-size: 14px;
-    font-family: 'JetBrains Mono', monospace;
-    resize: vertical;
-    transition: all 0.2s ease;
-}
-
-.smiles-textarea:focus {
-    outline: none;
-    border-color: #1abc9c;
-    box-shadow: 0 0 0 2px rgba(26, 188, 156, 0.2);
-}
-
-.smiles-textarea::placeholder {
-    color: #707070;
-}
-
-/* Actions */
-.molecule-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 8px;
-}
-
-.molecule-action-btn {
+.control-btn {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    color: #a0a0a0;
-    font-size: 13px;
-    font-weight: 500;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--surface);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-normal);
 }
 
-.molecule-action-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-1px);
+.control-btn:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
 }
 
-.molecule-action-btn.primary {
-    background: linear-gradient(135deg, #16a085 0%, #1abc9c 100%);
-    border-color: #1abc9c;
-    color: #ffffff;
-}
-
-.molecule-action-btn.primary:hover {
-    background: linear-gradient(135deg, #138d75 0%, #16a085 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(26, 188, 156, 0.3);
-}
-
-/* Tooltip */
-.molecule-tooltip {
-    position: fixed;
-    pointer-events: none;
-    padding: 8px 12px;
-    background: linear-gradient(135deg, rgba(14, 14, 14, 0.95), rgba(20, 20, 20, 0.9));
-    color: #ffffff;
-    border-radius: 8px;
-    font-size: 13px;
-    z-index: 9999;
-    transform: translate3d(0, 0, 0);
-    transition: opacity 120ms ease, transform 120ms ease;
-    opacity: 0;
-    backdrop-filter: blur(8px) saturate(120%);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.molecule-tooltip.visible {
-    opacity: 1;
-    transform: translateY(-6px);
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 900px) {
     .molecule-main-content {
         grid-template-columns: 1fr;
-        gap: 20px;
+        grid-template-rows: 1fr auto;
+    }
+
+    .smiles-input-section {
+        grid-template-columns: 1fr;
     }
 
     .molecule-sidebar {
-        order: -1;
-    }
-
-    .molecule-content {
-        width: 95%;
-        height: 85vh;
-    }
-
-    .molecule-body {
-        padding: 20px;
+        max-height: 200px;
     }
 }
 
 @media (max-width: 768px) {
+    .molecule-content {
+        width: 100%;
+        height: 95vh;
+        max-height: 95vh;
+        border-radius: var(--radius-xl);
+    }
+
     .molecule-header {
-        padding: 16px 20px;
+        padding: var(--space-3) var(--space-4);
     }
 
     .molecule-body {
-        padding: 16px;
+        padding: var(--space-3);
     }
 
+    .view-mode-toggle {
+        top: var(--space-2);
+        left: var(--space-2);
+    }
+
+    .style-3d-selector {
+        left: 140px;
+    }
+}
+
+@media (max-width: 520px) {
     .molecule-title {
-        font-size: 18px;
+        font-size: var(--text-base);
     }
 
-    .molecule-content {
-        width: 98%;
-        height: 90vh;
+    .molecule-icon {
+        width: 32px;
+        height: 32px;
     }
 
-    .molecule-main-content {
-        gap: 16px;
+    .molecule-icon svg {
+        width: 16px;
+        height: 16px;
     }
 
-    .examples-grid {
-        grid-template-columns: 1fr 1fr;
+    .view-mode-btn {
+        padding: var(--space-1) var(--space-2);
+        font-size: var(--text-xs);
+    }
+
+    .style-3d-btn {
+        width: 28px;
+        height: 28px;
     }
 }

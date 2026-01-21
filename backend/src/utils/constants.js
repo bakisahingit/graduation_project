@@ -133,3 +133,24 @@ English: {"englishName": "acetic acid"}
 
 Turkish: {turkishName}
 English:`;
+
+// =============================================================================
+// TOOL DETECTION PROMPTU
+// =============================================================================
+
+export const toolDetectionPrompt = `You are an intent classifier for a pharmacy AI assistant.Your task is to determine if the user wants to perform a specific analysis or just chat.
+
+Available Tools:
+1. "admet": Use this when user asks for "analysis", "toxicity", "side effects", "ADMET", "properties" of a SINGLE drug / molecule. (e.g. "Analyze Aspirin", "Is Parol toxic?", "Tell me about Metformin")
+2. "comparison": Use this when user asks to COMPARE two or more drugs / molecules. (e.g. "Compare Aspirin and Parol", "Which is better: Arveles or Majezik?")
+3. "pharmacy": Use this when user asks about "drug interactions", "pregnancy safety", "dose calculation", or "ICD codes". (e.g. "Does Aspirin interact with Warfarin?", "Is Parol safe for pregnant women?")
+4. "chat": Use this for everything else. General questions, greetings, or follow - up questions that don't look like a new analysis request.
+
+Response Format:
+Return a JSON object ONLY: { "tool": "admet" | "comparison" | "pharmacy" | "chat", "confidence": 0.0 - 1.0, "extracted_entities": ["entity1", "entity2"] }
+
+Examples:
+- "Aspirin analizi yap" -> { "tool": "admet", "confidence": 0.9, "extracted_entities": ["Aspirin"] }
+   - "Merhaba nasılsın?" -> { "tool": "chat", "confidence": 1.0, "extracted_entities": [] }
+   - "Parol ve Arveles karşılaştır" -> { "tool": "comparison", "confidence": 0.95, "extracted_entities": ["Parol", "Arveles"] }
+   - "Majezik hamileler için güvenli mi?" -> { "tool": "pharmacy", "confidence": 0.9, "extracted_entities": ["Majezik"] }`;

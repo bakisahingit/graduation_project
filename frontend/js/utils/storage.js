@@ -3,6 +3,8 @@
  * LocalStorage ile çalışmak için yardımcı fonksiyonlar
  */
 
+import { config } from '../config.js';
+
 export class StorageUtils {
     /**
      * LocalStorage'a veri kaydet
@@ -61,7 +63,7 @@ export class StorageUtils {
      * @param {Array} conversations - Konuşma listesi
      */
     static saveConversationHistory(conversations) {
-        this.set('conversationHistory', conversations);
+        this.set(config.storage.conversations, conversations);
     }
 
     /**
@@ -69,7 +71,7 @@ export class StorageUtils {
      * @returns {Array}
      */
     static loadConversationHistory() {
-        const saved = this.get('conversationHistory', []);
+        const saved = this.get(config.storage.conversations, []);
         // Date stringlerini Date objelerine çevir
         return saved.map(conv => ({
             ...conv,
@@ -83,7 +85,7 @@ export class StorageUtils {
      * @param {Set} activeModels - Aktif model seti
      */
     static saveActiveModels(activeModels) {
-        this.set('activeModels', Array.from(activeModels));
+        this.set(config.storage.activeModels, Array.from(activeModels));
     }
 
     /**
@@ -91,7 +93,7 @@ export class StorageUtils {
      * @returns {Set}
      */
     static loadActiveModels() {
-        const saved = this.get('activeModels', []);
+        const saved = this.get(config.storage.activeModels, []);
         return new Set(saved);
     }
 }

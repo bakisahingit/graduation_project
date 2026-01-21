@@ -1,172 +1,242 @@
 /**
- * CSS Variables
- * Tema değişkenleri ve renk paleti
+ * CSS Variables - Gemini-Inspired Theme
+ * Modern, clean Gemini dark theme design
  */
 
 :root {
-    /* Ana renkler */
-    --bg: #0f1113;
-    /* deep near-black */
-    --frost: rgba(255, 255, 255, 0.06);
-    --accent: rgba(255, 255, 255, 0.75);
+    /* ========================================
+       GEMINI DARK THEME - PRIMARY
+       ======================================== */
+
+    /* Core Background Colors */
+    --bg: #131314;
+    --bg-secondary: #1e1f20;
+    --bg-tertiary: #282a2c;
+    --bg-elevated: #2d2f31;
+
+    /* Surface Colors (for cards, panels) */
+    --surface: #1e1f20;
+    --surface-hover: #282a2c;
+    --surface-active: #333537;
+
+    /* Glass Effect (minimal, subtle) */
+    --glass-surface: rgba(30, 31, 32, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.06);
     --glass-blur: 8px;
 
-    /* Modal overlay kararma oranı */
-    --modal-overlay-opacity: 0.7;
+    /* Text Colors */
+    --text-primary: #e3e3e3;
+    --text-secondary: #c4c7c5;
+    --text-tertiary: #8e918f;
+    --text-muted: #5f6368;
 
-    /* Renk paleti */
-    --primary: #4fc3f7;
-    --primary-light: #81d4fa;
-    --primary-dark: #29b6f6;
-    --secondary: #4caf50;
-    --secondary-light: #66bb6a;
-    --secondary-dark: #388e3c;
-    --error: #ff6b6b;
-    --error-light: #ff5252;
-    --warning: #ff9800;
-    --success: #4caf50;
+    /* Accent Colors (Google Blue) */
+    --primary: #8ab4f8;
+    --primary-light: #aecbfa;
+    --primary-dark: #669df6;
+    --primary-surface: rgba(138, 180, 248, 0.12);
+    --primary-hover: rgba(138, 180, 248, 0.18);
 
-    /* Gri tonları */
-    --gray-50: rgba(255, 255, 255, 0.95);
-    --gray-100: rgba(255, 255, 255, 0.9);
-    --gray-200: rgba(255, 255, 255, 0.8);
-    --gray-300: rgba(255, 255, 255, 0.7);
-    --gray-400: rgba(255, 255, 255, 0.6);
-    --gray-500: rgba(255, 255, 255, 0.5);
-    --gray-600: rgba(255, 255, 255, 0.4);
-    --gray-700: rgba(255, 255, 255, 0.3);
-    --gray-800: rgba(255, 255, 255, 0.2);
-    --gray-900: rgba(255, 255, 255, 0.1);
-    --gray-950: rgba(255, 255, 255, 0.05);
+    /* Secondary Accent */
+    --secondary: #c4c7c5;
+    --secondary-light: #dadce0;
 
-    /* Arka plan renkleri */
-    --bg-primary: linear-gradient(180deg, #0b0c0d 0%, #111214 100%);
-    --bg-secondary: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
-    --bg-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
-    --bg-glass-hover: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.08));
+    /* Status Colors */
+    --success: #81c995;
+    --success-surface: rgba(129, 201, 149, 0.12);
+    --error: #f28b82;
+    --error-surface: rgba(242, 139, 130, 0.12);
+    --warning: #fdd663;
+    --warning-surface: rgba(253, 214, 99, 0.12);
+    --info: #8ab4f8;
+    --info-surface: rgba(138, 180, 248, 0.12);
 
-    /* Border renkleri */
-    --border-primary: rgba(255, 255, 255, 0.05);
-    --border-secondary: rgba(255, 255, 255, 0.1);
-    --border-accent: rgba(255, 255, 255, 0.15);
-    --border-focus: rgba(79, 195, 247, 0.5);
+    /* Gray Palette */
+    --gray-50: #f8f9fa;
+    --gray-100: #e8eaed;
+    --gray-200: #dadce0;
+    --gray-300: #bdc1c6;
+    --gray-400: #9aa0a6;
+    --gray-500: #5f6368;
+    --gray-600: #3c4043;
+    --gray-700: #303134;
+    --gray-800: #28292a;
+    --gray-900: #1f1f1f;
+    --gray-950: #141414;
 
-    /* Gölge renkleri */
-    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
-    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 8px 40px rgba(2, 6, 8, 0.8);
-    --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.5);
-    --shadow-glow: 0 0 30px rgba(79, 195, 247, 0.3);
+    /* Border Colors */
+    --border-primary: rgba(255, 255, 255, 0.08);
+    --border-secondary: rgba(255, 255, 255, 0.04);
+    --border-hover: rgba(255, 255, 255, 0.12);
+    --border-focus: rgba(138, 180, 248, 0.4);
 
-    /* Typography */
-    --font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    --font-family-mono: 'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+    /* Shadow Colors */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.25);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.3);
+    --shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.35);
+    --shadow-dropdown: 0 2px 6px 2px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.3);
 
-    /* Font boyutları */
-    --text-xs: 10px;
-    --text-sm: 12px;
-    --text-base: 13px;
-    --text-md: 14px;
-    --text-lg: 16px;
-    --text-xl: 18px;
-    --text-2xl: 1.5rem;
-    --text-3xl: 2rem;
+    /* ========================================
+       TYPOGRAPHY
+       ======================================== */
+    --font-family: 'Google Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-family-mono: 'Google Sans Mono', 'JetBrains Mono', 'Fira Code', monospace;
 
-    /* Font ağırlıkları */
+    /* Font Sizes */
+    --text-xs: 0.75rem;
+    /* 12px */
+    --text-sm: 0.875rem;
+    /* 14px */
+    --text-base: 1rem;
+    /* 16px */
+    --text-md: 1.125rem;
+    /* 18px */
+    --text-lg: 1.25rem;
+    /* 20px */
+    --text-xl: 1.5rem;
+    /* 24px */
+    --text-2xl: 2rem;
+    /* 32px */
+    --text-3xl: 2.5rem;
+    /* 40px */
+
+    /* Font Weights */
     --font-normal: 400;
     --font-medium: 500;
     --font-semibold: 600;
     --font-bold: 700;
 
-    /* Spacing */
-    --space-1: 4px;
-    --space-2: 8px;
-    --space-3: 12px;
-    --space-4: 16px;
-    --space-5: 20px;
-    --space-6: 24px;
-    --space-8: 32px;
-    --space-10: 40px;
-    --space-12: 48px;
-    --space-16: 64px;
-    --space-20: 80px;
+    /* ========================================
+       SPACING
+       ======================================== */
+    --space-0: 0;
+    --space-1: 0.25rem;
+    /* 4px */
+    --space-2: 0.5rem;
+    /* 8px */
+    --space-3: 0.75rem;
+    /* 12px */
+    --space-4: 1rem;
+    /* 16px */
+    --space-5: 1.25rem;
+    /* 20px */
+    --space-6: 1.5rem;
+    /* 24px */
+    --space-8: 2rem;
+    /* 32px */
+    --space-10: 2.5rem;
+    /* 40px */
+    --space-12: 3rem;
+    /* 48px */
+    --space-16: 4rem;
+    /* 64px */
 
-    /* Border radius */
+    /* ========================================
+       BORDER RADIUS
+       ======================================== */
     --radius-sm: 4px;
-    --radius-md: 6px;
-    --radius-lg: 8px;
-    --radius-xl: 12px;
-    --radius-2xl: 16px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 24px;
+    --radius-3xl: 28px;
+    --radius-pill: 9999px;
     --radius-full: 50%;
 
-    /* Transitions */
-    --transition-fast: 0.15s ease;
-    --transition-normal: 0.2s ease;
-    --transition-slow: 0.3s ease;
+    /* ========================================
+       TRANSITIONS
+       ======================================== */
+    --transition-fast: 100ms ease;
+    --transition-normal: 200ms ease;
+    --transition-slow: 300ms ease;
+    --transition-smooth: 200ms cubic-bezier(0.2, 0, 0, 1);
 
-    /* Z-index */
+    /* ========================================
+       Z-INDEX
+       ======================================== */
+    --z-base: 0;
     --z-dropdown: 1000;
-    --z-modal: 10000;
-    --z-tooltip: 10001;
+    --z-sticky: 1020;
+    --z-fixed: 1030;
+    --z-modal-backdrop: 1040;
+    --z-modal: 1050;
+    --z-tooltip: 1060;
 
-    /* Breakpoints (CSS custom properties olarak) */
-    --breakpoint-sm: 520px;
+    /* ========================================
+       BREAKPOINTS (for reference)
+       ======================================== */
+    --breakpoint-sm: 640px;
     --breakpoint-md: 768px;
     --breakpoint-lg: 1024px;
     --breakpoint-xl: 1280px;
+
+    /* ========================================
+       MODAL / OVERLAY
+       ======================================== */
+    --modal-overlay: rgba(0, 0, 0, 0.6);
+
+    /* Legacy variable mappings for compatibility */
+    --accent: var(--text-primary);
+    --frost: var(--glass-surface);
 }
 
 /* ========================================
-   LIGHT THEME VARIABLES
+   LIGHT THEME
    ======================================== */
 [data-theme="light"] {
-    /* Ana renkler */
-    --bg: #f5f7fa;
-    --frost: rgba(0, 0, 0, 0.04);
-    --accent: rgba(0, 0, 0, 0.85);
+    --bg: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #f1f3f4;
+    --bg-elevated: #ffffff;
 
-    /* Renk paleti - daha canlı */
-    --primary: #0d96cb;
-    --primary-light: #4fc3f7;
-    --primary-dark: #0288d1;
-    --secondary: #2e7d32;
-    --secondary-light: #43a047;
-    --secondary-dark: #1b5e20;
+    --surface: #ffffff;
+    --surface-hover: #f1f3f4;
+    --surface-active: #e8eaed;
 
-    /* Gri tonları - ters çevrilmiş */
-    --gray-50: rgba(0, 0, 0, 0.95);
-    --gray-100: rgba(0, 0, 0, 0.9);
-    --gray-200: rgba(0, 0, 0, 0.8);
-    --gray-300: rgba(0, 0, 0, 0.7);
-    --gray-400: rgba(0, 0, 0, 0.55);
-    --gray-500: rgba(0, 0, 0, 0.45);
-    --gray-600: rgba(0, 0, 0, 0.35);
-    --gray-700: rgba(0, 0, 0, 0.25);
-    --gray-800: rgba(0, 0, 0, 0.15);
-    --gray-900: rgba(0, 0, 0, 0.08);
-    --gray-950: rgba(0, 0, 0, 0.03);
+    --glass-surface: rgba(255, 255, 255, 0.9);
+    --glass-border: rgba(0, 0, 0, 0.08);
 
-    /* Arka plan renkleri */
-    --bg-primary: linear-gradient(180deg, #ffffff 0%, #f0f2f5 100%);
-    --bg-secondary: linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.01));
-    --bg-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
-    --bg-glass-hover: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+    --text-primary: #202124;
+    --text-secondary: #5f6368;
+    --text-tertiary: #80868b;
+    --text-muted: #9aa0a6;
 
-    /* Border renkleri */
-    --border-primary: rgba(0, 0, 0, 0.08);
-    --border-secondary: rgba(0, 0, 0, 0.12);
-    --border-accent: rgba(0, 0, 0, 0.18);
-    --border-focus: rgba(13, 150, 203, 0.5);
+    --primary: #1a73e8;
+    --primary-light: #4285f4;
+    --primary-dark: #1557b0;
+    --primary-surface: rgba(26, 115, 232, 0.08);
+    --primary-hover: rgba(26, 115, 232, 0.12);
 
-    /* Gölge renkleri */
-    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.12);
-    --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.15);
-    --shadow-glow: 0 0 30px rgba(13, 150, 203, 0.2);
+    --border-primary: rgba(0, 0, 0, 0.1);
+    --border-secondary: rgba(0, 0, 0, 0.06);
+    --border-hover: rgba(0, 0, 0, 0.15);
+    --border-focus: rgba(26, 115, 232, 0.4);
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.12);
+    --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.18);
+
+    --gray-50: #202124;
+    --gray-100: #3c4043;
+    --gray-200: #5f6368;
+    --gray-300: #80868b;
+    --gray-400: #9aa0a6;
+    --gray-500: #bdc1c6;
+    --gray-600: #dadce0;
+    --gray-700: #e8eaed;
+    --gray-800: #f1f3f4;
+    --gray-900: #f8f9fa;
+    --gray-950: #ffffff;
+
+    --accent: var(--text-primary);
+    --modal-overlay: rgba(0, 0, 0, 0.4);
 }
 
-/* Smooth theme transitions */
+/* ========================================
+   SMOOTH THEME TRANSITIONS
+   ======================================== */
 body,
 .app-root,
 .sidebar,
@@ -176,32 +246,35 @@ body,
 .welcome-input-wrapper,
 .modal-content,
 .card {
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    transition:
+        background-color var(--transition-normal),
+        color var(--transition-normal),
+        border-color var(--transition-normal);
 }
 
 /* ========================================
    THEME SELECTOR STYLES
    ======================================== */
 .theme-settings {
-    padding: 16px;
+    padding: var(--space-4);
 }
 
 .theme-section-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--gray-100);
-    margin-bottom: 8px;
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
 }
 
 .theme-description {
-    font-size: 13px;
-    color: var(--gray-400);
-    margin-bottom: 20px;
+    font-size: var(--text-sm);
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-5);
 }
 
 .theme-options {
     display: flex;
-    gap: 16px;
+    gap: var(--space-4);
 }
 
 .theme-option {
@@ -219,26 +292,26 @@ body,
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    padding: 12px;
-    border-radius: 12px;
-    border: 2px solid var(--border-secondary);
-    transition: all 0.2s ease;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--border-primary);
+    transition: all var(--transition-normal);
 }
 
 .theme-option input[type="radio"]:checked+.theme-option-content {
     border-color: var(--primary);
-    background: rgba(79, 195, 247, 0.08);
+    background: var(--primary-surface);
 }
 
 .theme-option:hover .theme-option-content {
-    border-color: var(--gray-600);
+    border-color: var(--border-hover);
 }
 
 .theme-preview {
     width: 100px;
     height: 70px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     overflow: hidden;
     display: grid;
     grid-template-columns: 30px 1fr;
@@ -248,50 +321,50 @@ body,
 }
 
 .dark-preview {
-    background: #0f1113;
+    background: #131314;
 }
 
 .dark-preview .preview-header {
     grid-column: 1 / -1;
-    background: #1a1d21;
+    background: #1e1f20;
     border-radius: 2px;
 }
 
 .dark-preview .preview-sidebar {
-    background: #16191d;
+    background: #1e1f20;
     border-radius: 2px;
 }
 
 .dark-preview .preview-content {
-    background: #1e2227;
+    background: #282a2c;
     border-radius: 2px;
 }
 
 .light-preview {
-    background: #f5f7fa;
+    background: #ffffff;
 }
 
 .light-preview .preview-header {
     grid-column: 1 / -1;
-    background: #e8eaed;
+    background: #f1f3f4;
     border-radius: 2px;
 }
 
 .light-preview .preview-sidebar {
-    background: #e0e3e7;
+    background: #f8f9fa;
     border-radius: 2px;
 }
 
 .light-preview .preview-content {
     background: #ffffff;
     border-radius: 2px;
-    border: 1px solid #e0e3e7;
+    border: 1px solid #e8eaed;
 }
 
 .theme-label {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--gray-300);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-secondary);
 }
 
 .theme-option input[type="radio"]:checked+.theme-option-content .theme-label {
