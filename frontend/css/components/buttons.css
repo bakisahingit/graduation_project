@@ -186,8 +186,13 @@
     height: 36px;
     min-width: 36px;
     border-radius: var(--radius-full);
-    background: var(--text-primary);
-    color: var(--bg);
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    color: var(--text-primary);
     border: none;
     cursor: pointer;
     display: flex;
@@ -198,8 +203,10 @@
 }
 
 .send-btn:hover:not(:disabled) {
-    background: var(--gray-200);
-    transform: scale(1.05);
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    transform: scale(1.1);
 }
 
 .send-btn:active:not(:disabled) {
@@ -207,7 +214,8 @@
 }
 
 .send-btn:disabled {
-    background: var(--text-muted);
+    background: transparent;
+    opacity: 0.3;
     cursor: not-allowed;
 }
 
@@ -221,6 +229,10 @@
     width: 18px;
     height: 18px;
     filter: invert(1);
+}
+
+.send-btn img.btn-icon:hover {
+    background: transparent !important;
 }
 
 /* ========================================
